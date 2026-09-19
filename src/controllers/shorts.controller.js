@@ -1,13 +1,17 @@
 import axios from 'axios';
-import { YOUTUBE_CHANNEL_IDS } from '../config/youtube.js';
+import { YOUTUBE_CHANNEL_IDS, SHORTS_PRODUCTOS } from '../config/youtube.js';
 
 const PAGE_URL = 'https://www.youtube.com/channel';
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const MAX_VIDEOS = 24;
+const MAX_CARRUSEL = 10;
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36';
 const RE_ID = /^[\w-]{11}$/;
 
-let cache = { videos: null, timestamp: 0 };
+let cache = {
+  carrusel: { videos: null, fuentes: [], timestamp: 0 },
+  porFuente: {},
+};
 
 function tituloDesde(titleObj) {
   if (typeof titleObj === 'string') return titleObj;
@@ -17,22 +21,36 @@ function tituloDesde(titleObj) {
   return '';
 }
 
-function videoDesdeLockup(lockup) {
+function etiquetaDesde(html) {
+  try {
+    const data = extraerYtInitialData(html);
+    return data?.header?.c4TabbedHeaderRenderer?.title?.trim()
+      || data?.metadata?.channelMetadataRenderer?.title?.trim()
+      || '';
+  } catch {
+    return '';
+  }
+}
+
+function videoDesdeLockup(lockup, canal_id, fuente) {
   const id = lockup.contentId;
   if (typeof id !== 'string' || !RE_ID.test(id)) return null;
 
   const titulo = tituloDesde(lockup.metadata?.lockupMetadataViewModel?.title?.content).trim();
-  const fuente = lockup.contentImage?.thumbnailViewModel?.image?.sources?.at(-1)?.url;
+  const imagen = lockup.contentImage?.thumbnailViewModel?.image?.sources?.at(-1)?.url;
 
   return {
     id,
     titulo,
-    thumb: typeof fuente === 'string' ? fuente.split('?')[0] : `https://i.ytimg.com/vi/${id}/hq720.jpg`,
+    thumb: typeof imagen === 'string' ? imagen.split('?')[0] : `https://i.ytimg.com/vi/${id}/hq720.jpg`,
     url: `https://www.youtube.com/watch?v=${id}`,
+    canal_id,
+    fuente,
+    producto: SHORTS_PRODUCTOS[id] || null,
   };
 }
 
-function videoDesdeShorts(shorts) {
+function videoDesdeShorts(shorts, canal_id, fuente) {
   const reel = shorts?.onTap?.innertubeCommand?.reelWatchEndpoint;
   const id = reel?.videoId
     || (typeof shorts?.entityId === 'string' ? shorts.entityId.replace(/^shorts-shelf-item-/, '') : null);
@@ -42,14 +60,17 @@ function videoDesdeShorts(shorts) {
   if (!titulo && typeof shorts?.accessibilityText === 'string') {
     titulo = shorts.accessibilityText.split(',')[0].trim();
   }
-  const fuente = reel?.thumbnail?.thumbnails?.at(-1)?.url
+  const imagen = reel?.thumbnail?.thumbnails?.at(-1)?.url
     || shorts?.thumbnailViewModel?.image?.sources?.at(-1)?.url;
 
   return {
     id,
     titulo,
-    thumb: typeof fuente === 'string' ? fuente.split('?')[0] : `https://i.ytimg.com/vi/${id}/frame0.jpg`,
+    thumb: typeof imagen === 'string' ? imagen.split('?')[0] : `https://i.ytimg.com/vi/${id}/frame0.jpg`,
     url: `https://www.youtube.com/shorts/${id}`,
+    canal_id,
+    fuente,
+    producto: SHORTS_PRODUCTOS[id] || null,
   };
 }
 
@@ -72,7 +93,7 @@ export function parsearPagina(html) {
       const contenido = item?.richItemRenderer?.content;
       const shorts = contenido?.shortsLockupViewModel;
       const lockup = contenido?.lockupViewModel;
-      const video = shorts ? videoDesdeShorts(shorts) : lockup ? videoDesdeLockup(lockup) : null;
+      const video = shorts ? videoDesdeShorts(shorts, '', '') : lockup ? videoDesdeLockup(lockup, '', '') : null;
       if (video && !videos.some((v) => v.id === video.id)) videos.push(video);
     }
     if (videos.length > 0) break;
@@ -114,40 +135,89 @@ function extraerYtInitialData(html) {
   return null;
 }
 
+async function fetchFuente(canal_id) {
+  const res = await axios.get(`${PAGE_URL}/${canal_id}/shorts`, {
+    headers: { 'User-Agent': UA, 'Accept-Language': 'es' },
+    timeout: 15000,
+  });
+  const nombre = etiquetaDesde(res.data) || canal_id;
+  const videos = parsearPagina(res.data)
+    .map((v) => ({ ...v, canal_id, fuente: nombre, producto: SHORTS_PRODUCTOS[v.id] || null }))
+    .slice(0, MAX_VIDEOS);
+  return { canal_id, nombre, videos };
+}
+
+export function armarCarrusel(feeds, max = MAX_CARRUSEL) {
+  const salida = [];
+  const vistos = new Set();
+  if (!Array.isArray(feeds) || feeds.length === 0) return salida;
+  let ronda = 0;
+  let continuar = true;
+  while (continuar && salida.length < max) {
+    continuar = false;
+    for (const feed of feeds) {
+      const v = feed?.videos?.[ronda];
+      if (!v) continue;
+      continuar = true;
+      if (!vistos.has(v.id)) {
+        vistos.add(v.id);
+        salida.push(v);
+        if (salida.length >= max) break;
+      }
+    }
+    ronda++;
+  }
+  return salida;
+}
+
 export async function getShorts(req, res) {
   if (YOUTUBE_CHANNEL_IDS.length === 0) {
     return res.json({ videos: [], configurado: false });
   }
 
   const ahora = Date.now();
-  if (cache.videos && ahora - cache.timestamp < CACHE_TTL_MS) {
-    return res.json({ videos: cache.videos, configurado: true });
+  const fuenteParam = typeof req.query.fuente === 'string' ? req.query.fuente.trim() : '';
+
+  if (fuenteParam) {
+    const canal_id = YOUTUBE_CHANNEL_IDS.find((c) => c === fuenteParam);
+    if (!canal_id) return res.status(404).json({ error: 'Fuente no encontrada' });
+    const at = cache.porFuente[canal_id];
+    if (at && ahora - at.timestamp < CACHE_TTL_MS) {
+      return res.json({ videos: at.videos, fuente: { canal_id, nombre: at.nombre }, configurado: true });
+    }
+    try {
+      const feed = await fetchFuente(canal_id);
+      cache.porFuente[canal_id] = { videos: feed.videos, nombre: feed.nombre, timestamp: ahora };
+      return res.json({ videos: feed.videos, fuente: { canal_id, nombre: feed.nombre }, configurado: true });
+    } catch (err) {
+      console.error('shorts: fallo al obtener la fuente', err?.message);
+      if (at) return res.json({ videos: at.videos, fuente: { canal_id, nombre: at.nombre }, configurado: true });
+      return res.status(502).json({ error: 'No se pudo obtener los shorts de YouTube', videos: [] });
+    }
   }
 
-  const resultados = await Promise.allSettled(
-    YOUTUBE_CHANNEL_IDS.map((canal) => axios.get(`${PAGE_URL}/${canal}/shorts`, {
-      headers: { 'User-Agent': UA, 'Accept-Language': 'es' },
-      timeout: 15000,
-    }))
-  );
+  if (cache.carrusel.videos && ahora - cache.carrusel.timestamp < CACHE_TTL_MS) {
+    return res.json({ videos: cache.carrusel.videos, fuentes: cache.carrusel.fuentes, configurado: true });
+  }
 
-  const videos = [];
+  const resultados = await Promise.allSettled(YOUTUBE_CHANNEL_IDS.map(fetchFuente));
+  const fuentes = [];
+  const feeds = [];
   for (const r of resultados) {
     if (r.status === 'rejected') {
       console.error('shorts: fallo al obtener el canal', r.reason?.message);
       continue;
     }
-    const vids = parsearPagina(r.value.data);
-    for (const v of vids) {
-      if (!videos.some((x) => x.id === v.id)) videos.push(v);
-    }
+    fuentes.push({ canal_id: r.value.canal_id, nombre: r.value.nombre });
+    feeds.push(r.value);
   }
 
+  const videos = armarCarrusel(feeds);
   if (videos.length === 0) {
-    if (cache.videos) return res.json({ videos: cache.videos, configurado: true });
+    if (cache.carrusel.videos) return res.json({ videos: cache.carrusel.videos, fuentes: cache.carrusel.fuentes, configurado: true });
     return res.status(502).json({ error: 'No se pudo obtener los shorts de YouTube', videos: [] });
   }
 
-  cache = { videos: videos.slice(0, MAX_VIDEOS), timestamp: ahora };
-  return res.json({ videos: cache.videos, configurado: true });
+  cache.carrusel = { videos, fuentes, timestamp: ahora };
+  return res.json({ videos, fuentes, configurado: true });
 }
