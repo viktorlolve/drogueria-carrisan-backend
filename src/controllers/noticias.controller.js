@@ -8,10 +8,11 @@ const FUENTES_RSS = [
   'https://diariofarma.com/feed/',
 ];
 
-const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 horas
 const MAX_NOTICIAS = 12;
 
-let cache = { data: null, timestamp: 0 };
+// Feed ya sincronizado. Solo lo llena el cron (jobs) y un sync al arrancar;
+// el endpoint GET /noticias NO hace fetch bajo demanda (no consume runtime).
+let noticiasCache = [];
 
 // Extrae la primera imagen disponible de un <item>: primero busca
 // media:content/enclosure (poco común en WordPress sin plugin), y si no
@@ -62,13 +63,10 @@ async function obtenerNoticiasDeFuente(url) {
   return noticias;
 }
 
-// GET /noticias
-export async function getNoticias(req, res) {
-  const ahora = Date.now();
-
-  if (cache.data && (ahora - cache.timestamp) < CACHE_TTL_MS) {
-    return res.json(cache.data);
-  }
+// Sincroniza el feed desde las fuentes RSS. Lo llama el cron de server.js
+// (cada 24h) y un sync inicial al arrancar para no servir un feed vacío.
+export async function sincronizarNoticias() {
+  console.log('📰 Cron: sincronizando noticias…');
 
   try {
     const resultadosPorFuente = await Promise.all(
@@ -83,17 +81,20 @@ export async function getNoticias(req, res) {
       .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
       .slice(0, MAX_NOTICIAS);
 
-    // Si todas las fuentes fallaron y no hay nada nuevo que mostrar,
-    // preferimos servir la cache vieja (si existe) antes que una lista vacía.
-    if (noticias.length === 0 && cache.data) {
-      return res.json(cache.data);
+    if (noticias.length === 0) {
+      console.error('❌ No se pudieron obtener noticias de ninguna fuente — se conserva el feed anterior');
+      return;
     }
 
-    cache = { data: noticias, timestamp: ahora };
-    res.json(noticias);
+    noticiasCache = noticias;
+    console.log(`✅ Feed de noticias actualizado: ${noticias.length} noticias`);
   } catch (err) {
-    console.error('Error al obtener noticias:', err.message);
-    if (cache.data) return res.json(cache.data);
-    res.status(500).json({ error: 'No se pudieron obtener las noticias' });
+    console.error('❌ Error al sincronizar noticias:', err.message);
   }
+}
+
+// GET /noticias — solo sirve el feed ya sincronizado (no consume runtime ni
+// hace peticiones externas en cada visita; el refresh lo hace el cron).
+export function getNoticias(req, res) {
+  res.json(noticiasCache);
 }

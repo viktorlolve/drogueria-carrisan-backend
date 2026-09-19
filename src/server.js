@@ -56,6 +56,7 @@ import noticiasRoutes from './routes/noticias.routes.js';
 import shortsRoutes from './routes/shorts.routes.js';
 import cron from 'node-cron';
 import { actualizarTasa } from './jobs/actualizarTasa.js';
+import { sincronizarNoticias } from './controllers/noticias.controller.js';
 
 dotenv.config();
 
@@ -141,6 +142,14 @@ app.use('/products', valoracionesRoutes);
 // Cron: actualizar tasa de cambio a las 18:00 hora Venezuela (lunes a viernes)
 cron.schedule('0 18 * * 1-5', () => {
   actualizarTasa();
+}, { timezone: 'America/Caracas' });
+
+// Noticias RSS: sincronizar una vez al día (06:00 hora Venezuela).
+// Synnc inicial al arrancar para no servir un feed vacío tras un restart
+// (el proceso puede reiniciarse al despertar del sleep en Render free).
+sincronizarNoticias();
+cron.schedule('0 6 * * *', () => {
+  sincronizarNoticias();
 }, { timezone: 'America/Caracas' });
 
 app.listen(PORT, () => {
