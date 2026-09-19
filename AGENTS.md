@@ -24,14 +24,14 @@ npm run start    # Produccion (node src/server.js)
 
 ```
 src/
-├── server.js                  # ENTRY POINT — Express app + rutas + middleware
-├── config/supabase.js         # Cliente Supabase (createClient con env vars)
-├── controllers/               # Logica de negocio (33 archivos)
-├── routes/                    # Definicion de endpoints (30 archivos)
+├── server.js                  # ENTRY POINT — Express app + rutas + middleware + cron
+├── config/                    # supabase.js, proveedores.js, youtube.js, categoriasTienda.js
+├── controllers/               # Logica de negocio (~58 archivos)
+├── routes/                    # Definicion de endpoints (~56 archivos)
 ├── middleware/                 # auth.js, Ratelimit.js, soloAdmin.middleware.js, staffAuth.js (JWT staff interno)
-├── services/                  # push.service.js (web-push)
-├── jobs/                      # Tareas cron (limpiezaNotificaciones, revisarVencimientos)
-├── migrations/                # SQL de migraciones (010-023) + scripts de import
+├── services/                  # push.service.js (web-push), proveedores/ (importarProveedor, parsers)
+├── jobs/                      # Tareas cron (actualizarTasa, limpiezaNotificaciones, revisarVencimientos)
+├── migrations/                # SQL de migraciones (010-037) + scripts de import
 └── utils/                     # turnstile.js (verificacion anti-bot)
 ```
 
@@ -49,9 +49,12 @@ const { data, error } = await supabase
 
 Si necesitas entender la schema de la DB, mira los controllers (los nombres de columnas aparecen en las queries) o las migraciones SQL.
 
-### Rutas registradas en server.js (30 de 30)
+### Rutas registradas en server.js
 
-Todos los archivos de `routes/` estan importados y montados en `server.js`: `/auth`, `/marcas`, `/products`, `/prices`, `/orders`, `/users`, `/admin/codigos-invitacion`, `/descuentos`, `/facturas`, `/pagos`, `/reportes-pago`, `/clientes`, `/notifications`, `/lists`, `/direcciones`, `/favoritos`, `/uploads`, `/moleculas`, `/staff`, `/delivery-tarifas`, `/requerimientos`, `/cotizaciones`, `/documentos`, `/chat`, `/presupuestos`, `/subusuarios`, `/admin/analytics`, `/push`, `/promociones`, y `/products` (valoraciones, junto al router de productos).
+Todos los archivos de `routes/` estan importados y montados en `server.js` (montaje verificable en `server.js:88-139`):
+- **Públicas / cliente**: `/auth`, `/marcas`, `/products`, `/shorts`, `/prices`, `/orders`, `/users`, `/admin/codigos-invitacion`, `/descuentos`, `/facturas`, `/pagos`, `/reportes-pago`, `/clientes`, `/notifications`, `/lists`, `/direcciones`, `/perfil`, `/favoritos`, `/uploads`, `/moleculas`, `/catalogo`, `/registro-invita`, `/delivery-tarifas`, `/requerimientos`, `/cotizaciones`, `/documentos`, `/chat`, `/presupuestos`, `/subusuarios`, `/admin/analytics`, `/push`, `/promociones`, `/cupones`, `/noticias`, `/products` (valoraciones, junto al router de productos).
+- **Staff** (se montan ANTES del `/staff` base, cada uno con `verifyStaffJWT` + `checkRolStaff`): `/staff/almacen`, `/staff/contabilidad`, `/staff/cotizaciones`, `/staff/requerimientos`, `/staff/documentos`, `/staff/promociones`, `/staff/direcciones`, `/staff/precios`, `/staff/credito`, `/staff/tesoreria`, `/staff/reportes`, `/staff/logistica`, `/staff/chat`, `/staff/cupones`, `/staff` (base: login/registro/ordenes/despacho/bridge).
+- **Cron**: `cron.schedule('0 18 * * 1-5', actualizarTasa, { timezone: 'America/Caracas' })` en `server.js:142-144` (tasa de cambio, lun-vie 18:00 hora Venezuela).
 
 Si agregas un endpoint nuevo, recuerda importar y montar el archivo de rutas en `server.js`.
 
@@ -85,9 +88,17 @@ Login aparte para trabajadores de la empresa (vendedores, despachadores, almacen
   - `POST /staff/ordenes` — vendedor crea pedido a nombre de un cliente (usa `construirOrden` con `creado_por_staff_id`).
   - `POST /staff/admin-bridge` — staff admin/director recibe un JWT de CLIENTE válido para entrar al panel `/admin` (empareja por email con cuenta `users` `es_admin=true`).
   - **`/staff/almacen`** (`almacenista/administrador/director/admin`): `GET /revisar` (cola `pedido_creado` con items y stock), `GET /preparar` (cola unificada `preparando`+`procesando` legacy); `PATCH /:id/aprobar` (ajusta cantidades, anula items agotados con nota, recalcula `total_usd` y pasa directo a `preparando`; contado queda con `estado_pago='esperando'`, crédito con `fecha_vencimiento`); `PATCH /:id/cancelar` (solo `pedido_creado`/`preparando`); `PATCH /:id/enviado` (solo `delivery`/`envio_nacional` en `preparando` + pago autorizado); `PATCH /:id/listo-para-retiro` (solo `retiro` en `preparando` + pago autorizado). Usa `validarTransicion`/`aplicarCambioEstado` de `ordenes.controller.js` (contexto: `tipo_envio`, `forma_pago`, `estado_pago`). OJO: NO existe `PATCH /:id/preparando` — pasar a `preparando` ya lo hace la aprobación; `procesando→preparando` legacy queda exclusivo de la verificación de pago de contabilidad.
-  - **`/staff/contabilidad`** (`contabilidad/administrador/director/admin`): `GET /clientes` (resumen), `GET /clientes/:id` (detalle), `GET /clientes/:id/comparativa`, `GET /clientes/:id/sin-facturar`; `GET|POST /pagos`, `DELETE /pagos/:id`; `GET|POST /facturas` (POST acepta `tipo`/`factura_referencia_id`/`motivo` para notas con la migración 012), `PATCH|DELETE /facturas/:id`; `GET /reportes-pago`, `PATCH /reportes-pago/:id/verificar`, `PATCH /reportes-pago/:id/rechazar`. Duplica la lógica de `/admin` (facturas/pagos/estadocuenta/reportes) pero con sesión staff; **`created_by` = `req.staff.id`** (en pagos/facturas/reportes). No toca los controllers de `/admin`. Las páginas de Finanzas del frontend (Ventas, Cuentas por cobrar, Pagos, Órdenes por cancelar) consumen estos endpoints SIN cambios de ruta.
-- Frontend: `src/pages/staff/` (StaffLogin, StaffDashboard, StaffAlmacen, StaffDespacho, StaffOrdenes, StaffVentas, StaffCuentasPorCobrar, StaffPagos, StaffOrdenesPorCancelar), `src/components/staff/` (LayoutStaff + NavStaff, sidebar persistente), `src/context/StaffAuthContext.jsx`, `src/api/staffAxios.js` (token propio `staff_token`, sesion independiente de la de cliente), `src/components/PrivateRouteStaff.jsx`.
-- **Orden de montaje en `server.js`**: `/staff/almacen` y `/staff/contabilidad` se montan ANTES de `/staff` (llegan antes que el router base).
+  - **`/staff/contabilidad`** (`contabilidad/administrador/director/admin`): `GET /clientes` (resumen), `GET /clientes/:id` (detalle), `GET /clientes/:id/comparativa`, `GET /clientes/:id/sin-facturar`; `GET|POST /pagos`, `DELETE /pagos/:id`; `GET|POST /facturas` (POST acepta `tipo`/`factura_referencia_id`/`motivo` para notas con la migración 012), `PATCH|DELETE /facturas/:id`; `GET /reportes-pago`, `PATCH /reportes-pago/:id/verificar`, `PATCH /reportes-pago/:id/rechazar`. Duplica la lógica de `/admin` (facturas/pagos/estadocuenta/reportes) pero con sesión staff; **`created_by` = `req.staff.id`** (en pagos/facturas/reportes). No toca los controllers de `/admin`. Las páginas de Finanzas del frontend (Ventas, Cuentas por cobrar, Pagos, Órdenes por cancelar) consumen estos endpoints SIN cambios de ruta. `verificarReportePago` SOLO confirma el pago — NO genera factura (la emite el módulo Facturación aparte, regla 2026-09-14).
+  - **`/staff/credito`** (`contabilidad/administrador/director/admin`): crédito y cobranza — aging report, notas de cobranza, recordatorios push, freeze de crédito (manual + auto-freeze en `revisarVencimientos.js`). Migración `026_credito_cobranza.sql` (+ ampliaciones `032_ampliaciones_credito.sql`). Ver AGENTS raíz.
+  - **`/staff/tesoreria`** (`contabilidad/administrador/director/admin`): ingresos consolidados (read-only desde `pagos`), egresos manuales + salidas internas (`movimientos_caja`), por tercero, export PDF/CSV. Migraciones `027_tesoreria_movimientos_caja.sql` + `028_tesoreria_ampliada.sql`.
+  - **`/staff/reportes`** (`contabilidad/administrador/director/admin`): `GET /resumen?desde=&hasta=` — informe financiero consolidado (6 bloques: ventas, crédito aprobado, crédito vencido con aging, cobros, facturado_vs_cobrado, egresos).
+  - **`/staff/logistica`** (`almacenista/administrador/director/admin`, agencias solo admin): retiros (`GET/PATCH /retiros`), incidencias (`GET/PATCH /incidencias`), verificar paquete (`/verificar-paquete`, `/reintentar`), completadas (`/completadas`), agencias CRUD (`/agencias*`). Migración `029_logistica.sql`.
+  - **`/staff/chat`** (`vendedor/administrador/director/admin`): `GET /conversaciones` (todas, `updated_at desc`), `GET|POST /conversaciones/:id/mensajes`. Migración `031_mensajes_chat_staff.sql`.
+  - **`/staff/cupones`** (`admin/administrador/director`): CRUD de códigos giftcard (tipo % o monto). Migración `034_cupones_descuento.sql`.
+  - **`/staff/clientes`** (Comercial, en `staff.routes.js`): `GET /clientes` (listar con buscador/paginación + línea/deuda/saldo via batch), `GET /clientes/:id/detalle`, `/clientes/:id/ordenes`, `/clientes/:id/cotizaciones`, `/clientes/:id/requerimientos`. Ver AGENTS raíz (sección Clientes).
+  - **`/staff/precios`** (`vendedor/administrador/director/admin`): `GET /productos`, `PATCH /:id`, `PATCH /lote`, `POST /importar-proveedor` (multipart, multi-proveedor COBECA/Drovencentro).
+- Frontend (páginas reales): `src/pages/staff/` (StaffLogin, StaffRegistro, StaffDashboard, StaffDepartamento, StaffPedidos, StaffEnvios, StaffOrdenes, StaffSolicitudes, StaffPresupuestos, StaffFacturacion, StaffCuentasPorCobrar, StaffOrdenesPorCancelar, StaffCredito, StaffTesoreria, StaffReportesFinancieros, StaffClientes, StaffClienteFicha, StaffChat, StaffCupones, StaffPromociones, StaffPrecios, StaffDirecciones, StaffModuloPlaceholder), `src/components/staff/` (LayoutDepartamento + NavStaff, sidebar por depto; LayoutStaff/NavStaff legacy sin uso activo), `src/context/StaffAuthContext.jsx`, `src/api/staffAxios.js` (token propio `staff_token`, sesion independiente de la de cliente), `src/components/PrivateRouteStaff.jsx`.
+- **Orden de montaje en `server.js`**: los módulos `staff.*.routes.js` (incluido `/staff/almacen`, `/staff/contabilidad`, `/staff/credito`, `/staff/tesoreria`, `/staff/reportes`, `/staff/logistica`, `/staff/chat`, `/staff/cupones`, etc.) se montan ANTES de `/staff` (llegan antes que el router base). Se montan con `authLimiter` en `/staff/login` y `/staff/registro`; luego cada módulo; por último `/staff` base.
 
 **Migración Admin → Staff (IMPLEMENTADA — 2026-09-07)** — funcionalidades del panel `/admin` migradas a módulos staff con endpoints **NUEVOS** `/staff/*` (sesión staff). Las rutas están en `routes/staff.{modulo}.routes.js` y se montan en `server.js` ANTES del `/staff` base, usando `verifyStaffJWT` + `checkRolStaff([...])`. NO se reutilizan ni modifican los controllers/endpoints de `/admin`:
 
@@ -98,6 +109,8 @@ Login aparte para trabajadores de la empresa (vendedores, despachadores, almacen
 | **Documentos** (Comercial) | `vendedor/administrador/director/admin` | `GET /staff/documentos`, `PATCH /staff/documentos/:id/aprobar`, `PATCH /staff/documentos/:id/rechazar` |
 | **Promociones** (Comercial, sin envío masivo) | `vendedor/administrador/director/admin` | `GET/POST/PUT/DELETE /staff/promociones/templates`, `GET /staff/promociones/history`. El envío masivo (`send`/`send-custom`) queda SOLO en `/admin` (solo el dueño) |
 | **Direcciones** (Logística) | `despachador/administrador/director/admin` | `GET /staff/direcciones` (con info del cliente), `GET /staff/direcciones/cliente/:id` |
+
+**Nota tras el Comercial unificado (2026-09-14)**: los endpoints `/staff/cotizaciones` y `/staff/requerimientos` siguen existiendo y los usan las páginas legacy, pero la **navegación** ya no los expone — el módulo `solicitudes` (`StaffSolicitudes.jsx`) consume ambos endpoints desde un solo kanban de 2 tabs. `/staff/documentos` también dejó de aparecer en el menú (se absorbe en la ficha de cliente `StaffClienteFicha` tab Documentos). No eliminar los endpoints — siguen vivos y los usan las páginas nuevas.
 
 Los 5 módulos están IMPLEMENTADOS (los controllers reutilizados de `cotizaciones.controller.js`, `requerimientos.controller.js`, `documentos.controller.js`, `promociones.controller.js`) expuestos bajo `/staff/*` con sesión staff. Auditoría de acciones staff con **`staff_id`** (migración `015_staff_auditoria.sql`): los controllers reutilizados registran `staff_id: req.staff?.id ?? null` — en `/admin` (sesión cliente) `req.staff` es `undefined` y queda `null`, así que el comportamiento admin se mantiene intacto.
 
@@ -124,8 +137,9 @@ Se construyó el flujo de aprobación del almacenista. Resumen de lo agregado:
 - `ordenes.controller.js`: `validarTransicion` (transición + fulfillment + pago autorizado), `normalizarEstado` (mapeo legacy), `aplicarCambioEstado` y `getDeliveryPendientes` (devuelve `{ pendientes, enviadosRecientes }` filtrando por pago autorizado).
 - `contabilidad.controller.js` + rutas: `GET /staff/contabilidad/ordenes-procesando` (contado esperando pago) y `PATCH /staff/contabilidad/ordenes/:id/cancelar` (módulo "Órdenes por cancelar" en el frontend).
 - Frontend: `StaffAlmacen.jsx` con tabs "Por revisar" / "Por preparar" (badge de pago pendiente, botón "Marcar listo para retiro" para retiro o "Marcar como enviado" para delivery) y `StaffOrdenesPorCancelar.jsx` con la cola de cancelación.
+- **2026-09-12 — Logística unificada**: `StaffAlmacen`.jsx` fue sustituido por `StaffPedidos` (pipelines completos: revisar/aprobar/preparar + retiros/incidencias/verificar-paquete/agencias). `StaffDespacho` → `StaffEnvios`. Ver sección Logística en el AGENTS raíz.
 
-Ideas pendientes (ver `analisis/plan-modulos-staff-por-rol.md`): proveedores, estadísticas separadas del staff, historial de actividad de aprobación (quién ajustó/anuló qué), y asegurar notificación por item anulado cuando ya hay cambios.
+Ideas pendientes (ver `analisis/plan-modulos-staff-por-rol.md`): proveedores (módulo Comercial), estadísticas separadas del staff, historial de actividad de aprobación (quién ajustó/anuló qué), y asegurar notificación por item anulado cuando ya hay cambios.
 
 ### Catálogo de productos INHRR (PLAN APROBADO — 2026-09-05)
 
@@ -196,7 +210,7 @@ Objetivo: crear un catálogo público de consulta (`productos_catalogo`) basado 
 |-----------|----------------|
 | auth.controller.js | Login, registro, check-email, verificar-codigo, reset-password |
 | productos.controller.js | CRUD de productos, busqueda, filtros, stock |
-| ordenes.controller.js | Crear/confirmar/cancelar/estado de ordenes |
+| ordenes.controller.js | Crear/confirmar/cancelar/estado de ordenes, `validarTransicion`/`normalizarEstado`/`construirOrden` |
 | pagos.controller.js | Registrar pagos, verificar, rechazar |
 | facturas.controller.js | Generar facturas, asociar a ordenes |
 | estadocuenta.controller.js | Estado de cuenta de clientes, saldos, ampliacion de credito |
@@ -212,12 +226,37 @@ Objetivo: crear un catálogo público de consulta (`productos_catalogo`) basado 
 | documentos.controller.js | Documentos adjuntos |
 | chat.controller.js | Mensajes de chat cliente-empresa |
 | staff.controller.js | Login interno (staff), cola de despacho, crear orden a cliente, bridge al admin |
+| staff.clientes.controller.js | Comercial Clientes: listar (buscador + pág), detalle ficha, órdenes/cotizaciones/requerimientos del cliente |
+| staff.chat.controller.js | Chat staff Comercial: conversaciones + mensajes |
+| staff.precios.controller.js | Precios staff: grid + edición + lote + importar proveedor |
+| staff.productos.controller.js | Buscador server-side de productos para presupuestos/órdenes |
+| almacen.controller.js | Colas revisar/preparar, aprobar/cancelar, marcar enviado/listo-retiro |
+| contabilidad.controller.js | Estado de cuenta, pagos, facturas, reportes de pago, verificación (solo confirma, no factura) |
+| credito.controller.js | Crédito y cobranza: aging, notas, freeze |
+| tesoreria.controller.js | Tesorería: ingresos, egresos, salidas internas, por tercero |
+| reportes.controller.js | Reportes financieros consolidados (`/staff/reportes/resumen`) |
+| logistica.controller.js | Logística: retiros, incidencias, verificar-paquete, completadas, agencias |
+| cupones.controller.js | Cupones giftcard admin |
+| catalogo.controller.js | Catálogo público INHRR: `catalogo_listar`/`catalogo_producto`/`catalogo_metadata` |
+| alertasDisponibilidad.controller.js | "Avísame cuando llegue": alertas por producto sin precio |
+| shorts.controller.js | Shorts/videos cortos (público) |
+| noticias.controller.js | Noticias |
+| registroInvita.controller.js | Registro por invitación (status/config) |
+| reportesPago.controller.js | Reportes de pago admin (verificar/rechazar, solo confirma — no factura) |
+| analytics.controller.js | Analytics de ventas admin |
+| presupuestos.controller.js | Presupuestos (cliente + staff) |
+| perfil.controller.js | Perfil/avatar |
+| valoraciones.controller.js | Valoraciones de productos |
+| favoritos.controller.js | Favoritos |
+| direcciones.controller.js | Direcciones de envío |
+| subusuarios.controller.js | Sub-usuarios |
+| tarifasDelivery.controller.js | Tarifas de delivery |
 
 ## Migraciones SQL
 
-Ubicacion: `src/migrations/` (010-023)
+Ubicacion: `src/migrations/` (010-037)
 
-Las migraciones son SQL plano. NO hay sistema de migraciones automatico — se ejecutan manualmente en Supabase SQL Editor.
+Las migraciones son SQL plano. NO hay sistema de migraciones automatico — se ejecutan manualmente en Supabase SQL Editor. Varios números quedaron duplicados (025, 026, 032) porque se crearon en paralelo — verificar por nombre de archivo.
 
 | Archivo | Que hace |
 |---------|----------|
@@ -237,6 +276,22 @@ Las migraciones son SQL plano. NO hay sistema de migraciones automatico — se e
 | 023_producto_costos.sql | Tabla `producto_costos` (costos POR PROVEEDOR): `proveedor text` + `producto_id integer NOT NULL REFERENCES productos(id) ON DELETE CASCADE` (**`productos.id` es `integer`, NO uuid**) + `costo_usd numeric NOT NULL CHECK >= 0` + `fecha timestamptz default now()` + `PK(proveedor, producto_id)`. `productos.costo_usd` = `MIN(producto_costos)` global; precio = min/0.6. Usada por `src/services/proveedores/importarProveedor.js` |
 | 024_reconstruccion_catalogo.sql | Reconstrucción del catálogo por presentaciones (APLICADA 2026-09-08): TRUNCATE físico (25 tablas) + detach/recreate de FKs `conversaciones_orden_id_fkey` y `notificaciones_orden_id_fkey` con `ON DELETE SET NULL` (chat/notis se conservan) + columnas nuevas en `productos` (`sku text`, `presentacion text`, `unidades_por_presentacion integer`) con índice UNIQUE parcial `productos_sku_key`; se DROPEA la constraint `productos_fuente_inhrr_ef_key`. Requiere aplicar a mano (Supabase SQL Editor) antes de correr `scripts/reconstruir-catalogo.mjs` |
 | 025_codigos_invitacion_fechas.sql | Códigos de invitación: agrega `fecha_creacion` y `expira_en` (TIMESTAMPTZ) que la tabla real no tenía (solo `created_at`); backfill `fecha_creacion=created_at` y `expira_en=created_at+48h`. SIN esta columna, todos los endpoints de `/admin/codigos-invitacion`, `verificar-codigo` y los registros honorífico/staff fallaban (POST/GET guardaban/consultaban `expira_en`/`fecha_creacion` inexistentes → toasts de error al entrar a la página de gestión). Aplicada en BD 2026-09-10 |
+| 025_notificaciones_tipos.sql | Expande el CHECK `notificaciones_tipo_check` con tipos nuevos del flujo de catálogo/pagos (unificación `qa`/`pagos`). Aplicada en BD 2026-09-10 en el QA funcional |
+| 026_credito_cobranza.sql | Módulo Crédito y cobranza: tabla `cobranza_notas`, columnas `users.credito_bloqueado` + `credito_bloqueado_motivo`, extiende `notificaciones_tipo_check` con `recordatorio_cobro`/`credito_bloqueado`/`credito_desbloqueado` |
+| 026_facturacion.sql | Módulo Facturación: reestructura de facturas para el staff Finanzas (mismo número que credito_cobranza — archivos paralelos) |
+| 027_tesoreria_movimientos_caja.sql | Tesorería: tabla `movimientos_caja` (ingresos read-only + egresos manuales con categorías fijas) |
+| 028_tesoreria_ampliada.sql | Tesorería ampliada: `tipo='salida_interna'` en `movimientos_caja` + columna `tercero text NULL` + índice |
+| 029_logistica.sql | Logística unificada: columnas `ordenes.paquete_verificado` + `ordenes.incidencia_motivo`, tabla `agencias_envio` |
+| 030_pagos_reporte_staff.sql | Pagos/verificación staff: `pagos.created_by_staff` y `reportes_pago.verificado_por_staff` (uuid FK `staff(id)`) — `pagos.created_by`/`reportes_pago.verificado_por` son FK integer a `users(id)`, el staff (uuid) NUNCA se escribe ahí |
+| 031_mensajes_chat_staff.sql | Chat staff: `mensajes_chat.remitente_id` nullable + `mensajes_chat.staff_id uuid REFERENCES staff(id) ON DELETE SET NULL` (auditoría de quién respondió) |
+| 032_ampliaciones_credito.sql | Crédito: ampliaciones/solicitudes de línea de crédito |
+| 032_categorias_tienda.sql | Categorías de tienda (mismo número 032 — archivos paralelos) |
+| 032_perfiles_institucional_documentos.sql | Perfiles institucional (documentos) |
+| 033_ordenes_sub_usuario.sql | Órdenes de sub-usuarios |
+| 034_cupones_descuento.sql | Cupones giftcard: tabla `cupones_descuento` (id uuid, codigo text unique, tipo check porcentaje/monto, valor numeric>0, expira_en, activo, usado) |
+| 035_registro_invita.sql | Registro por invitación (profesional/honorífico): tabla `registro_invita_config` (habilitado + token), RLS lectura pública |
+| 036_perfiles_profesional_cedula.sql | Perfiles profesional: cédula |
+| 037_etiquetas_precio.sql | Etiquetas de precio en productos |
 
 **NOTA**: Las migraciones 002-009 ya NO existen como archivos (fueron consolidadas/aplicadas directamente en Supabase). La tabla principal `users` tampoco esta en estas migraciones — fue creada directamente en Supabase. Si necesitas ver su schema, busca las queries en los controllers (especialmente auth.controller.js y users.controller.js).
 
