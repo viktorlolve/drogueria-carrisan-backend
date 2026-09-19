@@ -246,8 +246,7 @@ export async function getProductosMetadata(req, res) {
     }, {});
     const laboratoriosTop = Object.entries(conteo)
       .map(([nombre, total]) => ({ nombre, total }))
-      .sort((a, b) => b.total - a.total || a.nombre.localeCompare(b.nombre))
-      .slice(0, 20);
+      .sort((a, b) => b.total - a.total || a.nombre.localeCompare(b.nombre));
 
     res.json({ laboratorios, formas, categorias, laboratoriosTop });
   } catch (err) {
