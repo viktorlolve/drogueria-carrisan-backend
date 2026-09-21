@@ -145,7 +145,7 @@ test('labCoincideNombreFarm: lab ausente o distinto se rechaza', () => {
 
 test('dosisCrudas: captura porcentuales y ml (gate de dosis crudo)', () => {
   assert.deepEqual(dosisCrudas('SULFATO DE MAGNESIO 10% SOL INY 100ML'), new Set([10, 100]));
-  assert.deepEqual(dosisCrudas('LOSARTAN POTASICO 50 MG X 30 TABLETAS'), new Set([50, 30]));
+  assert.deepEqual(dosisCrudas('LOSARTAN POTASICO 50 MG X 30 TABLETAS'), new Set([50]));
   assert.deepEqual(dosisCrudas(''), new Set());
 });
 
@@ -158,27 +158,39 @@ test('umbralFarmanselmo: genérico DCI -> 0.75, marca -> 0.6', () => {
 
 test('matchFarmanselmo2: lab correcto con umbral de marca', () => {
   const producto = {
-    id: 10, nombre_comercial: 'ATAMEL 500 MG X 10 TABLETAS', forma: 'TABLETAS',
-    molecula: 'Acetaminofen', laboratorio: 'CALOX INTERNATIONAL, C.A.',
+    id: 10, nombre_comercial: 'NEFROTAL 50 MG X 30 TABLETAS', forma: 'TABLETAS',
+    molecula: 'Losartan Potasico', laboratorio: 'MEGALABS VZL, C.A.',
   };
   const filas = [
-    { id: 1, nombre: 'ATAMEL 500MG X10 TABLETAS TIRO SIEGFRIED (E)', imagen: 'sig.jpg' },
-    { id: 2, nombre: 'ATAMEL 500MG X10 TABLETAS RECUBIERTAS CALOX', imagen: 'clx.jpg' },
-    { id: 3, nombre: 'ATAMEL 500MG X10 TABLETAS RECUBIERTAS LETI', imagen: 'leti.jpg' },
+    { id: 1, nombre: 'NEFROTAL LOSARTAN POTASICO 50MG X30 TABLETAS SIEGFRIED (E)', imagen: 'sig.jpg' },
+    { id: 2, nombre: 'NEFROTAL LOSARTAN POTASICO 50MG X30 TABLETAS LETI', imagen: 'leti.jpg' },
+    { id: 3, nombre: 'NEFROTAL LOSARTAN POTASICO 50MG X30 TABLETAS MEG', imagen: 'meg.jpg' },
   ];
   const res = matchFarmanselmo2(producto, filas);
-  assert.equal(res.fila.imagen, 'clx.jpg');
+  assert.equal(res.fila.imagen, 'meg.jpg');
   assert.ok(res.score >= 0.6);
 });
 
-test('matchFarmanselmo2: genérico exige score >= 0.75 (ancla no discrimina labs)', () => {
+test('matchFarmanselmo2: genérico DCI — ancla de molécula sola NO alcanza 0.75', () => {
   const producto = {
     id: 11, nombre_comercial: 'LOSARTAN POTASICO 50 MG X 30 TABLETAS', forma: 'TABLETAS',
     molecula: 'Losartan Potasico', laboratorio: 'LABORATORIOS LETI, S.A.V.',
   };
-  // Solo ancla de molécula (losartan), sin forma ni marca: score=0.7 -> rechazado.
-  const filas = [{ id: 1, nombre: 'LOSARTAN POTASICO 50MG/30 TABLETAS LETI', imagen: 'l1.jpg' }];
+  // Solo ancla (losartan) sin forma/dosis/marca: score 0.55 < 0.75 -> rechazado.
+  const filas = [{ id: 1, nombre: 'LOSARTAN POTASICO LETI', imagen: 'l1.jpg' }];
   assert.equal(matchFarmanselmo2(producto, filas), null);
+});
+
+test('matchFarmanselmo2: genérico DCI completo (molécula+forma+dosis+lab) SÍ pasa', () => {
+  const producto = {
+    id: 13, nombre_comercial: 'LOSARTAN POTASICO 50 MG X 30 TABLETAS', forma: 'TABLETAS',
+    molecula: 'Losartan Potasico', laboratorio: 'LABORATORIOS LETI, S.A.V.',
+  };
+  const filas = [{ id: 1, nombre: 'LOSARTAN POTASICO 50MG X30 TABLETAS RECUBIERTAS LETI', imagen: 'l2.jpg' }];
+  const res = matchFarmanselmo2(producto, filas);
+  assert.ok(res);
+  assert.equal(res.fila.imagen, 'l2.jpg');
+  assert.ok(res.score >= 0.75);
 });
 
 test('matchFarmanselmo2: pack distinto se rechaza', () => {
