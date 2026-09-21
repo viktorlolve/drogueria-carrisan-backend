@@ -126,12 +126,98 @@ function numDeConc(conc) {
   return m ? Number(m[0].replace(',', '.')) : null;
 }
 
+// Pack de texto bruto: detecta "X10", "X 20", "20MGX14" (pegado a la dosis) y
+// descarta "X10MG" (eso es dosis). Más agresivo que extraerPackDesc (cruce 1:
+// su \bX no ve el pack pegado). Solo se usa en el cruce 2.
+function packDeTexto(texto) {
+  const matches = [];
+  const re = /[xX]\s*(\d+(?:[.,]\d+)?)(?!\s*(ml|mg|mcg|g|ug|ui|iu|%|pct))/g;
+  let m;
+  while ((m = re.exec(String(texto || ''))) !== null) {
+    const v = Number(m[1].replace(',', '.'));
+    if (isFinite(v) && v > 0 && v <= 1000) matches.push(v);
+  }
+  return matches.length ? matches[0] : null;
+}
+
+const RE_DOSIS_BARE = /(\d+(?:[.,]\d+)?)\s*[xX]\s*\d+/g;
+export function dosisBareDesc(texto) {
+  const d = new Set();
+  let m;
+  RE_DOSIS_BARE.lastIndex = 0;
+  while ((m = RE_DOSIS_BARE.exec(String(texto || ''))) !== null) {
+    const v = Number(m[1].replace(',', '.'));
+    if (isFinite(v) && v > 0 && v <= 5000) d.add(Math.round(v * 100000) / 100000);
+  }
+  return d;
+}
+
+const RE_PCT = /(\d+(?:[.,]\d+)?)\s*%/g;
+export function dosisPorciento(texto) {
+  const d = new Set();
+  let m;
+  RE_PCT.lastIndex = 0;
+  while ((m = RE_PCT.exec(String(texto || ''))) !== null) {
+    const v = Number(m[1].replace(',', '.'));
+    if (isFinite(v) && v > 0 && v <= 100) d.add(Math.round(v * 100000) / 100000);
+  }
+  return d;
+}
+
+// ¿La descripción corrobora la identidad del producto? Al menos uno de:
+//  - un token de la molécula en la desc (substring o tokenSim),
+//  - el primer token del núcleo de marca con tokenSim (sin substring: tokens
+//    cortos tipo "sieg" del laboratorio SIEGFRIED "<lab>" en la desc casaban
+//    como substring de marcas tipo "siegexania").
+// Protege contra bases COBECA corruptos que dicen la molécula pero la desc
+// es otro producto (p.ej. base "LOSARTAN", desc "OLMESARTAN MEDOXOM...").
+// Los tokens de la desc deben tener >= 4 chars: substrings triviales como
+// "x" (pack) o "sol" (de suplemento) atraviesan cualquier substring.
+// Gate de COMBO HCT/H: si el producto es un combo "X HCT", "X H",
+// "X - HIDROCLOROTIAZIDA", la desc debe llevar el marcador HCT/hidroclorotiazida
+// — sin esto la foto del producto MONO cae sobre el combo (NEFROTAL → NEFROTAL H,
+// LOSARTAN → LOSARTAN-HCT, IRBESARTAN → IRBESARTAN-HCT, CANDER → CANDER HCT).
+function descCorroboraMol(desc, nucleo, molTokens, comboNombre) {
+  const descN = normalizar(desc || '');
+  const tokensDesc = descN.split(/\s+/).filter((t) => t.length >= 4);
+  if (!tokensDesc.length) return false;
+  // Molécula: substring o similitud.
+  for (const t of molTokens) {
+    if (t.length < 4) continue;
+    if (tokensDesc.some((dt) => dt.includes(t) || t.includes(dt) || tokenSim(t, dt) >= 0.8)) return true;
+  }
+  // Combo HCT/H: el producto declara 2ª molécula (hidroclorotiazida) o marcador
+  // HCT/H en el nombre → la desc debe tener hct/hidroclorotiazida para no
+  // colocar la foto del mono sobre el combo. Se mira el MOLECULA + NOMBRE
+  // COMPLETO (no el núcleo): "BISOPROLOL FUMARATO - HIDROCLOROTIZIDA 2.5..."
+  // corta el núcleo en el primer dígito y con molécula vacía el combo se perdía
+  // → la desc del mono "BISOPROLOL FUMARATO COMP 2,5MG" pasaba.
+  function esComboTx(t) {
+    return t === 'h' || t.startsWith('hct') || t.startsWith('hidroclor');
+  }
+  const esComboHct = molTokens.some(esComboTx) ||
+    normalizar(comboNombre || '').split(/\s+/).filter(Boolean).some(esComboTx);
+  if (esComboHct && !(/\b(hct|hidroclor)\b/.test(descN) || (/\bh\b/.test(descN)))) {
+    return false;
+  }
+  // Marca: SOLO tokenSim (el substring de "sieg" <lab> dentro de "siegexania"
+  // era falso positivo; "acetilsalicilico"→"acetilsalic" lo resuelve la molécula).
+  const marca = normalizar(nucleo || '').split(/\s+/).filter(Boolean)[0];
+  if (marca && marca.length >= 4) {
+    if (tokensDesc.some((dt) => tokenSim(marca, dt) >= 0.8)) return true;
+  }
+  return false;
+}
+
 // Match COBECA del cruce 2: descs ya pre-filtradas por laboratorio.
 // 1) Gate de lab obligatorio (fuera: se pre-filtra, aquí se re-chequea).
 // 2) Refuerzo de molécula estructurada cuando existe (componenteBase).
 // 3) Gates estrictos del cruce 1: forma, dosis, pack.
-// 4) Identidad: por molécula estructurada (baseOk===true, no exige núcleo en
-//    desc) o por núcleo/tokens de molécula en la desc.
+// 4) Identidad SIEMPRE: la desc debe corroborar la molécula o la marca — incluso
+//    cuando baseOk===true, porque el base COBECA puede estar corrupto (p.ej. base
+//    "LOSARTAN" con desc "OLMESARTAN MEDOXOM...") y eso dejaría pasar fotos de
+//    otra molécula.
+// 5) Pack propio (captura "20MGX14" que \bX pierde).
 // Devuelve el desc ganador (objeto con imagen/desc_articulo) o null.
 export function matchCobeca2(producto, descs) {
   const nucleo = nucleoMarca(producto.nombre_comercial);
@@ -139,7 +225,7 @@ export function matchCobeca2(producto, descs) {
   const dosisDb = dosisProductoDb(producto);
   const packDb = extraerPackNombre(producto.nombre_comercial || '');
   const labDb = normalizar(producto.laboratorio || '');
-  const molTokensDb = normalizar(producto.molecula || '').split(/\s+/).filter(Boolean);
+  const molTokensDb = tokensSignificativos(producto.molecula || '');
 
   let mejor = null;
   let mejorScore = -1;
@@ -147,12 +233,9 @@ export function matchCobeca2(producto, descs) {
     if (!d || !d.imagen) continue;
     // Gate de laboratorio (obligatorio).
     if (!labCoincide(d.proveedor || d.labToken || '', labDb)) continue;
-    // Refuerzo de molécula estructurada.
+    // Refuerzo de molécula estructurada (veto si no coincide).
     const baseOk = moleculaCoincide(d.base, producto.molecula);
     if (baseOk === false) continue;
-    // Sin base util y sin que el producto tenga identidad textual: sin camino.
-    const tieneIdentidad = baseOk === true || !!nucleo || molTokensDb.length > 0;
-    if (!tieneIdentidad) continue;
 
     const parsed = parsearDescripcion(d.desc_articulo || '');
 
@@ -162,31 +245,48 @@ export function matchCobeca2(producto, descs) {
       if (!formasSonEquivalentes(parsed.forma, formaDb)) continue;
     }
 
-    // Dosis del desc ⊆ dosis del producto (si el producto declara).
-    for (const c of [parsed.conc, parsed.conc2]) {
-      const num = numDeConc(c);
-      if (num != null && isFinite(num) && dosisDb.size > 0 && !dosisDb.has(num)) continue;
-    }
-
-    // Pack (gates del cruce 1).
-    const packDesc = extraerPackDesc(d.desc_articulo || '');
-    if (packDesc != null && packDb != null && packDesc !== packDb) continue;
-
-    // Identidad:
-    //  - baseOk===true (molécula estructurada): acepta sin núcleo en desc.
-    //  - baseOk===null: exige núcleo de marca en la desc O tokens de molécula.
-    let ident = true;
-    if (baseOk !== true) {
-      if (nucleo) {
-        ident = descTieneNucleo(d.desc_articulo, nucleo);
-      } else if (molTokensDb.length) {
-        const tokensDesc = new Set(normalizar(d.desc_articulo || '').split(/\s+/));
-        ident = molTokensDb.every((t) => tokensDesc.has(t));
-      } else {
-        ident = false;
+    // Dosis del desc ⊆ dosis del producto (si el producto declara). Flag: el
+    // continue anterior dentro de for..of no cortaba el loop externo.
+    let dosisOk = true;
+    if (dosisDb.size > 0) {
+      for (const c of [parsed.conc, parsed.conc2]) {
+        const num = numDeConc(c);
+        if (num != null && isFinite(num) && !dosisDb.has(num)) { dosisOk = false; break; }
       }
     }
-    if (!ident) continue;
+    if (!dosisOk) continue;
+
+    // Concentración %: el % de la desc debe existir en el % del producto. Sin
+    // esto, CIFARCAINA AL 2% casaba la foto del AMP 5% hiperbarico (el conc
+    // "2ML" del parseo coincidía pero el % no). Solo se aplica cuando AMBOS
+    // declaran % y el producto lo declara.
+    const pctDesc = dosisPorciento(d.desc_articulo || '');
+    if (pctDesc.size > 0) {
+      const pctDb2 = dosisPorciento(`${producto.molecula || ''} ${producto.nombre_comercial || ''}`);
+      if (pctDb2.size > 0) {
+        for (const p of pctDesc) {
+          if (!pctDb2.has(p)) { dosisOk = false; break; }
+        }
+      }
+    }
+    if (!dosisOk) continue;
+
+    // Dosis sin unidad pegada a pack ("TAB 12,5 X30"): parsearDescripcion la
+    // pierde y dosisDb no la ve -> DICARVEX 25MG casaba la foto del 12,5MG.
+    const bareDesc = dosisBareDesc(d.desc_articulo || '');
+    if (dosisDb.size > 0 && bareDesc.size > 0) {
+      for (const b of bareDesc) {
+        if (!dosisDb.has(b)) { dosisOk = false; break; }
+      }
+    }
+    if (!dosisOk) continue;
+
+    // Pack (gate del cruce 2: captura packs pegados a la dosis).
+    const packDesc = packDeTexto(d.desc_articulo || '');
+    if (packDesc != null && packDb != null && packDesc !== packDb) continue;
+
+    // Identidad SIEMPRE: la desc debe corroborar molécula o marca.
+    if (!descCorroboraMol(d.desc_articulo, nucleo, molTokensDb, `${producto.molecula || ''} ${producto.nombre_comercial || ''}`)) continue;
 
     // Desempate: más dosis del desc dentro de las del producto.
     let s = 0;
@@ -263,7 +363,7 @@ export function matchFarmanselmo2(producto, filasFarm) {
     // Gate de laboratorio (obligatorio).
     if (!labCoincideNombreFarm(f.nombre, producto.laboratorio)) continue;
     // Gate de pack.
-    const packFarm = extraerPackDesc(f.nombre);
+    const packFarm = packDeTexto(f.nombre);
     if (packFarm != null && packDb != null && packFarm !== packDb) continue;
     // Gate de dosis estricto (producto ⊆ farm) sobre texto crudo.
     if (dosisDb.size > 0) {

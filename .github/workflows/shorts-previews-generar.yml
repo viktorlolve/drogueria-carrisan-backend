@@ -27,4 +27,5 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           YOUTUBE_CHANNEL_IDS: ${{ secrets.YOUTUBE_CHANNEL_IDS }}
+          YT_COOKIES_B64: ${{ secrets.YT_COOKIES_B64 }}
         run: node scripts/shorts-previews-generar.mjs

@@ -7,7 +7,7 @@ import { fetchFuente } from '../src/controllers/shorts.controller.js';
 import { YOUTUBE_CHANNEL_IDS } from '../src/config/youtube.js';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -16,7 +16,19 @@ const MAX_POR_CORRIDA = 8;
 const DURACION_SEGUNDOS = 4;
 const BUCKET = 'shorts-previews';
 
-async function descargarYRecortar(videoId, dir) {
+// YouTube bloquea por IP las descargas desde datacenters (GitHub Actions) con
+// "Sign in to confirm you're not a bot". La vía robusta es pasar cookies de
+// una cuenta logueada (archivo Netscape cookies.txt en base64 en el secret
+// YT_COOKIES_B64). Sin ese secret, se intenta igual sin cookies.
+async function prepararCookies() {
+  const b64 = process.env.YT_COOKIES_B64;
+  if (!b64) return null;
+  const archivo = join(tmpdir(), `shorts-cookies-${Date.now()}.txt`);
+  await writeFile(archivo, Buffer.from(b64, 'base64'), { mode: 0o600 });
+  return archivo;
+}
+
+async function descargarYRecortar(videoId, dir, cookieFile) {
   const bruto = join(dir, `${videoId}-bruto.mp4`);
   const final = join(dir, `${videoId}.mp4`);
 
@@ -25,14 +37,17 @@ async function descargarYRecortar(videoId, dir) {
   // not a bot") desde IP de datacenter (GitHub Actions). El cliente tv (YouTube
   // en Smart TVs) no pide cookies, no requiere JS runtime y entrega mp4 360p —
   // suficiente para un preview de 4 segundos.
-  await run('yt-dlp', [
+  const args = [
     '-f', 'mp4[height<=480]/best[height<=480]/best',
     '--extractor-args', 'youtube:player_client=tv',
     '--download-sections', `*0-${DURACION_SEGUNDOS + 1}`,
     '--no-playlist',
     '-o', bruto,
-    `https://www.youtube.com/watch?v=${videoId}`,
-  ], { timeout: 120000 });
+  ];
+  if (cookieFile) args.push('--cookies', cookieFile);
+  args.push(`https://www.youtube.com/watch?v=${videoId}`);
+
+  await run('yt-dlp', args, { timeout: 120000 });
 
   await run('ffmpeg', [
     '-y', '-i', bruto,
@@ -87,10 +102,13 @@ async function main() {
 
   console.log(`Generando ${pendientes.length} clip(s)...`);
 
+  const cookieFile = await prepararCookies();
+  if (cookieFile) console.log('Usando cookies de YT_COOKIES_B64.');
+
   for (const { video_id } of pendientes) {
     const dir = await mkdtemp(join(tmpdir(), 'shorts-'));
     try {
-      const archivo = await descargarYRecortar(video_id, dir);
+      const archivo = await descargarYRecortar(video_id, dir, cookieFile);
       const buffer = await readFile(archivo);
       const storage_path = `${video_id}.mp4`;
 
