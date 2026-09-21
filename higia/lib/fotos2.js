@@ -129,7 +129,7 @@ function numDeConc(conc) {
 // Pack de texto bruto: detecta "X10", "X 20", "20MGX14" (pegado a la dosis) y
 // descarta "X10MG" (eso es dosis). Más agresivo que extraerPackDesc (cruce 1:
 // su \bX no ve el pack pegado). Solo se usa en el cruce 2.
-function packDeTexto(texto) {
+export function packDeTexto(texto) {
   const matches = [];
   const re = /[xX]\s*(\d+(?:[.,]\d+)?)(?!\s*(ml|mg|mcg|g|ug|ui|iu|%|pct))/g;
   let m;
@@ -177,7 +177,7 @@ export function dosisPorciento(texto) {
 // "X - HIDROCLOROTIAZIDA", la desc debe llevar el marcador HCT/hidroclorotiazida
 // — sin esto la foto del producto MONO cae sobre el combo (NEFROTAL → NEFROTAL H,
 // LOSARTAN → LOSARTAN-HCT, IRBESARTAN → IRBESARTAN-HCT, CANDER → CANDER HCT).
-function descCorroboraMol(desc, nucleo, molTokens, comboNombre) {
+export function descCorroboraMol(desc, nucleo, molTokens, comboNombre) {
   const descN = normalizar(desc || '');
   const tokensDesc = descN.split(/\s+/).filter((t) => t.length >= 4);
   if (!tokensDesc.length) return false;
