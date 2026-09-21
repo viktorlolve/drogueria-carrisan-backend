@@ -1,0 +1,30 @@
+name: Shorts previews - generar
+
+on:
+  schedule:
+    # Aproximado a cada 48h (cron no tiene unidad nativa de "cada 2 días" limpia).
+    - cron: '0 3 */2 * *'
+  workflow_dispatch: {}
+
+jobs:
+  generar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar yt-dlp
+        run: pip install -U yt-dlp
+
+      - name: Instalar dependencias del backend
+        run: npm install
+
+      - name: Generar previews pendientes
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          YOUTUBE_CHANNEL_IDS: ${{ secrets.YOUTUBE_CHANNEL_IDS }}
+        run: node scripts/shorts-previews-generar.mjs

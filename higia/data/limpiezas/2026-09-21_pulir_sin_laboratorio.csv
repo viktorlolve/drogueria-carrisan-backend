@@ -1,0 +1,4 @@
+id,sku,nombre_comercial,descripcion,marca_id,precio_usd,foto_url,activo,created_at,updated_at,molecula,linea,forma,disponible,requiere_cotizacion,visible_catalogo,es_cotizacion,pais_id,fuente_inhrr_ef,laboratorio,costo_usd,presentacion,unidades_por_presentacion
+39605,,TRAMAL 100 mg / mL SOLUCION ORAL,,,4.00,,true,Wed Sep 09 2026 20:13:04 GMT-0400 (hora de Venezuela),Thu Sep 10 2026 14:02:47 GMT-0400 (hora de Venezuela),,,,true,false,false,false,,,,,,
+39606,,TRAMAL 100 mg / mL SOLUCION ORAL,,,1.25,,true,Wed Sep 09 2026 20:13:07 GMT-0400 (hora de Venezuela),Wed Sep 09 2026 20:13:07 GMT-0400 (hora de Venezuela),,,,true,false,false,false,,,,,,
+39611,,TRAMAL 100 mg / mL SOLUCION ORAL,,,4.00,,true,Wed Sep 09 2026 20:57:20 GMT-0400 (hora de Venezuela),Thu Sep 10 2026 14:02:41 GMT-0400 (hora de Venezuela),,,,true,false,false,false,,,,,,

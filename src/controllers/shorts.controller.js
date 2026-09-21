@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { YOUTUBE_CHANNEL_IDS, SHORTS_PRODUCTOS } from '../config/youtube.js';
+import { supabase } from '../config/supabase.js';
 
 const PAGE_URL = 'https://www.youtube.com/channel';
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -135,7 +136,7 @@ function extraerYtInitialData(html) {
   return null;
 }
 
-async function fetchFuente(canal_id) {
+export async function fetchFuente(canal_id) {
   const res = await axios.get(`${PAGE_URL}/${canal_id}/shorts`, {
     headers: { 'User-Agent': UA, 'Accept-Language': 'es' },
     timeout: 15000,
@@ -170,6 +171,23 @@ export function armarCarrusel(feeds, max = MAX_CARRUSEL) {
   return salida;
 }
 
+async function adjuntarPreviews(videos) {
+  if (!Array.isArray(videos) || videos.length === 0) return videos;
+  try {
+    const { data, error } = await supabase
+      .from('shorts_clips')
+      .select('video_id, preview_url')
+      .eq('estado', 'listo')
+      .in('video_id', videos.map((v) => v.id));
+    if (error) throw error;
+    const mapa = new Map(data.map((c) => [c.video_id, c.preview_url]));
+    return videos.map((v) => ({ ...v, preview_url: mapa.get(v.id) || null }));
+  } catch (err) {
+    console.error('shorts: fallo al adjuntar previews', err?.message);
+    return videos.map((v) => ({ ...v, preview_url: null }));
+  }
+}
+
 export async function getShorts(req, res) {
   if (YOUTUBE_CHANNEL_IDS.length === 0) {
     return res.json({ videos: [], configurado: false });
@@ -183,21 +201,21 @@ export async function getShorts(req, res) {
     if (!canal_id) return res.status(404).json({ error: 'Fuente no encontrada' });
     const at = cache.porFuente[canal_id];
     if (at && ahora - at.timestamp < CACHE_TTL_MS) {
-      return res.json({ videos: at.videos, fuente: { canal_id, nombre: at.nombre }, configurado: true });
+      return res.json({ videos: await adjuntarPreviews(at.videos), fuente: { canal_id, nombre: at.nombre }, configurado: true });
     }
     try {
       const feed = await fetchFuente(canal_id);
       cache.porFuente[canal_id] = { videos: feed.videos, nombre: feed.nombre, timestamp: ahora };
-      return res.json({ videos: feed.videos, fuente: { canal_id, nombre: feed.nombre }, configurado: true });
+      return res.json({ videos: await adjuntarPreviews(feed.videos), fuente: { canal_id, nombre: feed.nombre }, configurado: true });
     } catch (err) {
       console.error('shorts: fallo al obtener la fuente', err?.message);
-      if (at) return res.json({ videos: at.videos, fuente: { canal_id, nombre: at.nombre }, configurado: true });
+      if (at) return res.json({ videos: await adjuntarPreviews(at.videos), fuente: { canal_id, nombre: at.nombre }, configurado: true });
       return res.status(502).json({ error: 'No se pudo obtener los shorts de YouTube', videos: [] });
     }
   }
 
   if (cache.carrusel.videos && ahora - cache.carrusel.timestamp < CACHE_TTL_MS) {
-    return res.json({ videos: cache.carrusel.videos, fuentes: cache.carrusel.fuentes, configurado: true });
+    return res.json({ videos: await adjuntarPreviews(cache.carrusel.videos), fuentes: cache.carrusel.fuentes, configurado: true });
   }
 
   const resultados = await Promise.allSettled(YOUTUBE_CHANNEL_IDS.map(fetchFuente));
@@ -214,10 +232,10 @@ export async function getShorts(req, res) {
 
   const videos = armarCarrusel(feeds);
   if (videos.length === 0) {
-    if (cache.carrusel.videos) return res.json({ videos: cache.carrusel.videos, fuentes: cache.carrusel.fuentes, configurado: true });
+    if (cache.carrusel.videos) return res.json({ videos: await adjuntarPreviews(cache.carrusel.videos), fuentes: cache.carrusel.fuentes, configurado: true });
     return res.status(502).json({ error: 'No se pudo obtener los shorts de YouTube', videos: [] });
   }
 
   cache.carrusel = { videos, fuentes, timestamp: ahora };
-  return res.json({ videos, fuentes, configurado: true });
+  return res.json({ videos: await adjuntarPreviews(videos), fuentes, configurado: true });
 }

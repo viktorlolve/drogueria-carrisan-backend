@@ -1,0 +1,27 @@
+name: Shorts previews - limpiar
+
+on:
+  schedule:
+    # Corre semanal; el script solo borra lo que tenga 14+ días sin verse,
+    # así la cadencia real de "cada 2 semanas" no depende de la precisión del cron.
+    - cron: '0 4 * * 0'
+  workflow_dispatch: {}
+
+jobs:
+  limpiar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar dependencias del backend
+        run: npm install
+
+      - name: Limpiar clips viejos
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/shorts-previews-limpiar.mjs
