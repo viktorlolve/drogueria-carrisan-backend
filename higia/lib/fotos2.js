@@ -69,7 +69,7 @@ const SALES = new Set(['clorhidrato', 'clorhidratado', 'sodico', 'potasico', 'ac
 
 // Normaliza un componente de molécula a sus tokens significativos (sin sales).
 // Igual criterio que componentesMolecula pero recibe un texto suelto.
-function tokensSignificativos(molecula) {
+export function tokensSignificativos(molecula) {
   return normalizar(molecula || '')
     .split(/\s+/)
     .map((t) => t.replace(/[^a-z]/g, ''))

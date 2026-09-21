@@ -21,8 +21,13 @@ async function descargarYRecortar(videoId, dir) {
   const final = join(dir, `${videoId}.mp4`);
 
   // --download-sections descarga solo los primeros segundos, no el video completo.
+  // player_client=tv: el cliente "web" exige login ("Sign in to confirm you're
+  // not a bot") desde IP de datacenter (GitHub Actions). El cliente tv (YouTube
+  // en Smart TVs) no pide cookies, no requiere JS runtime y entrega mp4 360p —
+  // suficiente para un preview de 4 segundos.
   await run('yt-dlp', [
     '-f', 'mp4[height<=480]/best[height<=480]/best',
+    '--extractor-args', 'youtube:player_client=tv',
     '--download-sections', `*0-${DURACION_SEGUNDOS + 1}`,
     '--no-playlist',
     '-o', bruto,
