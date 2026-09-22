@@ -44,6 +44,7 @@ async function descargarYRecortar(videoId, dir, cookieFile) {
   const args = [
     '-f', 'mp4[height<=480]/best[height<=480]/best',
     '--extractor-args', 'youtube:player_client=web',
+    '--js-runtimes', 'node',
     '--download-sections', `*0-${DURACION_SEGUNDOS + 1}`,
     '--no-playlist',
     '-o', bruto,
