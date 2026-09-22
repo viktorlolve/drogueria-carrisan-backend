@@ -173,11 +173,10 @@ async function main() {
   }
   await client.end();
 
-  const archivoProps = guardarCsv('fotos3_propuestas', COLUMNAS_PROPIESTAS, propuestas);
-  console.log(`Propuestas: ${path.relative(process.cwd(), archivoProps)} (${propuestas.length} filas)`);
-  console.log(`Sin candidata viable (duros C1/C2/C3 atascan): ${sinCandidata.length}`);
-
   if (!APLICAR) {
+    const archivoProps = guardarCsv('fotos3_propuestas', COLUMNAS_PROPIESTAS, propuestas);
+    console.log(`Propuestas: ${path.relative(process.cwd(), archivoProps)} (${propuestas.length} filas)`);
+    console.log(`Sin candidata viable (duros C1/C2/C3 atascan): ${sinCandidata.length}`);
     console.log('\nDRY-RUN: no se tocó la BD ni el ledger.');
     console.log('Revisa las propuestas, borra lo que rechaces y guarda como:');
     console.log(RUTA_APROBADAS);
@@ -192,7 +191,12 @@ async function main() {
   }
   const aprobadas = leerCsvObjects(RUTA_APROBADAS)
     .filter((f) => f.foto_url && f.producto_id)
-    .map((f) => ({ id: Number(f.producto_id), url: f.foto_url, tier: Number(f.tier ?? 3) }));
+    .map((f) => ({
+      id: Number(f.producto_id),
+      url: f.foto_url,
+      tier: Number(f.tier ?? 3),
+      nombre: (f.nombre_comercial || '').trim(),
+    }));
   console.log(`Aprobadas leídas: ${aprobadas.length}`);
 
   // Revalidación: solo las aprobadas que siguen pasando sus gates.
@@ -238,7 +242,13 @@ async function main() {
       rechazadas.push({ ...a, motivo: `gate_${res.gate}` });
       continue;
     }
-    validas.push({ ...a, p });
+    validas.push({
+      ...a,
+      p,
+      // Re-nombre: si el dueño corrigió el nombre en las propuestas,
+      // propagarlo; si no, conservar el actual de la BD.
+      nombre: a.nombre && a.nombre !== p.nombre_comercial ? a.nombre : p.nombre_comercial,
+    });
   }
 
   // Escribir (con triple guardrail: foto_url IS NULL).
@@ -247,15 +257,17 @@ async function main() {
   const CHUNK = 200;
   let total = 0;
   for (let i = 0; i < validas.length; i += CHUNK) {
-    const ids = validas.slice(i, i + CHUNK).map((v) => v.id);
-    const urls = validas.slice(i, i + CHUNK).map((v) => v.url);
+    const chunk = validas.slice(i, i + CHUNK);
+    const ids = chunk.map((v) => v.id);
+    const urls = chunk.map((v) => v.url);
+    const nombres = chunk.map((v) => v.nombre);
     const { rowCount } = await client2.query(
       `UPDATE public.productos AS p
-          SET foto_url = v.url, updated_at = now()
-         FROM unnest($1::int[], $2::text[]) AS v(id, url)
+          SET foto_url = v.url, nombre_comercial = v.nombre, updated_at = now()
+         FROM unnest($1::int[], $2::text[], $3::text[]) AS v(id, url, nombre)
         WHERE p.id = v.id
           AND (p.foto_url IS NULL OR p.foto_url = '')`,
-      [ids, urls]
+      [ids, urls, nombres]
     );
     total += rowCount || 0;
     console.log(`  actualizados ${total}/${ids.length}`);
@@ -268,7 +280,7 @@ async function main() {
     filasLedger.push({
       producto_id: v.id,
       sku: v.p.sku,
-      nombre_comercial: v.p.nombre_comercial,
+      nombre_comercial: v.nombre,
       foto_url: v.url,
       fuente: 'cobeca_rescate3',
       fecha: hoy,
@@ -285,8 +297,15 @@ async function main() {
   );
   fs.writeFileSync(
     path.join(DATA_LIMPIEZAS, nombreConFecha('fotos3_aplicadas')),
-    csvDeFilas(['producto_id', 'sku', 'nombre_comercial', 'foto_url', 'tier'],
-      validas.map((v) => ({ producto_id: v.id, sku: v.p.sku, nombre_comercial: v.p.nombre_comercial, foto_url: v.url, tier: v.tier }))),
+    csvDeFilas(['producto_id', 'sku', 'nombre_comercial', 'nombre_comercial_anterior', 'foto_url', 'tier'],
+      validas.map((v) => ({
+        producto_id: v.id,
+        sku: v.p.sku,
+        nombre_comercial: v.nombre,
+        nombre_comercial_anterior: v.p.nombre_comercial,
+        foto_url: v.url,
+        tier: v.tier,
+      }))),
     'utf-8'
   );
   fs.writeFileSync(
