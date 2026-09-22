@@ -129,10 +129,14 @@ function tokensBusqueda(p) {
 // ---------- Gates COBECA (replican matchCobeca2 con lab Y mol relajados) ----------
 // Devuelve las puertas que fallan: 'lab', 'base', 'forma', 'dosis', 'pct', 'bare',
 // 'pack', 'identidad'. El desc es candidata si NO falla ningún gate débil.
-function gatesCobeca(p, d) {
+// Para genéricos (núcleo==molécula) el lab NUNCA se relaja: foto de otro lab es
+// otra marca (regla central del cruce 2). Solo marcas relajan lab.
+function gatesCobeca(p, d, esGenericoP) {
   const gates = [];
   // Punto de relajación: comparamos el lab de la desc contra el del producto.
-  if (!labCoincide(d.proveedor || '', p.laboratorio || '')) gates.push('lab');
+  if (!labCoincide(d.proveedor || '', p.laboratorio || '')) {
+    gates.push(esGenericoP ? 'lab_generico' : 'lab');
+  }
   // Punto de relajación: el veto mono↔combo se reporta por separado.
   const baseOk = moleculaCoincide(d.base, p.molecula);
   if (baseOk === false) gates.push('base');
@@ -180,9 +184,12 @@ function gatesCobeca(p, d) {
 }
 
 // ---------- Gates farmanselmo (replican matchFarmanselmo2 con lab relajado) ----------
-function gatesFarm(p, f) {
+// Misma regla que COBECA: genéricos NO relajan lab (otra marca).
+function gatesFarm(p, f, esGenericoP) {
   const gates = [];
-  if (!labCoincideNombreFarm(f.nombre, p.laboratorio)) gates.push('lab');
+  if (!labCoincideNombreFarm(f.nombre, p.laboratorio)) {
+    gates.push(esGenericoP ? 'lab_generico' : 'lab');
+  }
   const packDb = extraerPackNombre(p.nombre_comercial || '');
   const packFarm = packDeTexto(f.nombre);
   if (packFarm != null && packDb != null && packFarm !== packDb) gates.push('pack');
@@ -203,7 +210,7 @@ function gatesFarm(p, f) {
 }
 
 // Gates débiles (NUNCA se relajan): una candidata que los tenga no sirve.
-const DEBILES = new Set(['forma', 'dosis', 'pct', 'bare', 'pack', 'identidad', 'score', 'score_duro']);
+const DEBILES = new Set(['forma', 'dosis', 'pct', 'bare', 'pack', 'identidad', 'score', 'score_duro', 'lab_generico']);
 
 function clasificar({ mejores }) {
   // mejores: lista de { fuente, gates:Set, desc, score? } ordenada (todas sin gates débiles).
@@ -273,6 +280,8 @@ async function main() {
   console.log(`COBECA con imagen: ${cobeca.length} | farmanselmo con imagen: ${filasFarm.length}`);
 
   const { cobecaPorToken, farmPorToken } = construirIndices(cobeca, filasFarm);
+  const urlsUsadas = leerLedger(path.join(DATA_LIMPIEZAS, 'fotos_editadas.csv'));
+  console.log(`URLs en ledger (no reasignables): ${urlsUsadas.size}`);
 
   const filasClasificacion = [];
   const resumenConteo = {};
@@ -280,6 +289,7 @@ async function main() {
 
   for (const p of productos) {
     const nucleo = nucleoMarca(p.nombre_comercial);
+    const generico = esGenerico(p, nucleo);
     const tokens = tokensBusqueda(p);
 
     const mejores = [];
@@ -291,29 +301,39 @@ async function main() {
       for (const d of cobecaPorToken.get(t) || []) {
         if (visitadosCobeca.has(d.imagen)) continue;
         visitadosCobeca.add(d.imagen);
-        const gates = gatesCobeca(p, d);
+        const gates = gatesCobeca(p, d, generico);
         if ([...gates].some((g) => DEBILES.has(g))) continue;
-        mejores.push({ fuente: 'cobeca', gates: new Set(gates), desc: d });
+        mejores.push({ fuente: 'cobeca', gates: new Set(gates), desc: d, url_en_ledger: urlsUsadas.has(d.imagen) });
       }
     }
-    // Candidatas farmanselmo: filas que comparten tokens del núcleo.
+    // Candidatas farmanselmo: misma pre-filtración del cruce 2 — TODOS los tokens
+    // del núcleo deben estar en la fila (no basta con el primero).
     const nucleoTokens = normalizar(nucleo).split(/\s+/).filter((t) => t.length > 1);
-    const tokensFarm = nucleoTokens.length ? nucleoTokens : tokens;
-    for (const t of tokensFarm) {
-      for (const f of farmPorToken.get(t) || []) {
-        if (visitadosFarm.has(f.imagen)) continue;
-        visitadosFarm.add(f.imagen);
-        const { gates } = gatesFarm(p, f);
-        if ([...gates].some((g) => DEBILES.has(g))) continue;
-        mejores.push({ fuente: 'farmanselmo', gates: new Set(gates), desc: { nombre: f.nombre, imagen: f.imagen } });
+    if (nucleoTokens.length) {
+      const primero = nucleoTokens[0];
+      if (farmPorToken.has(primero)) {
+        for (const f of farmPorToken.get(primero)) {
+          if (!nucleoTokens.every((t) => f.tokens.has(t))) continue;
+          if (visitadosFarm.has(f.imagen)) continue;
+          visitadosFarm.add(f.imagen);
+          const { gates } = gatesFarm(p, f, generico);
+          if ([...gates].some((g) => DEBILES.has(g))) continue;
+          mejores.push({ fuente: 'farmanselmo', gates: new Set(gates), desc: { nombre: f.nombre, imagen: f.imagen }, url_en_ledger: urlsUsadas.has(f.imagen) });
+        }
       }
     }
 
     const categoria = clasificar({ mejores });
-    resumenConteo[categoria] = (resumenConteo[categoria] || 0) + 1;
-    if (!mejores.length) sinCandidatas++;
 
     const mejor = mejores[0] || null;
+    // gates vacíos: el producto YA sería matchable estricto; si la única foto
+    // viable ya está en el ledger no se puede duplicar (foto tomada por otro).
+    let categoriaFinal = categoria;
+    if (categoria === 'matchable_sin_fix') {
+      categoriaFinal = mejor && mejor.url_en_ledger ? 'foto_en_ledger' : 'matchable_revisar';
+    }
+    resumenConteo[categoriaFinal] = (resumenConteo[categoriaFinal] || 0) + 1;
+    if (!mejores.length) sinCandidatas++;
     filasClasificacion.push({
       producto_id: p.id,
       sku: p.sku,
@@ -322,9 +342,10 @@ async function main() {
       molecula: p.molecula,
       forma: p.forma,
       laboratorio: p.laboratorio,
-      categoria,
+      categoria: categoriaFinal,
       fuente: mejor ? mejor.fuente : '',
       gates: mejor ? [...mejor.gates].join('|') : '',
+      url_en_ledger: mejor ? (mejor.url_en_ledger ? 'si' : 'no') : '',
       desc_candidata: mejor ? (mejor.desc.desc_articulo || mejor.desc.nombre || '') : '',
       foto_candidata: mejor ? mejor.desc.imagen : '',
     });
@@ -339,7 +360,7 @@ async function main() {
   console.log(`  Sin ninguna candidata (no_match_fuentes): ${sinCandidatas}`);
 
   // CSV maestro de clasificación.
-  const columnas = ['producto_id', 'sku', 'nombre_comercial', 'nucleo', 'molecula', 'forma', 'laboratorio', 'categoria', 'fuente', 'gates', 'desc_candidata', 'foto_candidata'];
+  const columnas = ['producto_id', 'sku', 'nombre_comercial', 'nucleo', 'molecula', 'forma', 'laboratorio', 'categoria', 'fuente', 'gates', 'url_en_ledger', 'desc_candidata', 'foto_candidata'];
   const archivoMaestro = path.join(DATA_LIMPIEZAS, nombreConFecha('sin_foto_clasificacion'));
   fs.writeFileSync(archivoMaestro, csvDeFilas(columnas, filasClasificacion), 'utf-8');
   console.log(`\nMaestro: ${path.relative(process.cwd(), archivoMaestro)} (${filasClasificacion.length} filas)`);

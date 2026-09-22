@@ -1,0 +1,5 @@
+producto_id,sku,nombre_comercial,nucleo,molecula,forma,laboratorio,categoria,fuente,gates,url_en_ledger,desc_candidata,foto_candidata
+37570,ME16115,BETAGEN SOLSPEN X 1 AMPOLLA,BETAGEN SOLSPEN X,,INYECTABLE,BIOTECH LABORATORIOS C.A.,foto_en_ledger,cobeca,,si,BETAGEN SOL INY 12MG/3ML X1 BIOTECH,https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/13138.jpg
+39016,ME42715,ACICLOR NANOPHARM 5 % CREMA,ACICLOR NANOPHARM,Aciclovir,CREMA,LABORATORIOS LETI S.A.V.,foto_en_ledger,cobeca,,si,ACICLOR CREM 5% 10G LETI,https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/8876.jpg
+39095,ME16167,BETADERM CON GENTAMICINA 0.1 % - 0.1 % X 1 CREMA,BETADERM CON GENTAMICINA,Betametasona - Gentamicina,CREMA,BIOTECH LABORATORIOS C.A.,foto_en_ledger,cobeca,,si,BETADERM GENTAMICINA CREM 15G BIOTECH,https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/4155.jpg
+39266,ME44048,IZABAN DPP 10 MG - 5 MG COMPRIMIDOS RECUBIERTOS,IZABAN DPP,Empagliflozina - Linagliptina,COMPRIMIDOS,LABORATORIOS LETI S.A.V.,foto_en_ledger,cobeca,,si,IZABAN COM 10MG X 30,https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/29953.jpg
