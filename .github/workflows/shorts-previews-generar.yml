@@ -19,6 +19,9 @@ jobs:
       - name: Instalar yt-dlp (grupo default incluye yt-dlp-ejs para el n-challenge)
         run: pip install -U "yt-dlp[default]"
 
+      - name: Instalar ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
       - name: Instalar dependencias del backend
         run: npm install
 

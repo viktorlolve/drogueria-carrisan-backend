@@ -156,7 +156,17 @@ export async function getProductos(req, res) {
     if (search) query = query.ilike('nombre_comercial', `%${search}%`);
     if (marca_id) query = query.eq('marca_id', marca_id);
     if (linea) query = query.eq('linea', NORMALIZAR_LINEA[String(linea).toLowerCase()] || linea);
-    if (laboratorio) query = query.in('laboratorio', laboratorio.split(','));
+    // `laboratorio` acepta dos formas:
+    //   - un solo valor sin coma  → coincidencia parcial (ilike %valor%) — robusto a
+    //     variantes de nombre (ej. "calox" > "CALOX INTERNATIONAL C.A.")
+    //   - varios valores separados por coma → coincidencia EXACTA múltiple (.in) —
+    //     comportamiento legacy del catálogo (laboratorios marcados con checkbox)
+    if (laboratorio) {
+      const labs = laboratorio.split(',');
+      query = labs.length === 1
+        ? query.ilike('laboratorio', `%${laboratorio}%`)
+        : query.in('laboratorio', labs);
+    }
     if (forma) query = query.in('forma', forma.split(','));
     if (disponible === 'true') query = query.eq('disponible', true);
     if (disponible === 'false') query = query.is('disponible', false);
