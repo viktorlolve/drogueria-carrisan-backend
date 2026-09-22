@@ -83,14 +83,15 @@ async function main() {
   }
 
   // 2) Reintentar errores viejos: un fallo (bot-block, red, subida) no debe
-  //    condenar el clip para siempre. Los errores con intento hace >1h vuelven
-  //    a 'pendiente' para reintentarlos en esta corrida.
+  //    condenar el clip para siempre. Los errores con intento hace >1h (o que
+  //    nunca registraron generado_en — el script solo lo escribe en éxito)
+  //    vuelven a 'pendiente' para reintentarlos en esta corrida.
   const haceUnaHora = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   const { data: erroresRetry, error: errReset } = await supabase
     .from('shorts_clips')
     .select('video_id')
     .eq('estado', 'error')
-    .lt('generado_en', haceUnaHora)
+    .or(`generado_en.is.null,generado_en.lt.${haceUnaHora}`)
     .limit(MAX_POR_CORRIDA);
   if (errReset) {
     console.error('Error leyendo errores a reintentar:', errReset.message);
@@ -157,7 +158,7 @@ async function main() {
       console.error(`✗ ${video_id}:`, err.message);
       await supabase
         .from('shorts_clips')
-        .update({ estado: 'error', error_msg: String(err.message).slice(0, 500) })
+        .update({ estado: 'error', error_msg: String(err.message).slice(0, 500), generado_en: new Date().toISOString() })
         .eq('video_id', video_id);
     } finally {
       await rm(dir, { recursive: true, force: true });
