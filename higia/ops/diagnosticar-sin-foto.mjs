@@ -3,14 +3,19 @@
 // de por qué no tiene foto y estima qué fix lo rescata (lab, molécula, o ambos).
 //
 // Categorías (prelación):
-//   lab_y_mol          — haría match con lab Y molécula corregidos (patrón ARANDA ACHE)
-//   lab_antiguo        — haría match solo corrigiendo el laboratorio (data vieja INHRR)
-//   molecula_mono_combo— haría match solo completando la molécula (combo↔mono)
-//   solo_farmanselmo   — la foto solo existe en farmanselmo (dump COBECA incompleto)
-//   no_match_fuentes   — la presentación no existe en ninguna fuente (irrecuperable)
+//   lab_y_mol           — haría match con lab Y molécula corregidos (patrón ARANDA ACHE)
+//   lab_antiguo         — haría match solo corrigiendo el laboratorio (data vieja INHRR)
+//   generico_otro_lab   — genérico/sin molécula con foto solo en OTRO lab = otra
+//                         marca (regla cruce 2: nunca mezclar labs en genéricos).
+//                         Se lista con candidata para decisión manual del dueño.
+//   solo_farmanselmo    — la foto solo existe en farmanselmo (dump COBECA incompleto)
+//   foto_en_ledger      — matchable estricto pero la única foto ya está en el ledger
+//   matchable_revisar   — matchable estricto sin foto todavía guardada (anomalía)
+//   no_match_fuentes    — la presentación no existe en ninguna fuente (irrecuperable)
 //
 // Regla de seguridad: la relajación de lab/molécula NUNCA afloja identidad, forma,
-// dosis, %, bare ni pack. La foto candidata debe corroborar la marca o la molécula.
+// dosis, %, bare ni pack. La foto candidata debe corroborar la marca o la molécula,
+// y con molécula de BD vacía el lab distinto se trata como otra marca.
 
 import fs from 'fs';
 import path from 'path';
@@ -24,11 +29,14 @@ import {
   formasSonEquivalentes,
   dosisProductoDb,
   extraerPackNombre,
+  esComboProducto,
+  tokenSim,
 } from '../../scripts/lib/cobecaParser.mjs';
-import { scoreFarmanselmo } from '../../scripts/lib/farmanselmoParser.mjs';
+import { scoreFarmanselmo, componentesMolecula } from '../../scripts/lib/farmanselmoParser.mjs';
 import {
   nucleoMarca,
   esGenerico,
+  descTieneNucleo,
 } from '../lib/fotos.js';
 import {
   labCoincide,
@@ -126,6 +134,106 @@ function tokensBusqueda(p) {
   return [...tokens];
 }
 
+// Sales/frases que se ignoran al comparar nucleo vs molécula (mismo criterio que
+// SALES en los parsers, SOLO para genericidad del diagnóstico). Incluye sales y
+// ésteres/prodrogas que el INHRR suele agregar al nombre pero no a la columna
+// molecula: BISOPROLOL FUMARATO vs "Bisoprolol", CANDESARTAN CILEXETILO vs
+// "Candesartan", SECNIDAZOL vs "Secnidazol Anhidro".
+const SALES_GENERICIDAD = new Set([
+  'clorhidrato', 'clorhidratado', 'sodico', 'potasico', 'acido', 'hidratado',
+  'bromuro', 'disodico', 'calcium', 'trihidrato', 'monohidrato', 'dihidrato',
+  'fumarato', 'maleato', 'succinato', 'tartrato', 'citrato', 'mesilato',
+  'tosilato', 'besilato', 'fosfato', 'gluconato', 'lactato', 'nitrato',
+  'acetato', 'estearato', 'cloruro', 'yoduro', 'carbonato', 'bicarbonato',
+  'sulfato', 'cilexetilo', 'anhidro', 'hemifumarato',
+]);
+
+// ¿El producto es genérico? `esGenerico` de fotos.js compara por igualdad exacta
+// y falla por inversión de palabras ("Folico Acido" vs "ACIDO FOLICO") y género
+// CIMA (Amlodipino vs AMLODIPINA) → para el DIAGNÓSTICO una vía tolerante:
+// multiset de tokens normalizados (sin sales) de nucleo vs molécula. NO toca esGenerico.
+function esGenericoTolerante(p, nucleo) {
+  if (esGenerico(p, nucleo)) return true;
+  const limp = (s) =>
+    new Set(
+      normalizar(s || '')
+        .split(/\s+/)
+        .map((t) => t.replace(/[^a-z]/g, ''))
+        .filter((t) => t.length >= 4 && !SALES_GENERICIDAD.has(t))
+    );
+  const nTok = limp(nucleo);
+  const mTok = limp(p.molecula || '');
+  if (!nTok.size || !mTok.size) return false;
+  // subconjunto en cualquier dirección: la sal/éster solo puede sobrar de un lado
+  // ("bisoprolol" ⊂ {bisoprolol, fumarato}; {secnidazol} ⊂ {secnidazol, anhidro}).
+  const sub0 = [...mTok].every((t) => nTok.has(t));
+  const sub1 = [...nTok].every((t) => mTok.has(t));
+  if (sub0 || sub1) return true;
+  // igualdad de conjuntos (tokens ≥ 4 chars, sin sales) → arbitrariedad de orden
+  if (nTok.size === mTok.size && [...nTok].every((t) => mTok.has(t))) return true;
+  // género CIMA al comparar mismas posiciones ("amlodipina" vs "amlodipino")
+  if (nTok.size === mTok.size) {
+    const na = [...nTok];
+    const ma = [...mTok];
+    let igual = true;
+    for (const tn of na) {
+      if (!ma.some((tm) => tn === tm || tokenSim(tn, tm) >= 0.8)) { igual = false; break; }
+    }
+    if (igual) return true;
+  }
+  return false;
+}
+
+// Gate de IDENTIDAD DE COMBO (dirección): si el producto es una combinación
+// (doble dosis "2.5 MG - 50 MG", hct, o molécula con " - ") y la desc candidata
+// es MONO → la foto es de OTRO producto (p.ej. ACETAMINOFEN-HIOSCINA ← foto
+// "ACETAMINOFEN TAB 500MG"). Y al revés: producto mono ← desc combo tampoco.
+// Si la desc declara combo (doble dosis, "+" o "/" entre nombres, componente del
+// producto) la identidad queda corroborada por los gates base/identidad normales.
+function reclamaCombo(texto) {
+  const low = String(texto || '').toLowerCase();
+  if (/(\d+(?:[.,]\d+)?)\s*(?:mg|g|ug|mcg|iu|ui)\s*[-/]\s*(\d+(?:[.,]\d+)?)\s*(?!\s*(?:ml|%))\s*(?:mg|g|ug|mcg|iu|ui)?/i.test(low)) return true;
+  if (/(?:^|[^a-z])hct(?:[^a-z]|$)/.test(low)) return true;
+  if (/[a-z]+\s*(?:\+|\/)\s*[a-z]+/i.test(normalizar(texto))) return true;
+  return false;
+}
+function descCorroboraCombo(desc, p) {
+  const productoCombo = esComboProducto(p);
+  const descCombo = reclamaCombo(desc);
+  if (productoCombo && !descCombo) return false; // producto combo ← desc mono
+  if (!productoCombo && descCombo) return false; // producto mono ← desc combo
+  return true;
+}
+
+// ¿El gate 'base' es FIXABLE (molécula BD incompleta) o la candidata es OTRO
+// producto? Solo es fixable cuando el producto es MONO en BD pero su NOMBRE
+// declara la combinación (doble dosis/HCT → esComboProducto) y el base candidato
+// es un combo que CONTIENE esa molécula mono (p.ej. ARANDA: molecule "Losartan",
+// base "AMLODIPINA/LOSARTAN POTASICO"). Cualquier otra combinación (ej. producto
+// combo vs candidata mono; candidata combo que NO contiene la molécula BD) es
+// un producto DISTINTO → no se relaja.
+function esBaseFixable(p, baseComp) {
+  const base = String(baseComp || '').trim();
+  if (!base || /no aplica/i.test(base)) return false;
+  const basePartes = base.split(/[\/+;]/).map((s) => s.trim()).filter(Boolean);
+  if (basePartes.length <= 1) return false;
+  const dbPartes = componentesMolecula(p.molecula || '');
+  if (dbPartes.length !== 1) return false;
+  if (!esComboProducto(p)) return false;
+  const toksDb = dbPartes[0];
+  if (!toksDb.length) return false;
+  for (const parte of basePartes) {
+    const toksP = componentesMolecula(parte)[0] || [];
+    if (!toksP.length) continue;
+    for (const tB of toksP) {
+      for (const tD of toksDb) {
+        if (tD.includes(tB) || tB.includes(tD)) return true;
+      }
+    }
+  }
+  return false;
+}
+
 // ---------- Gates COBECA (replican matchCobeca2 con lab Y mol relajados) ----------
 // Devuelve las puertas que fallan: 'lab', 'base', 'forma', 'dosis', 'pct', 'bare',
 // 'pack', 'identidad'. El desc es candidata si NO falla ningún gate débil.
@@ -133,20 +241,30 @@ function tokensBusqueda(p) {
 // otra marca (regla central del cruce 2). Solo marcas relajan lab.
 function gatesCobeca(p, d, esGenericoP) {
   const gates = [];
+  const nucleo = nucleoMarca(p.nombre_comercial);
   // Punto de relajación: comparamos el lab de la desc contra el del producto.
+  const tieneMol = !!tokensSignificativos(p.molecula || '').length;
   if (!labCoincide(d.proveedor || '', p.laboratorio || '')) {
-    gates.push(esGenericoP ? 'lab_generico' : 'lab');
+    // Sin molécula de BD o sin marca repetida en la desc no se puede corroborar
+    // que la identidad sea la misma: lab distinto en genérico DCI es OTRA marca,
+    // y en una MARCA la desc debe repetir el núcleo completo (regla cruce 1).
+    const marcaRepetida = descTieneNucleo(d.desc_articulo || '', nucleo);
+    gates.push(esGenericoP || !tieneMol || !marcaRepetida ? 'lab_generico' : 'lab');
   }
-  // Punto de relajación: el veto mono↔combo se reporta por separado.
+  // Punto de relajación: el veto mono↔combo se reporta por separado. Solo se
+  // relaja cuando la molécula de BD es incompleta (caso ARANDA); si la candidata
+  // es OTRO producto (producto combo vs candidata mono, o combo sin la molécula
+  // BD) es gate duro 'base_otro' (no rescatable).
   const baseOk = moleculaCoincide(d.base, p.molecula);
-  if (baseOk === false) gates.push('base');
+  if (baseOk === false) {
+    gates.push(esBaseFixable(p, d.base) ? 'base' : 'base_otro');
+  }
 
   const parsed = parsearDescripcion(d.desc_articulo || '');
   const formaDb = normalizar(p.forma || '');
   const dosisDb = dosisProductoDb(p);
   const packDb = extraerPackNombre(p.nombre_comercial || '');
   const molTokensDb = tokensSignificativos(p.molecula || '');
-  const nucleo = nucleoMarca(p.nombre_comercial);
 
   if (parsed.forma) {
     if (!formaDb || !formasSonEquivalentes(parsed.forma, formaDb)) gates.push('forma');
@@ -180,6 +298,11 @@ function gatesCobeca(p, d, esGenericoP) {
   if (!descCorroboraMol(d.desc_articulo, nucleo, molTokensDb, `${p.molecula || ''} ${p.nombre_comercial || ''}`)) {
     gates.push('identidad');
   }
+  if (!descCorroboraCombo(d.desc_articulo, p)) gates.push('identidad_combo');
+  // NOTA: con molécula vacía un lab distinto es OTRO producto (genérico DCI sin
+  // marca registrada, p.ej. AMIKACINA de un lab y foto de otro). El gate 'lab'
+  // relajable SOLO aplica cuando hay molécula que corrobore la identidad; sin
+  // molécula sale como categoría propia lab_otro_sin_mol (revisar, no asignar).
   return gates;
 }
 
@@ -187,8 +310,11 @@ function gatesCobeca(p, d, esGenericoP) {
 // Misma regla que COBECA: genéricos NO relajan lab (otra marca).
 function gatesFarm(p, f, esGenericoP) {
   const gates = [];
+  const nucleo = nucleoMarca(p.nombre_comercial);
+  const tieneMol = !!tokensSignificativos(p.molecula || '').length;
   if (!labCoincideNombreFarm(f.nombre, p.laboratorio)) {
-    gates.push(esGenericoP ? 'lab_generico' : 'lab');
+    const marcaRepetida = descTieneNucleo(f.nombre || '', nucleo);
+    gates.push(esGenericoP || !tieneMol || !marcaRepetida ? 'lab_generico' : 'lab');
   }
   const packDb = extraerPackNombre(p.nombre_comercial || '');
   const packFarm = packDeTexto(f.nombre);
@@ -210,7 +336,7 @@ function gatesFarm(p, f, esGenericoP) {
 }
 
 // Gates débiles (NUNCA se relajan): una candidata que los tenga no sirve.
-const DEBILES = new Set(['forma', 'dosis', 'pct', 'bare', 'pack', 'identidad', 'score', 'score_duro', 'lab_generico']);
+const DEBILES = new Set(['forma', 'dosis', 'pct', 'bare', 'pack', 'identidad', 'identidad_combo', 'score', 'score_duro', 'lab_generico', 'base_otro']);
 
 function clasificar({ mejores }) {
   // mejores: lista de { fuente, gates:Set, desc, score? } ordenada (todas sin gates débiles).
@@ -225,6 +351,9 @@ function clasificar({ mejores }) {
   if (!mejores.some((m) => m.fuente === 'cobeca')) {
     if (tieneLab && tieneBase) return 'lab_y_mol_solo_farm';
     if (tieneBase && !tieneLab) return 'molecula_mono_combo';
+    // gates vacíos → matchable estricto; el remapeo por ledger (foto_en_ledger /
+    // matchable_revisar) lo decide el main y también aplica a la rama solo-farm.
+    if (!tieneLab && !tieneBase) return 'matchable_sin_fix';
     return 'solo_farmanselmo';
   }
   if (tieneLab && tieneBase) return 'lab_y_mol';
@@ -289,10 +418,11 @@ async function main() {
 
   for (const p of productos) {
     const nucleo = nucleoMarca(p.nombre_comercial);
-    const generico = esGenerico(p, nucleo);
+    const generico = esGenericoTolerante(p, nucleo);
     const tokens = tokensBusqueda(p);
 
     const mejores = [];
+    let mejorRechazadoLab = null;
     const visitadosCobeca = new Set();
     const visitadosFarm = new Set();
 
@@ -302,7 +432,13 @@ async function main() {
         if (visitadosCobeca.has(d.imagen)) continue;
         visitadosCobeca.add(d.imagen);
         const gates = gatesCobeca(p, d, generico);
-        if ([...gates].some((g) => DEBILES.has(g))) continue;
+        if ([...gates].some((g) => DEBILES.has(g))) {
+          // Genérico / sin molécula con lab distinto: la foto es de OTRA marca.
+          if ([...gates].every((g) => g === 'lab_generico')) {
+            if (!mejorRechazadoLab) mejorRechazadoLab = { fuente: 'cobeca', desc: d };
+          }
+          continue;
+        }
         mejores.push({ fuente: 'cobeca', gates: new Set(gates), desc: d, url_en_ledger: urlsUsadas.has(d.imagen) });
       }
     }
@@ -317,7 +453,12 @@ async function main() {
           if (visitadosFarm.has(f.imagen)) continue;
           visitadosFarm.add(f.imagen);
           const { gates } = gatesFarm(p, f, generico);
-          if ([...gates].some((g) => DEBILES.has(g))) continue;
+          if ([...gates].some((g) => DEBILES.has(g))) {
+            if ([...gates].every((g) => g === 'lab_generico')) {
+              if (!mejorRechazadoLab) mejorRechazadoLab = { fuente: 'farmanselmo', desc: { nombre: f.nombre, imagen: f.imagen } };
+            }
+            continue;
+          }
           mejores.push({ fuente: 'farmanselmo', gates: new Set(gates), desc: { nombre: f.nombre, imagen: f.imagen }, url_en_ledger: urlsUsadas.has(f.imagen) });
         }
       }
@@ -325,15 +466,22 @@ async function main() {
 
     const categoria = clasificar({ mejores });
 
-    const mejor = mejores[0] || null;
+    const mejor = mejorRechazadoLab && !mejores.length ? mejorRechazadoLab : (mejores[0] || null);
     // gates vacíos: el producto YA sería matchable estricto; si la única foto
     // viable ya está en el ledger no se puede duplicar (foto tomada por otro).
     let categoriaFinal = categoria;
     if (categoria === 'matchable_sin_fix') {
       categoriaFinal = mejor && mejor.url_en_ledger ? 'foto_en_ledger' : 'matchable_revisar';
     }
+    if (!mejores.length && !mejorRechazadoLab) {
+      categoriaFinal = 'no_match_fuentes';
+    } else if (!mejores.length && mejorRechazadoLab) {
+      // Genérico o sin molécula con foto solo en otro lab: la foto no corresponde
+      // (otra marca). Categoría separada para que el dueño la revise y decida.
+      categoriaFinal = 'generico_otro_lab';
+    }
     resumenConteo[categoriaFinal] = (resumenConteo[categoriaFinal] || 0) + 1;
-    if (!mejores.length) sinCandidatas++;
+    if (!mejores.length && !mejorRechazadoLab) sinCandidatas++;
     filasClasificacion.push({
       producto_id: p.id,
       sku: p.sku,
@@ -344,8 +492,8 @@ async function main() {
       laboratorio: p.laboratorio,
       categoria: categoriaFinal,
       fuente: mejor ? mejor.fuente : '',
-      gates: mejor ? [...mejor.gates].join('|') : '',
-      url_en_ledger: mejor ? (mejor.url_en_ledger ? 'si' : 'no') : '',
+      gates: mejor ? (mejores.length ? [...mejor.gates].join('|') : 'lab_generico') : '',
+      url_en_ledger: mejor && mejores.length ? (mejor.url_en_ledger ? 'si' : 'no') : '',
       desc_candidata: mejor ? (mejor.desc.desc_articulo || mejor.desc.nombre || '') : '',
       foto_candidata: mejor ? mejor.desc.imagen : '',
     });
