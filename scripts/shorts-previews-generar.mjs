@@ -38,10 +38,12 @@ async function descargarYRecortar(videoId, dir, cookieFile) {
   // en Smart TVs) no pide cookies, no requiere JS runtime y entrega mp4 360p —
   // suficiente para un preview de 4 segundos. PERO con cuenta autenticada
   // (cookies) YouTube activa el experimento SABR solo para tv → solo imágenes.
-  // El cliente ios no usa n-challenge ni SABR y devuelve mp4 progresivos.
+  // ios no soporta cookies (yt-dlp lo salta). El cliente web usa las cookies,
+  // y el n-challenge se resuelve con el solver EJS (workflow instala
+  // "yt-dlp[ejs]").
   const args = [
     '-f', 'mp4[height<=480]/best[height<=480]/best',
-    '--extractor-args', 'youtube:player_client=ios',
+    '--extractor-args', 'youtube:player_client=web',
     '--download-sections', `*0-${DURACION_SEGUNDOS + 1}`,
     '--no-playlist',
     '-o', bruto,

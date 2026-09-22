@@ -16,8 +16,8 @@ jobs:
         with:
           node-version: 24
 
-      - name: Instalar yt-dlp
-        run: pip install -U yt-dlp
+      - name: Instalar yt-dlp (con solver EJS para el n-challenge)
+        run: pip install -U "yt-dlp[ejs]"
 
       - name: Instalar dependencias del backend
         run: npm install
