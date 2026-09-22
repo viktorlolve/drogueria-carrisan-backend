@@ -82,7 +82,29 @@ async function main() {
     if (error) console.error(`Error actualizando last_seen para ${canal_id}:`, error.message);
   }
 
-  // 2) Tomar pendientes (los que aún no tienen clip) y generarlos.
+  // 2) Reintentar errores viejos: un fallo (bot-block, red, subida) no debe
+  //    condenar el clip para siempre. Los errores con intento hace >1h vuelven
+  //    a 'pendiente' para reintentarlos en esta corrida.
+  const haceUnaHora = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const { data: erroresRetry, error: errReset } = await supabase
+    .from('shorts_clips')
+    .select('video_id')
+    .eq('estado', 'error')
+    .lt('generado_en', haceUnaHora)
+    .limit(MAX_POR_CORRIDA);
+  if (errReset) {
+    console.error('Error leyendo errores a reintentar:', errReset.message);
+    process.exit(1);
+  }
+  if (erroresRetry && erroresRetry.length > 0) {
+    await supabase
+      .from('shorts_clips')
+      .update({ estado: 'pendiente', error_msg: null })
+      .in('video_id', erroresRetry.map((v) => v.video_id));
+    console.log(`Reintentando ${erroresRetry.length} clip(s) que fallaron antes.`);
+  }
+
+  // 3) Tomar pendientes (los que aún no tienen clip) y generarlos.
   const { data: pendientes, error: errPendientes } = await supabase
     .from('shorts_clips')
     .select('video_id')
