@@ -110,6 +110,8 @@ export const LAB_ALIASES = {
   'CCM': 'CR CCM',
   'GMEDIC': 'CR GM',
   'NATURLIFES': 'NATURALIFES',
+  'COFASA': 'COFA',
+  'AND': 'ADN',
 };
 
 // Overrides MANUALES por producto_id (decididos con el dueño 2026-09-24):
@@ -128,6 +130,31 @@ export const OVERRIDES_PRODUCTO = {
   37374: { lab: 'ALCOHOLES VALENCIA, C.A.', nuevo: true, nota: 'agua_oxig_alva' },
   37375: { lab: 'ALCOHOLES VALENCIA, C.A.', nuevo: true, nota: 'agua_oxig_alva' },
 };
+
+// 37698 CURPINOL CARVEDILOL 25 MG X 15 -> la foto es CURPINOL X30 (nombre
+//   comercial único sin molécula) - dueño 2026-09-24: pasó a FASE EXTRA
+//   (búsqueda de nombres comerciales únicos). Darle el lab MEGALABS si se
+//   resuelve; mientras tanto se deja sin foto.
+export const FASE_EXTRA_PRODUCTO = new Set([37698]);
+
+// Matches a SOLTAR (dueño 2026-09-24): descs que NO terminan en sigla de lab
+// (la foto no corresponde a ningún producto conocido, y los productos "quedan
+// pendientes sin laboratorio" -> sin foto). La foto candidata no aplica.
+export const SOLTAR_MATCH_PRODUCTO = new Set([
+  37792, // CLONAZEPAM 0.5 MG X 30 - sin sigla
+  37793, // CLONAZEPAM 2 MG X 30 - sin sigla
+  37821, // CLOTRIMAZOL 200 MG VAGINALES - sin sigla
+  37960, // PENTASA/DIZACOL MESALAZINA 500MG - sin sigla
+  38287, // KETOPROFENO I.M 100MG/2ML - sin sigla
+  38559, // NISTATINA 100.000UI/ML - sin sigla
+  38718, // RAMIPRES (RAMIPRIL) 2.5 MG - sin sigla
+  38810, // SULFATO D/MAGNESIO 1MEQ - sin sigla
+  39450, // NAFAZOLINA 0,12MG/ML - sin sigla
+  39341, // SERUM VERABELL AC SALICILICO - sin sigla
+  39555, // OMEPRAZOL 40MG I.V AMPOLLA - sin sigla
+  // Dejo OLMEsartan (38589/38591/38592/38594) con override LETI (fase creación).
+]);
+
 export const EXCLUIDOS_PRODUCTO = new Set([37668]);
 
 // Claves que son AMBIGUAS (mismo texto con otro significado) o que aparecen

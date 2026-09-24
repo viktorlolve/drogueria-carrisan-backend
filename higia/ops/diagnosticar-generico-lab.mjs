@@ -14,7 +14,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { LAB_CLAVES, LAB_ALIASES, CLAVES_ORDENADAS, OVERRIDES_PRODUCTO, EXCLUIDOS_PRODUCTO } from '../lib/labClaves.js';
+import { LAB_CLAVES, LAB_ALIASES, CLAVES_ORDENADAS, OVERRIDES_PRODUCTO, EXCLUIDOS_PRODUCTO, FASE_EXTRA_PRODUCTO, SOLTAR_MATCH_PRODUCTO } from '../lib/labClaves.js';
 import { csvDeFilas, nombreConFecha } from '../lib/csv.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -139,10 +139,15 @@ function main() {
   const porLab = new Map();
   const porFuente = { cobeca: 0, farmanselmo: 0 };
   const desconocidas = new Map(); // colita -> { n, ejemplos: [{producto_id, nombre_comercial, desc}] }
+  const faseExtra = [];
+  const soltadas = [];
 
   for (const f of filas) {
-    if (EXCLUIDOS_PRODUCTO.has(Number(f.producto_id))) continue;
-    const ov = OVERRIDES_PRODUCTO[Number(f.producto_id)];
+    const id = Number(f.producto_id);
+    if (EXCLUIDOS_PRODUCTO.has(id)) continue;
+    if (FASE_EXTRA_PRODUCTO.has(id)) { faseExtra.push(f); continue; }
+    if (SOLTAR_MATCH_PRODUCTO.has(id)) { soltadas.push(f); continue; }
+    const ov = OVERRIDES_PRODUCTO[id];
     const r = ov
       ? { clave: '(override)', claveReal: '(override)', lab: ov.lab, nuevo: ov.nuevo, nota: ov.nota }
       : resolverSiglaLab(f.desc_candidata);
@@ -163,7 +168,7 @@ function main() {
   }
 
   console.log('=== RESUELTAS ===');
-  console.log(`${resueltas.length} / ${filas.length} (${((resueltas.length / filas.length) * 100).toFixed(1)}%)`);
+  console.log(`${resueltas.length} / ${filas.length} (${((resueltas.length / filas.length) * 100).toFixed(1)}%) | fase_extra: ${faseExtra.length} | sin-sigla (match suelto): ${soltadas.length}`);
   const labsOrdenados = [...porLab.entries()].sort((a, b) => b[1].n - a[1].n);
   console.log(`${labsOrdenados.length} labs distintos:\n`);
   for (const [k, v] of labsOrdenados) {
@@ -183,7 +188,10 @@ function main() {
 
   // TXT de revisión para el dueño: siglas desconocidas con campo para anotar
   // el laboratorio real (mismo formato que el CSV resuelto).
-  const pendientes = filas.filter((f) => !EXCLUIDOS_PRODUCTO.has(Number(f.producto_id)) && !OVERRIDES_PRODUCTO[Number(f.producto_id)] && !resolverSiglaLab(f.desc_candidata));
+  const pendientes = filas.filter((f) => {
+    const id = Number(f.producto_id);
+    return !EXCLUIDOS_PRODUCTO.has(id) && !FASE_EXTRA_PRODUCTO.has(id) && !SOLTAR_MATCH_PRODUCTO.has(id) && !OVERRIDES_PRODUCTO[id] && !resolverSiglaLab(f.desc_candidata);
+  });
   const porColitaPendiente = new Map();
   for (const f of pendientes) {
     const colita = colitaDesc(f.desc_candidata);
@@ -195,9 +203,9 @@ function main() {
 
   const lineasTxt = [];
   lineasTxt.push('=== SIGLAS DE LABORATORIO PENDIENTES DE RESOLVER ===');
-  lineasTxt.push(`generico_otro_lab: ${filas.length} filas | analizadas: ${analizadas} (${EXCLUIDOS_PRODUCTO.size} excluida) | resueltas: ${resueltas.length} | pendientes: ${pendientes.length} | generado: ${new Date().toISOString().slice(0, 10)}`);
+  lineasTxt.push(`generico_otro_lab: ${filas.length} filas | analizadas: ${analizadas} (${EXCLUIDOS_PRODUCTO.size} excluida) | resueltas: ${resueltas.length} | fase_extra: ${faseExtra.length} | sin-sigla (soltadas): ${soltadas.length} | pendientes: ${pendientes.length} | generado: ${new Date().toISOString().slice(0, 10)}`);
   lineasTxt.push('');
-  lineasTxt.push('--- COLTAS/SIGLAS A BUSCAR (índice) ---');
+  lineasTxt.push(`--- COLTAS/SIGLAS A BUSCAR (índice) ---`);
   pendientesOrden.forEach(([colita, filasColita], i) => {
     const siglaGuia = colita.split(/\s+/).filter((t) => /^[a-z]{2,9}$/i.test(t)).pop() || colita;
     lineasTxt.push(`${String(i + 1).padStart(2)}. [${siglaGuia.toUpperCase()}] ${colita}  (${filasColita.length} fila(s))`);
@@ -231,4 +239,27 @@ lineasTxt.push(columnas.join('\t'));
   const rutaOut = path.join(DATA_LIMPIEZAS, nombreConFecha('generico_lab_resueltos'));
   fs.writeFileSync(rutaOut, csvDeFilas(columnas.slice(0, 13).concat(['sigla', 'clave_real', 'lab_real', 'lab_nuevo', 'nota']), resueltas), 'utf8');
   console.log(`CSV:       ${rutaOut} (${resueltas.length} filas)`);
+
+  // Reporte "cómo vamos" (dueño 2026-09-24).
+  const conFoto = resueltas.filter((r) => r.foto_candidata).length;
+  console.log('\n=== REPORTE: CÓMO VAMOS ===');
+  console.log(`Total generico_otro_lab : ${filas.length}`);
+  console.log(`  Excluidas (material)  : ${EXCLUIDOS_PRODUCTO.size}`);
+  console.log(`  RESUELTAS con photo   : ${resueltas.length} (${conFoto} con foto_candidata)`);
+  console.log(`    - lab ya existe       : ${resueltas.filter((r) => r.lab_nuevo !== 'si').length}`);
+  console.log(`    - lab NUEVO (crear)   : ${resueltas.filter((r) => r.lab_nuevo === 'si').length}`);
+  console.log(`  FASE EXTRA (comerciales): ${faseExtra.length}`);
+  console.log(`  SIN-SIGLA (match suelto): ${soltadas.length} -> siguen sin foto`);
+  console.log(`  PENDIENTES de resolver  : ${pendientes.length}`);
+  const porNuevo = resueltas.reduce((m, r) => { m[r.lab_nuevo === 'si' ? 'nuevo' : 'existente']++; return m; }, { nuevo: 0, existente: 0 });
+  console.log(`Total fotos a asignar    : ${resueltas.length} (${porNuevo.existente} a productos de lab que existe, ${porNuevo.nuevo} a lab NUEVO => crear producto)`);
+
+  // Productos con foto cuyo propio registro en BD no tiene lab o molécula.
+  const sinLabBD = resueltas.filter((r) => !String(r.laboratorio || '').trim());
+  const sinMoleculaBD = resueltas.filter((r) => !String(r.molecula || '').trim());
+  console.log(`\n--- Productos con foto pero con registro pobre en BD ---`);
+  console.log(`Sin laboratorio en BD    : ${sinLabBD.length}${sinLabBD.length ? ' -> ' + sinLabBD.map((r) => r.producto_id).join(', ') : ''}`);
+  console.log(`Sin molecula en BD       : ${sinMoleculaBD.length}${sinMoleculaBD.length ? ' -> ' + sinMoleculaBD.map((r) => r.producto_id).join(', ') : ''}`);
+  const sinAmbos = resueltas.filter((r) => !String(r.laboratorio || '').trim() && !String(r.molecula || '').trim());
+  console.log(`Sin ambos                : ${sinAmbos.length}`);
 }
