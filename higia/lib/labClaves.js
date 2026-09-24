@@ -34,6 +34,9 @@ export const LAB_CLAVES = {
   MEGALABS: { lab: 'MEGALABS, S.A.', nuevo: false },
   DOLLDER: { lab: 'LABORATORIOS DOLLDER, C.A.', nuevo: false },
   ANGELUS: { lab: 'INVERSIONES ANGELUS HEALTH, C.A.', nuevo: true },
+  MEYER: { lab: 'LABORATORIOS SIEGFRIED, S.A.', nuevo: false },
+  GENFAR: { lab: 'GENFAR, S.A.', nuevo: false },
+  VARG: { lab: 'LABORATORIOS VARGAS, S.A.', nuevo: false },
 
   // --- Claves de 2+ tokens (requieren match por secuencia completa) ------
   'CR MT': { lab: 'CASA DE REPRESENTACION MT GLOBAL CARE, C.A.', nuevo: true },
@@ -54,6 +57,33 @@ export const LAB_CLAVES = {
   'PHARMA': { lab: 'LABORATORIOS PHARMARIS DE VENEZUELA, C.A.', nuevo: false },
   'ADN': { lab: 'CASA DE REPRESENTACION ADN MEDICAL, C.A.', nuevo: true },
   'ANG/H': { lab: 'INVERSIONES ANGELUS HEALTH, C.A.', nuevo: true },
+  'CR GM': { lab: 'CASA DE REPRESENTACION GLOBAL MEDIC, C.A.', nuevo: true },
+  'FCH': { lab: 'LABORATORIO FINE CHEMICALS C.F.C., C.A.', nuevo: true },
+  'CR LATT': { lab: 'CASA DE REPRESENTACION LATTAN MEDIC, C.A.', nuevo: true },
+  'ALVA': { lab: 'ALCOHOLES VALENCIA, C.A.', nuevo: true },
+  'CR CCM': { lab: 'CASA DE REPRESENTACION FARMACEUTICAS CCM, C.A.', nuevo: true },
+  'DAC': { lab: 'CASA DE REPRESENTACION DAC55, C.A.', nuevo: false },
+  'GENVEN': { lab: 'LABORATORIOS LETI, S.A.V.', nuevo: false },
+  'DORO': { lab: 'CASA DE REPRESENTACION DOROPHARMA, C.A.', nuevo: true },
+  'BIU': { lab: 'CASA DE REPRESENTACION BIUMAK PHARMACEUTICALS, C.A.', nuevo: true },
+
+  // --- Siglas adicionales aportadas por el dueño 2026-09-24 ---------------
+  'VIN': { lab: 'LABORATORIOS VICENTI, C.A.', nuevo: true },
+  'CR BEL': { lab: 'CASA DE REPRESENTACIONES BELMARCA, C.A.', nuevo: true },
+  'PORTU': { lab: 'CASA DE REPRESENTACION MVGA PHARMA', nuevo: true },
+  'MEDV': { lab: 'CASA DE REPRESENTACION MEDVAL, C.A.', nuevo: true },
+  'UNIPHARMA': { lab: 'CASA DE REPRESENTACION UNIPHARMA, C.A.', nuevo: true },
+  'COFA': { lab: 'LABORATORIO COFASA, S.A.', nuevo: false },
+  'GEAG': { lab: 'CASA DE REPRESENTACION INVERSIONES GEAGAR, C.A.', nuevo: true },
+  'ARC IRIS': { lab: 'ARCO IRIS LABORATORIO, C.A.', nuevo: true },
+  'MDF': { lab: 'CASAS DE REPRESENTACION MEDIFARM, C.A.', nuevo: true },
+  'ZUKATI': { lab: 'CASA DE REPRESENTACION ZUKATI, C.A.', nuevo: true },
+  'LAND': { lab: 'CASA DE REPRESENTACION LAND, C.A.', nuevo: true },
+  'LAPROFF': { lab: 'CASA DE REPRESENTACIONES NAUTICA, C.A.', nuevo: true },
+  'MILAB': { lab: 'LABORATORIO MILAB, C.A.', nuevo: true },
+  'NATURALIFES': { lab: 'BY NATURLIFES, C.A.', nuevo: true },
+  'SGG': { lab: 'SOTO GLOBAL GROUP, C.A.', nuevo: true },
+  'HERBAPLANT': { lab: 'LABORATORIOS HERBAPLANT, C.A.', nuevo: true },
 };
 
 // Claves tipo "(E)": variante de un lab ya mapeado. Se resuelven igual que la
@@ -71,7 +101,34 @@ export const LAB_ALIASES = {
   LO: 'OFTALMI',
   'LA SAN': 'LA SANTE',
   MEYER: 'MEY',
+  'GSK FARMA': 'GSK',
+  'ZUOZ': 'VARG',
+  'VALMORCA': 'VLM',
+  'GLOB/C': 'LETI',
+  'CR ZUK': 'ZUKATI',
+  'FARMAMED': 'FM',
+  'CCM': 'CR CCM',
+  'GMEDIC': 'CR GM',
+  'NATURLIFES': 'NATURALIFES',
 };
+
+// Overrides MANUALES por producto_id (decididos con el dueño 2026-09-24):
+// casos donde la desc NO trae sigla pero el dueño confirmó el lab real.
+// OLMESARTAN (40/20mg x30) -> foto de LABORATORIOS LETI (lab ya existe, pero el
+//   producto de esa dosis+lab NO existe en BD -> se creará; nota: son 2 moléculas).
+// OXIGENO MEDICINAL (#37668) -> material médico (cánula + oxígeno) NO se trabaja
+//   aún; el dueño pidió excluirlo del proceso de fotos.
+// AGUA BIDESTILADA/DESTILADA (#37374/#37375) -> desc "AGUA OXIG ALVA AL 3% 1L"
+//   tiene la sigla ALVA en MEDIO (no al final).
+export const OVERRIDES_PRODUCTO = {
+  38589: { lab: 'LABORATORIOS LETI, S.A.V.', nuevo: false, nota: 'olmesartan_x30_leti' },
+  38591: { lab: 'LABORATORIOS LETI, S.A.V.', nuevo: false, nota: 'olmesartan_x30_leti' },
+  38592: { lab: 'LABORATORIOS LETI, S.A.V.', nuevo: false, nota: 'olmesartan_x30_leti' },
+  38594: { lab: 'LABORATORIOS LETI, S.A.V.', nuevo: false, nota: 'olmesartan_x30_leti' },
+  37374: { lab: 'ALCOHOLES VALENCIA, C.A.', nuevo: true, nota: 'agua_oxig_alva' },
+  37375: { lab: 'ALCOHOLES VALENCIA, C.A.', nuevo: true, nota: 'agua_oxig_alva' },
+};
+export const EXCLUIDOS_PRODUCTO = new Set([37668]);
 
 // Claves que son AMBIGUAS (mismo texto con otro significado) o que aparecen
 // como parte de la descripción (NO son el lab). Para human review.

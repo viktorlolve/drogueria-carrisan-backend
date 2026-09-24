@@ -14,7 +14,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { LAB_CLAVES, LAB_ALIASES, CLAVES_ORDENADAS } from '../lib/labClaves.js';
+import { LAB_CLAVES, LAB_ALIASES, CLAVES_ORDENADAS, OVERRIDES_PRODUCTO, EXCLUIDOS_PRODUCTO } from '../lib/labClaves.js';
 import { csvDeFilas, nombreConFecha } from '../lib/csv.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -141,9 +141,13 @@ function main() {
   const desconocidas = new Map(); // colita -> { n, ejemplos: [{producto_id, nombre_comercial, desc}] }
 
   for (const f of filas) {
-    const r = resolverSiglaLab(f.desc_candidata);
+    if (EXCLUIDOS_PRODUCTO.has(Number(f.producto_id))) continue;
+    const ov = OVERRIDES_PRODUCTO[Number(f.producto_id)];
+    const r = ov
+      ? { clave: '(override)', claveReal: '(override)', lab: ov.lab, nuevo: ov.nuevo, nota: ov.nota }
+      : resolverSiglaLab(f.desc_candidata);
     if (r) {
-      resueltas.push({ ...f, sigla: r.clave, clave_real: r.claveReal, lab_real: r.lab, lab_nuevo: r.nuevo ? 'si' : 'no' });
+      resueltas.push({ ...f, sigla: r.clave, clave_real: r.claveReal, lab_real: r.lab, lab_nuevo: r.nuevo ? 'si' : 'no', nota: r.nota || '' });
       const k = `${r.nuevo ? '[NUEVO] ' : ''}${r.lab}`;
       if (!porLab.has(k)) porLab.set(k, { lab: r.lab, nuevo: r.nuevo, n: 0, ids: [] });
       porLab.get(k).n++;
@@ -177,9 +181,54 @@ function main() {
     }
   }
 
+  // TXT de revisión para el dueño: siglas desconocidas con campo para anotar
+  // el laboratorio real (mismo formato que el CSV resuelto).
+  const pendientes = filas.filter((f) => !EXCLUIDOS_PRODUCTO.has(Number(f.producto_id)) && !OVERRIDES_PRODUCTO[Number(f.producto_id)] && !resolverSiglaLab(f.desc_candidata));
+  const porColitaPendiente = new Map();
+  for (const f of pendientes) {
+    const colita = colitaDesc(f.desc_candidata);
+    if (!porColitaPendiente.has(colita)) porColitaPendiente.set(colita, []);
+    porColitaPendiente.get(colita).push(f);
+  }
+  const pendientesOrden = [...porColitaPendiente.entries()].sort((a, b) => b[1].length - a[1].length);
+  const analizadas = filas.length - EXCLUIDOS_PRODUCTO.size;
+
+  const lineasTxt = [];
+  lineasTxt.push('=== SIGLAS DE LABORATORIO PENDIENTES DE RESOLVER ===');
+  lineasTxt.push(`generico_otro_lab: ${filas.length} filas | analizadas: ${analizadas} (${EXCLUIDOS_PRODUCTO.size} excluida) | resueltas: ${resueltas.length} | pendientes: ${pendientes.length} | generado: ${new Date().toISOString().slice(0, 10)}`);
+  lineasTxt.push('');
+  lineasTxt.push('--- COLTAS/SIGLAS A BUSCAR (índice) ---');
+  pendientesOrden.forEach(([colita, filasColita], i) => {
+    const siglaGuia = colita.split(/\s+/).filter((t) => /^[a-z]{2,9}$/i.test(t)).pop() || colita;
+    lineasTxt.push(`${String(i + 1).padStart(2)}. [${siglaGuia.toUpperCase()}] ${colita}  (${filasColita.length} fila(s))`);
+  });
+  lineasTxt.push('');
+
+  const columnas = [
+    'producto_id', 'sku', 'nombre_comercial', 'nucleo', 'molecula', 'forma',
+    'laboratorio', 'categoria', 'fuente', 'gates', 'url_en_ledger',
+    'desc_candidata', 'foto_candidata', 'CLAVE_SIGLA', 'LABORATORIO_REAL', 'NUEVO',
+  ];
+
+lineasTxt.push(columnas.join('\t'));
+  lineasTxt.push('');
+
+  for (const [colita, filasColita] of pendientesOrden) {
+    lineasTxt.push('');
+    lineasTxt.push(`> ... ${colita}  (${filasColita.length} fila(s))`);
+    for (const f of filasColita) {
+      lineasTxt.push([f.producto_id, f.sku, f.nombre_comercial, f.nucleo, f.molecula, f.forma,
+        f.laboratorio, f.categoria, f.fuente, f.gates, f.url_en_ledger,
+        f.desc_candidata, f.foto_candidata, '', '', '',
+      ].map((v) => (v ?? '').replace(/\t/g, ' ')).join('\t'));
+    }
+  }
+  const rutaTxt = path.join(DATA_LIMPIEZAS, nombreConFecha('generico_lab_pendientes', 'txt'));
+  fs.writeFileSync(rutaTxt, lineasTxt.join('\n'), 'utf8');
+  console.log(`TXT:       ${rutaTxt}`);
+
   // CSV de salida del análisis (para la fase de creación).
-  const columnas = [...Object.keys(filas[0]), 'sigla', 'clave_real', 'lab_real', 'lab_nuevo'];
   const rutaOut = path.join(DATA_LIMPIEZAS, nombreConFecha('generico_lab_resueltos'));
-  fs.writeFileSync(rutaOut, csvDeFilas(columnas, resueltas), 'utf8');
-  console.log(`\nCSV: ${rutaOut} (${resueltas.length} filas)`);
+  fs.writeFileSync(rutaOut, csvDeFilas(columnas.slice(0, 13).concat(['sigla', 'clave_real', 'lab_real', 'lab_nuevo', 'nota']), resueltas), 'utf8');
+  console.log(`CSV:       ${rutaOut} (${resueltas.length} filas)`);
 }

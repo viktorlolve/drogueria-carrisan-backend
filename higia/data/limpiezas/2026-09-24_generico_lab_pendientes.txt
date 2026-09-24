@@ -1,0 +1,195 @@
+=== SIGLAS DE LABORATORIO PENDIENTES DE RESOLVER ===
+generico_otro_lab: 442 filas | analizadas: 441 (1 excluida) | resueltas: 394 | pendientes: 47 | generado: 2026-09-24
+
+--- COLTAS/SIGLAS A BUSCAR (índice) ---
+ 1. [MG] carvedilol 25 mg  (1 fila(s))
+ 2. [VIN] 200mg x10 vin  (1 fila(s))
+ 3. [MG] mg x 30  (1 fila(s))
+ 4. [TAB] tab 2mg x30  (1 fila(s))
+ 5. [VAGINALES] clotrimazol 200mg vaginales  (1 fila(s))
+ 6. [BEL] x30 cr bel  (1 fila(s))
+ 7. [PORTU] 4mg x100 portu  (1 fila(s))
+ 8. [CCM] 75mg/3ml x10 ccm  (1 fila(s))
+ 9. [TAB] tab 500mg x30  (1 fila(s))
+10. [MEDV] 250mg/5ml x5 medv  (1 fila(s))
+11. [UNIPHARMA] 20 tabletas unipharma  (1 fila(s))
+12. [CCM] 10mg x30 ccm  (1 fila(s))
+13. [VALMORCA] x30 tabletas valmorca  (1 fila(s))
+14. [COFA] 100mg x1 cofa  (1 fila(s))
+15. [100MG/2ML I M] 100mg/2ml i m  (1 fila(s))
+16. [GEAG] 5mg x1 geag  (1 fila(s))
+17. [GMEDIC] intrad x5 gmedic  (1 fila(s))
+18. [GEAG] 2mg x10 geag  (1 fila(s))
+19. [PORTU] 2mg x100 portu  (1 fila(s))
+20. [IRIS] x60 arc iris  (1 fila(s))
+21. [MDF] bld x30 mdf  (1 fila(s))
+22. [VIN] 10mg x10 vin  (1 fila(s))
+23. [ZUKATI] 15 g zukati  (1 fila(s))
+24. [BEL] x10 cr bel  (1 fila(s))
+25. [CCM] 250mg x10 ccm  (1 fila(s))
+26. [LAND] x10 tabletas land  (1 fila(s))
+27. [100 000UI/ML SUSPENCION] 100 000ui/ml suspencion  (1 fila(s))
+28. [LAPROFF] 100mg x300 laproff  (1 fila(s))
+29. [ZUOZ] capsulas elea zuoz  (1 fila(s))
+30. [PORTU] 100mg/ml 10ml portu  (1 fila(s))
+31. [VALMORCA] x20 capsulas valmorca  (1 fila(s))
+32. [MILAB] x 20 milab  (1 fila(s))
+33. [FARMAMED] x 10 farmamed  (1 fila(s))
+34. [MG] mg x30 comprimidos  (1 fila(s))
+35. [VIN] 20mg x10 vin  (1 fila(s))
+36. [1MEQ X 10ML] 1meq x 10ml  (1 fila(s))
+37. [AND] 80mg/15ml 100ml and  (1 fila(s))
+38. [TABLETAS] x30 tabletas naturalifes  (1 fila(s))
+39. [200MG X1 GLOB/C] 200mg x1 glob/c  (1 fila(s))
+40. [AC] ac salicilico 30ml  (1 fila(s))
+41. [MDF] 50mcg x200dosis mdf  (1 fila(s))
+42. [12MG/ML X 15ML] 12mg/ml x 15ml  (1 fila(s))
+43. [ZUK] 15g cr zuk  (1 fila(s))
+44. [SGG] 1 50g sgg  (1 fila(s))
+45. [X 60 HERBAPLANT] x 60 herbaplant  (1 fila(s))
+46. [COFASA] x30 tabletas cofasa  (1 fila(s))
+47. [AMPOLLA] i v ampolla  (1 fila(s))
+
+producto_id	sku	nombre_comercial	nucleo	molecula	forma	laboratorio	categoria	fuente	gates	url_en_ledger	desc_candidata	foto_candidata	CLAVE_SIGLA	LABORATORIO_REAL	NUEVO
+
+
+> ... carvedilol 25 mg  (1 fila(s))
+37698	ME31748/2	CARVEDILOL 25 MG X 15 COMPRIMIDOS	CARVEDILOL	Carvedilol	COMPRIMIDOS	LABORATORIOS LETI S.A.V.	generico_otro_lab	farmanselmo	lab_generico		CURPINOL CARVEDILOL 25 MG (E)	https://pccentro.net.ve/img/s/2/4/0/2/0/24020-large_default.webp			
+
+> ... 200mg x10 vin  (1 fila(s))
+37722	ME41586	CELECOXIB 200 MG X 10 CAPSULAS	CELECOXIB	Celecoxib	CAPSULAS	CALOX INTERNATIONAL C.A.	generico_otro_lab	cobeca	lab_generico		CELECOXIB CAP 200MG X10 VIN	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/26739.jpg			
+
+> ... mg x 30  (1 fila(s))
+37792	ME38584	CLONAZEPAM 0.5 MG X 30 TABLETAS	CLONAZEPAM	Clonazepam	TABLETAS	CALOX INTERNATIONAL C.A.	generico_otro_lab	cobeca	lab_generico		CLONAZEPAM TAB 0.5 MG X 30	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/98445.jpg			
+
+> ... tab 2mg x30  (1 fila(s))
+37793	ME38585	CLONAZEPAM 2 MG X 30 TABLETAS	CLONAZEPAM	Clonazepam	TABLETAS	CALOX INTERNATIONAL C.A.	generico_otro_lab	cobeca	lab_generico		CLONAZEPAM TAB 2MG X30	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/98444.jpg			
+
+> ... clotrimazol 200mg vaginales  (1 fila(s))
+37821	ME43020	CLOTRIMAZOL 200 MG CAPSULAS BLANDAS VAGINALES	CLOTRIMAZOL	Clotrimazol	CAPSULAS	CALOX INTERNATIONAL C.A.	generico_otro_lab	farmanselmo	lab_generico		CLOTRIMAZOL 200MG VAGINALES (E)	https://pccentro.net.ve/img/s/5/8/6/9/2/58692-large_default.webp			
+
+> ... x30 cr bel  (1 fila(s))
+37875	ME32194/3	DEFLAZACORT 6 MG X 30 COMPRIMIDOS	DEFLAZACORT	Deflazacort	COMPRIMIDOS	LABORATORIOS LETI S.A.V.	generico_otro_lab	cobeca	lab_generico		DEFLAZACORT TAB 6MG X30 CR BEL	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/52860.jpg			
+
+> ... 4mg x100 portu  (1 fila(s))
+37900	ME42492/3	DEXAMETASONA 4 MG X 100 COMPRIMIDOS	DEXAMETASONA	Dexametasona	COMPRIMIDOS	LABORATORIOS SPEFAR VENEZOLANOS S.A.	generico_otro_lab	cobeca	lab_generico		DEXAMETASONA TAB 4MG X100 PORTU	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/25079.jpg			
+
+> ... 75mg/3ml x10 ccm  (1 fila(s))
+37928	HO36803/3	DICLOFENACO SODICO 75 MG / 3 ML X 10 AMPOLLAS	DICLOFENACO SODICO	Diclofenaco	INYECTABLE	FARMIONNI SCALPI S.A.	generico_otro_lab	cobeca	lab_generico		DICLOFENACO SOD SOL INY 75MG/3ML X10 CCM	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/53115.jpg			
+
+> ... tab 500mg x30  (1 fila(s))
+37960	ME37926	PENTASA 500 MG X 30 COMPRIMIDOS DE LIBERACION PROLONGADA	PENTASA	Mesalazina	COMPRIMIDOS	FERRING INTERNATIONAL CENTER S.A.	generico_otro_lab	cobeca	lab_generico		DIZACOL MESALAZINA TAB 500MG X30	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/54489.jpg			
+
+> ... 250mg/5ml x5 medv  (1 fila(s))
+37964	HO42487	DOBUTAMINA 250 MG / 5 ML X 5 AMPOLLAS	DOBUTAMINA	Dobutamina	INYECTABLE	LABORATORIO BIOSANO S.A.	generico_otro_lab	cobeca	lab_generico		DOBUTAMINA AMP 250MG/5ML X5 MEDV	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/51161.jpg			
+
+> ... 20 tabletas unipharma  (1 fila(s))
+38102	ME40011/3	FLAVOXATO 200 MG X 20 COMPRIMIDOS RECUBIERTOS	FLAVOXATO	Flavoxato	COMPRIMIDOS	LABORATORIOS LETI S.A.V.	generico_otro_lab	farmanselmo	lab_generico		FLAVOXUNI (FLAVOXATO) 200 MG X 20 TABLETAS UNIPHARMA (E)	https://pccentro.net.ve/img/s/9/2/2/5/5/92255-large_default.webp			
+
+> ... 10mg x30 ccm  (1 fila(s))
+38125	ME43024	FLUNARIZINA 10 MG X 30 TABLETAS RECUBIERTAS	FLUNARIZINA	Flunarizina	TABLETAS	MASCOT HEALTH SERIES PVT. LTD.	generico_otro_lab	cobeca	lab_generico		FLUNARIZINA TAB 10MG X30 CCM	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/53116.jpg			
+
+> ... x30 tabletas valmorca  (1 fila(s))
+38255	ME36068/4	IRBESARTAN 150 MG X 30 TABLETAS	IRBESARTAN	Irbesartan	TABLETAS	SM PHARMA C.A.	generico_otro_lab	farmanselmo	lab_generico		IBECAR IRBESARTAN 150 MG x30 TABLETAS VALMORCA (E)	https://pccentro.net.ve/img/s/5/5/0/4/9/55049-large_default.webp			
+
+> ... 100mg x1 cofa  (1 fila(s))
+38284	HO35019/2	KETOPROFENO 100 MG / 2 ML X 1 AMPOLLA	KETOPROFENO	Ketoprofeno	INYECTABLE	CALOX INTERNATIONAL C.A.	generico_otro_lab	cobeca	lab_generico		KETOPROFENO AMP 100MG X1 COFA	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/521.jpg			
+
+> ... 100mg/2ml i m  (1 fila(s))
+38287	HO35019/5	KETOPROFENO 100 MG / 2 ML X 20 AMPOLLAS	KETOPROFENO	Ketoprofeno	INYECTABLE	CALOX INTERNATIONAL C.A.	generico_otro_lab	farmanselmo	lab_generico		KETOPROFENO AMPOLLA 100MG/2ML I.M (E)	https://pccentro.net.ve/img/s/9/2/7/8/5/92785-large_default.webp			
+
+> ... 5mg x1 geag  (1 fila(s))
+38344	ME43297	LEVONORGESTREL 1.5 MG X 1 TABLETA RECUBIERTA	LEVONORGESTREL	Levonorgestrel	TABLETAS	SYNOKEM PHARMACEUTICALS LIMITED	generico_otro_lab	cobeca	lab_generico		LEVONORGESTREL TAB 1,5MG X1 GEAG	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/50305.jpg			
+
+> ... intrad x5 gmedic  (1 fila(s))
+38353	HO32824	LIDOCAINA - EPINEFRINA 2 % - 1:50.000 SOLUCION INYECTABLE	LIDOCAINA - EPINEFRINA		INYECTABLE	EMPRESA LABORATORIOS AICA	generico_otro_lab	cobeca	lab_generico		LIDOCAINA AMP 2%/2ML INTRAD X5 GMEDIC	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/29478.jpg			
+
+> ... 2mg x10 geag  (1 fila(s))
+38378	ME40887	LOPERAMIDA 2 MG X 10 TABLETAS	LOPERAMIDA	Loperamida	TABLETAS	SM PHARMA C.A.	generico_otro_lab	cobeca	lab_generico		LOPERAMIDA CAP 2MG X10 GEAG	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/25399.jpg			
+
+> ... 2mg x100 portu  (1 fila(s))
+38379	ME43709	LOPERAMIDA 2 MG X 100 COMPRIMIDOS	LOPERAMIDA	Loperamida	COMPRIMIDOS	LABORATORIOS SPEFAR VENEZOLANOS S.A.	generico_otro_lab	cobeca	lab_generico		LOPERAMIDA TAB 2MG X100 PORTU	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/25013.jpg			
+
+> ... x60 arc iris  (1 fila(s))
+38422	ME38235	GLETOP 20 MG X 60 TABLETAS CON CUBIERTA ENTERICA	GLETOP	Esomeprazol Magnesio Trihidrato	TABLETAS	GLENMARK PHARMACEUTICALS LIMITED	generico_otro_lab	cobeca	lab_generico		MAGNESIO GLICINATO CAP X60 ARC IRIS	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/27004.jpg			
+
+> ... bld x30 mdf  (1 fila(s))
+38430	ME41135	MATERNAVIT X 30 CAPSULAS BLANDAS	MATERNAVIT X		CAPSULAS	LAMBO LABORATORIA N.V	generico_otro_lab	cobeca	lab_generico		MATERNAVIT CAP BLD X30 MDF	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/13652.jpg			
+
+> ... 10mg x10 vin  (1 fila(s))
+38469	ME36811	METOCLOPRAMIDA 10 MG X 10 TABLETAS	METOCLOPRAMIDA	Metoclopramida	TABLETAS	CORPORACION INFARMASA S.A.	generico_otro_lab	cobeca	lab_generico		METOCLOPRAMIDA TAB 10MG X10 VIN	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/26729.jpg			
+
+> ... 15 g zukati  (1 fila(s))
+38475	ME42520	METRONIDAZOL 0.75 % GEL	METRONIDAZOL	Metronidazol	GEL	LABORATORIOS SPEFAR VENEZOLANOS S.A.	generico_otro_lab	cobeca	lab_generico		METRONIDAZOL GEL 0,75% X 15 G ZUKATI	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/28989.jpg			
+
+> ... x10 cr bel  (1 fila(s))
+38517	ME36486	MOXIFLOXACINA 400 MG X 10 COMPRIMIDOS RECUBIERTOS	MOXIFLOXACINA	Moxifloxacino	COMPRIMIDOS	SM PHARMA C.A.	generico_otro_lab	cobeca	lab_generico		MOXIFLOXACINA TAB 400MG X10 CR BEL	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/25226.jpg			
+
+> ... 250mg x10 ccm  (1 fila(s))
+38531	ME34793	NAPROXENO 250 MG X 10 TABLETAS	NAPROXENO	Naproxeno	TABLETAS	EMPRESA LABORATORIOS MEDSOL	generico_otro_lab	cobeca	lab_generico		NAPROXENO COMP 250MG X10 CCM	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/53117.jpg			
+
+> ... x10 tabletas land  (1 fila(s))
+38554	ME25984/2	NIFEDIPINA 10 MG X 10 COMPRIMIDOS DISPERSABLES	NIFEDIPINA	Nifedipino	COMPRIMIDOS	LABORATORIOS LETI S.A.V.	generico_otro_lab	farmanselmo	lab_generico		NIFEDIPINA 10 MG X10 TABLETAS LAND (E)	https://pccentro.net.ve/img/s/5/9/8/4/5/59845-large_default.webp			
+
+> ... 100 000ui/ml suspencion  (1 fila(s))
+38559	ME44261	NISTATINA 100.000 UI / ML SUSPENSION	NISTATINA	Nistatina	SUSPENSION ORAL	ASPEN BIOPHARMA LABS PVT. LTD.	generico_otro_lab	farmanselmo	lab_generico		NISTATINA 100.000UI/ML SUSPENCION (E)	https://pccentro.net.ve/img/s/5/5/4/2/9/55429-large_default.webp			
+
+> ... 100mg x300 laproff  (1 fila(s))
+38562	ME43051/3	NITROFURANTOINA 100 MG X 300 TABLETAS RECUBIERTAS	NITROFURANTOINA	Nitrofurantoina	TABLETAS	RONALD PHARMACEUTICALS PVT. LTD.	generico_otro_lab	cobeca	lab_generico		NITROFURANTOINA CAP 100MG X300 LAPROFF	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/51871.jpg			
+
+> ... capsulas elea zuoz  (1 fila(s))
+38627	ME36024	ORLISTAT 120 MG X 30 CAPSULAS	ORLISTAT	Orlistat	CAPSULAS	LABORATORIOS LETI S.A.V.	generico_otro_lab	farmanselmo	lab_generico		CRISPLUS ORLISTAT 120MG x30 CAPSULAS ELEA ZUOZ (E)	https://pccentro.net.ve/img/s/7/9/3/8/1/79381-large_default.webp			
+
+> ... 100mg/ml 10ml portu  (1 fila(s))
+38637	ME44653	ATAREM 100 MG / 5 ML SOLUCION ORAL	ATAREM	Paracetamol	SOLUCION ORAL	LABORATORIOS SIEGFRIED S.A.	generico_otro_lab	cobeca	lab_generico		PARACETAMOL GTS 100MG/ML 10ML PORTU	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/23735.jpg			
+
+> ... x20 capsulas valmorca  (1 fila(s))
+38695	ME42570/2	PREGABALINA 150 MG X 20 CAPSULAS	PREGABALINA	Pregabalina	CAPSULAS	REMUS PHARMACEUTICALS PVT. LTD.	generico_otro_lab	farmanselmo	lab_generico		PRELIVAL PREGABALINA 150 MG x20 CÁPSULAS VALMORCA (E)	https://pccentro.net.ve/img/s/2/5/8/7/0/25870-large_default.webp			
+
+> ... x 20 milab  (1 fila(s))
+38702	ME39191	PROPRANOLOL 40 MG X 20 TABLETAS	PROPRANOLOL		TABLETAS	LABORATORIOS ALFA C X A	generico_otro_lab	cobeca	lab_generico		PROPRANOLOL CLORH COM 40MG X 20 MILAB	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/50368.jpg			
+
+> ... x 10 farmamed  (1 fila(s))
+38708	ME43431/2	QUETIAPINA 100 MG X 10 TABLETAS RECUBIERTAS	QUETIAPINA		TABLETAS	PINNACLE LIFE SCIENCE PVT. LTD.	generico_otro_lab	cobeca	lab_generico		QUETIAPINA TAB 100MG X 10 FARMAMED	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/50162.jpg			
+
+> ... mg x30 comprimidos  (1 fila(s))
+38718	ME37058	RAMIPRIL 2.5 MG X 30 COMPRIMIDOS	RAMIPRIL	Ramipril	COMPRIMIDOS	LABORATORIOS SPEFAR VENEZOLANOS S.A.	generico_otro_lab	farmanselmo	lab_generico		RAMIPRES (RAMIPRIL) 2.5 MG X30 COMPRIMIDOS (E)	https://pccentro.net.ve/img/s/8/3/9/7/9/83979-large_default.webp			
+
+> ... 20mg x10 vin  (1 fila(s))
+38745	ME42923/2	RIVAROXABAN 20 MG X 10 TABLETAS RECUBIERTAS	RIVAROXABAN	Rivaroxaban	TABLETAS	WEST-COAST PHARMACEUTICAL WORKS LTD	generico_otro_lab	cobeca	lab_generico		RIVAROXABAN TAB 20MG X10 VIN	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/26738.jpg			
+
+> ... 1meq x 10ml  (1 fila(s))
+38810	HO37696	SULFATO DE MAGNESIO 10 % SOLUCION INYECTABLE	SULFATO DE MAGNESIO	Citrato Magnesio	INYECTABLE	EMPRESA LABORATORIOS AICA	generico_otro_lab	cobeca	lab_generico		SULFATO D/MAGNESIO SOL INY 1MEQ X 10ML	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/28880.jpg			
+
+> ... 80mg/15ml 100ml and  (1 fila(s))
+38852	ME22980	NUELIN 80 MG / 15 ML JARABE	NUELIN	Teofilina	JARABE	LABORATORIOS VARGAS S.A.	generico_otro_lab	cobeca	lab_generico		TEOFILINA SOL ORAL 80MG/15ML 100ML AND	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/53266.jpg			
+
+> ... x30 tabletas naturalifes  (1 fila(s))
+38964	ME44099/4	VITAMINA C 500 MG X 30 TABLETAS MASTICABLES SABOR A NARANJA	VITAMINA C	Vitamina C	TABLETAS	HIRAL LABS LIMITED	generico_otro_lab	farmanselmo	lab_generico		BITEX COMPLEJO B VITAMINA B1/B2/B6/B12 X30 TABLETAS NATURALIFES (E)	https://pccentro.net.ve/img/s/6/8/9/1/0/68910-large_default.webp			
+
+> ... 200mg x1 glob/c  (1 fila(s))
+38981	HO33694	VORCUM 200 MG POLVO LIOFILIZADO PARA SOLUCION PARA INFUSION	VORCUM	Voriconazol	INYECTABLE	PHARMACIA & UPJOHN COMPANY LLC.	generico_otro_lab	cobeca	lab_generico		VORICONAZOL AMP 200MG X1 GLOB/C	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/27731.jpg			
+
+> ... ac salicilico 30ml  (1 fila(s))
+39341	ME21271	PINVEX 5 % - 1 % SOLUCION	PINVEX	Salicilico Acido	LOCION	LABORATORIO COFASA S.A.	generico_otro_lab	cobeca	lab_generico		SERUM VERABELL AC SALICILICO 30ML	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/52918.jpg			
+
+> ... 50mcg x200dosis mdf  (1 fila(s))
+39448	ME32411	BUDESONIDA 50 MCG / DOSIS SUSPENSION PARA INHALACION ORAL	BUDESONIDA	Budesonida	SUSPENSION ORAL	LABORATORIO ALDO UNION S.L.	generico_otro_lab	cobeca	lab_generico		BUDESONIDA INH PED 50MCG X200DOSIS MDF	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/4804.jpg			
+
+> ... 12mg/ml x 15ml  (1 fila(s))
+39450	ME44027	NAFAZOLINA CLORHIDRATO 0.012 % SOLUCION OFTALMICA	NAFAZOLINA CLORHIDRATO	Nafazolina	SOLUCION OFTALMICA	INDIANA OPHTHALMICS	generico_otro_lab	cobeca	lab_generico		NAFAZOLINA HCL SOL/OFT 0,12MG/ML X 15ML	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/29413.jpg			
+
+> ... 15g cr zuk  (1 fila(s))
+39458	ME42403	CLINDAMICINA 1 % GEL TOPICO	CLINDAMICINA	Clindamicina	GEL	LABORATORIOS SPEFAR VENEZOLANOS S.A.	generico_otro_lab	cobeca	lab_generico		CLINDAMICINA GEL TOP 1% 15G CR ZUK	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/23694.jpg			
+
+> ... 1 50g sgg  (1 fila(s))
+39472	ME37301	DICLOFENAC SODICO 1 % GEL	DICLOFENAC SODICO	Diclofenaco	GEL	LABORATORIOS VARGAS S.A.	generico_otro_lab	cobeca	lab_generico		DICLOFENAC SOD GEL 1% 50G SGG	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/24336.jpg			
+
+> ... x 60 herbaplant  (1 fila(s))
+39522	HO41500/3	GLUTANIL AL 20 % X 60 AMPOLLAS	GLUTANIL AL	Glutamina	INYECTABLE	LABORATORIO BEHRENS C.A.	generico_otro_lab	cobeca	lab_generico		L-GLUTAMINA/VIT B12 X 60 HERBAPLANT	https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/28485.jpg			
+
+> ... x30 tabletas cofasa  (1 fila(s))
+39545	ME43010	DESLORATADINA - MONTELUKAST 5 MG - 10 MG X 30 TABLETAS RECUBIERTAS	DESLORATADINA - MONTELUKAST	Desloratadina - Montelukast	TABLETAS	MASCOT HEALTH SERIES PVT. LTD.	generico_otro_lab	farmanselmo	lab_generico		AIRCOF PLUS MONTELUKAST+DESLORATADINA 10MG+5MG x30 TABLETAS COFASA (E)	https://pccentro.net.ve/img/s/8/1/9/4/8/81948-large_default.webp			
+
+> ... i v ampolla  (1 fila(s))
+39555	HO44444	OMEPRAZOL 40 MG X 10 AMPOLLAS	OMEPRAZOL	Omeprazol	INYECTABLE	ZHEJIANG XIANJU PHARMACEUTICAL CO. LTD. (TAIZHOU)	generico_otro_lab	farmanselmo	lab_generico		OMEPRAZOL 40MG I.V AMPOLLA (E)	https://pccentro.net.ve/img/s/7/7/8/8/6/77886-large_default.webp			
