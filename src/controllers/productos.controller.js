@@ -79,6 +79,7 @@ export async function getProductos(req, res) {
     search, marca_id, sort, molecula, categoria,
     linea, laboratorio, forma, disponible, sin_precio,
     precio_min, precio_max,
+    ids,
     page, limit
   } = req.query;
 
@@ -166,6 +167,18 @@ export async function getProductos(req, res) {
       query = labs.length === 1
         ? query.ilike('laboratorio', `%${laboratorio}%`)
         : query.in('laboratorio', labs);
+    }
+    // `ids` (modo lista manual de la vitrina): comma-separated de integers.
+    // Exige que cada valor sea un entero positivo; si llega vacío → respuesta vacía.
+    if (ids !== undefined) {
+      const idList = String(ids).split(',').map((s) => s.trim()).filter(Boolean);
+      const idNumericos = idList.map(Number);
+      if (idList.length === 0 || idNumericos.some((n) => !Number.isInteger(n) || n <= 0)) {
+        return usarPaginacion
+          ? res.json({ productos: [], total: 0, hasMore: false, page: pageNum })
+          : res.json([]);
+      }
+      query = query.in('id', idNumericos);
     }
     if (forma) query = query.in('forma', forma.split(','));
     if (disponible === 'true') query = query.eq('disponible', true);
