@@ -1,333 +1,164 @@
 ﻿Generico_otro_lab - FILAS CON aprobado=no (omitidas del --apply)
-Fecha del propuesta: 2026-09-24 | Total filas propuesta: 429 | aprobado=no: 55
+Fecha del propuesta: 2026-09-24 | Total filas propuesta: 429 | aprobado=no: 27
 
-id_fila=1 | accion=ambiguo | producto_id=37296 | target_id=
+id_fila= | accion=ya_tiene_foto | producto_id=37296 | target_id=38570
     original : ACIDO FOLICO 5 MG X 10 COMPRIMIDOS
-    lab_real : LABORATORIOS SIEGFRIED, S.A. | motivo: 2+ candidatos empatados en mismo tier
+    lab_real : MEGALABS S.A. | motivo: producto objetivo ya tiene foto (#38570)
     desc     : ACIDO FOLICO TAB 5MG X10 MEY
     foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/20331.jpg
 
-id_fila=5 | accion=ya_tiene_foto | producto_id=37311 | target_id=
-    original : ACETAMINOFEN 650 MG X 30 TABLETAS
-    lab_real : LABORATORIOS LETI, S.A.V. | motivo: producto objetivo ya tiene foto (#39013)
-    desc     : ACETAMINOFEN COMP 650MG X30 LETI
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/15591.jpg
-
-id_fila=10 | accion=ambiguo | producto_id=37317 | target_id=
-    original : ACETAMINOFEN 500 MG X 30 COMPRIMIDOS
-    lab_real : LABORATORIOS L.O. OFTALMI, C.A. | motivo: 2+ candidatos empatados en mismo tier
-    desc     : ACETAMINOFEN 500MG x30 TABLETAS OFTALMI (E)
-    foto     : https://pccentro.net.ve/img/s/8/7/8/2/6/87826-large_default.webp
-
-id_fila=22 | accion=ambiguo | producto_id=37356 | target_id=
+id_fila= | accion=ya_tiene_foto | producto_id=37356 | target_id=38567
     original : ACIDO FOLICO 10 MG X 10 COMPRIMIDOS
-    lab_real : LABORATORIOS SIEGFRIED, S.A. | motivo: 2+ candidatos empatados en mismo tier
+    lab_real : MEGALABS S.A. | motivo: producto objetivo ya tiene foto (#38567)
     desc     : ACIDO FOLICO TAB 10MG X10 MEY
     foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/20330.jpg
 
-id_fila=28 | accion=ya_tiene_foto | producto_id=37383 | target_id=
-    original : ALBENDAZOL 200 MG X 2 COMPRIMIDOS
-    lab_real : LABORATORIO PLUSANDEX DE FARMACEUTICOS UNIDOS, PLUSANDEX, C.A. | motivo: producto objetivo ya tiene foto (#37386)
-    desc     : ALBENDAZOL TAB 200MG X2 PLX
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/17968.jpg
-
-id_fila=36 | accion=ya_tiene_foto | producto_id=37429 | target_id=
-    original : AMLODIPINA 10 MG X 20 TABLETAS
-    lab_real : LABORATORIOS KIMICEG, C.A. | motivo: producto objetivo ya tiene foto (#39036)
-    desc     : AMLODIPINA TAB 10MG X20 KIMIC
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/92638.jpg
-
-id_fila=51 | accion=ya_tiene_foto | producto_id=37516 | target_id=
+id_fila= | accion=ya_tiene_foto | producto_id=37516 | target_id=37525
     original : ATORVACOF 20 MG X 30 TABLETAS RECUBIERTAS
-    lab_real : LABORATORIO LA SANTE, C.A. | motivo: producto objetivo ya tiene foto (#37525)
+    lab_real : LABORATORIO COFASA S.A. | motivo: producto objetivo ya tiene foto (#37525)
     desc     : ATORVASTATINA TAB REC 20MG X30 PHARME
     foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/22227.jpg
 
-id_fila=52 | accion=ya_tiene_foto | producto_id=37518 | target_id=
-    original : ATORVASTATINA 20 MG X 14 COMPRIMIDOS RECUBIERTOS
-    lab_real : LABORATORIO LA SANTE, C.A. | motivo: producto objetivo ya tiene foto (#37525)
-    desc     : ATORVASTATINA TAB 20MG X14 PHARME
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/11565.jpg
-
-id_fila=53 | accion=ya_tiene_foto | producto_id=37522 | target_id=
+id_fila= | accion=ya_tiene_foto | producto_id=37522 | target_id=37525
     original : ATORVASTATINA 20 MG X 30 TABLETAS RECUBIERTAS
-    lab_real : LABORATORIO LA SANTE, C.A. | motivo: producto objetivo ya tiene foto (#37525)
+    lab_real : EMPRESA LABORATORIOS MEDSOL | motivo: producto objetivo ya tiene foto (#37525)
     desc     : ATORVASTATINA TAB REC 20MG X30 PHARME
     foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/22227.jpg
 
-id_fila=58 | accion=ya_tiene_foto | producto_id=37545 | target_id=
-    original : AZITROMICINA 500 MG X 3 COMPRIMIDOS RECUBIERTOS
-    lab_real : CALOX INTERNATIONAL, C.A. | motivo: producto objetivo ya tiene foto (#37770)
-    desc     : AZITROMICINA TAB 500MG X3 CLX
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/11009.jpg
-
-id_fila=73 | accion=ya_tiene_foto | producto_id=37670 | target_id=
-    original : CAPTOPRIL 25 MG X 20 COMPRIMIDOS
-    lab_real : LABORATORIOS KIMICEG, C.A. | motivo: producto objetivo ya tiene foto (#39122)
-    desc     : CAPTOPRIL TAB 25MG X20 KIMIC
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/3029.jpg
-
-id_fila=74 | accion=ya_tiene_foto | producto_id=37671 | target_id=
-    original : CAPTOPRIL 25 MG X 20 TABLETAS
-    lab_real : LABORATORIOS KIMICEG, C.A. | motivo: producto objetivo ya tiene foto (#39122)
-    desc     : CAPTOPRIL TAB 25MG X20 KIMIC
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/3029.jpg
-
-id_fila=85 | accion=ambiguo | producto_id=37714 | target_id=
+id_fila= | accion=ambiguo | producto_id=37714 | target_id=37712|38374
     original : CEFIXIMA 400 MG X 5 TABLETAS RECUBIERTAS
-    lab_real : LABORATORIOS LETI, S.A.V. | motivo: 2+ candidatos empatados en mismo tier
+    lab_real : CALOX INTERNATIONAL C.A. | motivo: 2+ candidatos empatados en mismo tier
     desc     : CEFIXIMA CAP 400MG X5 LETI
     foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/29896.jpg
 
-id_fila=93 | accion=ya_tiene_foto | producto_id=37751 | target_id=
-    original : CIPROFLOXACINA 500 MG X 14 TABLETAS RECUBIERTAS
-    lab_real : LABORATORIOS LETI, S.A.V. | motivo: producto objetivo ya tiene foto (#38334)
-    desc     : CIPROFLOXACINA COMP REC 500 X14 LETI
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/51885.jpg
-
-id_fila=116 | accion=ambiguo | producto_id=37874 | target_id=
+id_fila= | accion=ambiguo | producto_id=37874 | target_id=37873|39173
     original : DEFLAZACORT 6 MG X 10 COMPRIMIDOS
-    lab_real : CALOX INTERNATIONAL, C.A. | motivo: 2+ candidatos empatados en mismo tier
+    lab_real : LABORATORIOS LETI S.A.V. | motivo: 2+ candidatos empatados en mismo tier
     desc     : DEFLAZACORT TAB 6MG X10 CLX
     foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/91527.jpg
 
-id_fila=123 | accion=ya_tiene_foto | producto_id=37921 | target_id=
-    original : DICARVEX 25 MG X 30 TABLETAS
-    lab_real : LABORATORIOS KIMICEG, C.A. | motivo: producto objetivo ya tiene foto (#39130)
-    desc     : CARVEDILOL TAB REC 25MG X30 KIMIC
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/54225.jpg
-
-id_fila=126 | accion=ambiguo | producto_id=37931 | target_id=
+id_fila= | accion=ambiguo | producto_id=37931 | target_id=37933|39185
     original : DICLOFENACO POTASICO 50 MG X 20 TABLETAS RECUBIERTAS
-    lab_real : LABORATORIOS KIMICEG, C.A. | motivo: 2+ candidatos empatados en mismo tier
+    lab_real : JIANGXI XIER KANGTAI PHARMACEUTICAL CO. LTD | motivo: 2+ candidatos empatados en mismo tier
     desc     : DICLOFENACO POTA TAB 50MG X20 KIMIC
     foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/55.jpg
 
-id_fila=128 | accion=ambiguo | producto_id=37934 | target_id=
+id_fila= | accion=ambiguo | producto_id=37934 | target_id=37933|39185
     original : DICLOFENACO POTASICO 50 MG X 20 TABLETAS CON RECUBRIMIENTO ENTERICO
-    lab_real : LABORATORIOS KIMICEG, C.A. | motivo: 2+ candidatos empatados en mismo tier
+    lab_real : VIDA LABORATORIES (P) LIMITED | motivo: 2+ candidatos empatados en mismo tier
     desc     : DICLOFENACO POTA TAB 50MG X20 KIMIC
     foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/55.jpg
 
-id_fila=143 | accion=ambiguo | producto_id=38019 | target_id=
-    original : ESCITALOPRAM 20 MG X 28 COMPRIMIDOS RECUBIERTOS
-    lab_real : CALOX INTERNATIONAL, C.A. | motivo: 2+ candidatos empatados en mismo tier
-    desc     : ESCITALOPRAM TAB 20MG X28 CLX
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/53635.jpg
-
-id_fila=148 | accion=ambiguo | producto_id=38045 | target_id=
+id_fila= | accion=ambiguo | producto_id=38045 | target_id=38045|38046|38047
     original : ESPIRONOLACTONA 25 MG X 10 TABLETAS
-    lab_real : LABORATORIOS SIEGFRIED, S.A. | motivo: 2+ candidatos empatados en mismo tier
+    lab_real : LABORATORIOS SIEGFRIED S.A. | motivo: 2+ candidatos empatados en mismo tier
     desc     : ESPIRONOLACTONA 25 MG 20 TABLETAS MEYER (E)
     foto     : https://pccentro.net.ve/img/s/2/4/9/9/8/24998-large_default.webp
 
-id_fila=163 | accion=ya_tiene_foto | producto_id=38145 | target_id=
-    original : FUROSEMIDA 40 MG X 24 TABLETAS
-    lab_real : LABORATORIOS SIEGFRIED, S.A. | motivo: producto objetivo ya tiene foto (#38143)
-    desc     : FUROSEMIDA TAB 40MG X24 MEY
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/5296.jpg
+id_fila= | accion=ya_tiene_foto | producto_id=38196 | target_id=38400
+    original : LOSARTAN POTASICO - HIDROCLOROTIAZIDA 100 MG - 25 MG X 30 COMPRIMIDOS RECUB
+    lab_real : LABORATORIOS VARGAS S.A. | motivo: producto objetivo ya tiene foto (#38400)
+    desc     : LOSARTAN HCT TAB REC 100/25MGX30 PHARME
+    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/99859.jpg
 
-id_fila=170 | accion=ya_tiene_foto | producto_id=38191 | target_id=
-    original : LOSARTAN POTASICO - HIDROCLOROTIAZIDA 100 MG - 25 MG X 10 COMPRIMIDOS RECUBIERTOS
-    lab_real : LABORATORIO LA SANTE, C.A. | motivo: producto objetivo ya tiene foto (#38400)
-    desc     : LOSARTAN/HCT TAB REC 100/25MG X10 PHARME
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/22228.jpg
-
-id_fila=171 | accion=ya_tiene_foto | producto_id=38195 | target_id=
-    original : LOSARTAN POTASICO - HIDROCLOROTIAZIDA 100 MG - 25 MG X 10 COMPRIMIDOS RECUB
-    lab_real : LABORATORIO LA SANTE, C.A. | motivo: producto objetivo ya tiene foto (#38400)
-    desc     : LOSARTAN/HCT TAB REC 100/25MG X10 PHARME
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/22228.jpg
-
-id_fila=176 | accion=ya_tiene_foto | producto_id=38255 | target_id=
+id_fila= | accion=ya_tiene_foto | producto_id=38255 | target_id=38205
     original : IRBESARTAN 150 MG X 30 TABLETAS
-    lab_real : LABORATORIOS VALMOR, C.A. | motivo: producto objetivo ya tiene foto (#38205)
+    lab_real : SM PHARMA C.A. | motivo: producto objetivo ya tiene foto (#38205)
     desc     : IBECAR IRBESARTAN 150 MG x30 TABLETAS VALMORCA (E)
     foto     : https://pccentro.net.ve/img/s/5/5/0/4/9/55049-large_default.webp
 
-id_fila=180 | accion=ambiguo | producto_id=38285 | target_id=
-    original : KETOPROFENO 100 MG / 2 ML X 2 AMPOLLAS
-    lab_real : LABORATORIOS LETI, S.A.V. | motivo: 2+ candidatos empatados en mismo tier
-    desc     : KETOPROFENO AMP 100MG/2ML X2 LETI
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/5201.jpg
+id_fila= | accion=ambiguo | producto_id=38506 | target_id=39028|39310
+    original : MONTELUKAST 5 MG X 30 TABLETAS MASTICABLES
+    lab_real : CALOX INTERNATIONAL C.A. | motivo: 2+ candidatos empatados en mismo tier
+    desc     : MONTELUKAST TAB MAST PED 5MG X30 L.O
+    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/92814.jpg
 
-id_fila=209 | accion=ambiguo | producto_id=38397 | target_id=
-    original : LOSARTAN POTASICO 50 MG X 20 COMPRIMIDOS RECUBIERTOS
-    lab_real : LABORATORIOS KIMICEG, C.A. | motivo: 2+ candidatos empatados en mismo tier
-    desc     : LOSARTAN POTA TAB REC 50MG X20 KIMIC
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/92637.jpg
-
-id_fila=211 | accion=ya_tiene_foto | producto_id=38399 | target_id=
-    original : LOSARTAN POTASICO - HIDROCLOROTIAZIDA 100 MG - 25 MG X 10 TABLETAS RECUBIERTAS
-    lab_real : LABORATORIO LA SANTE, C.A. | motivo: producto objetivo ya tiene foto (#38400)
-    desc     : LOSARTAN/HCT TAB REC 100/25MG X10 PHARME
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/22228.jpg
-
-id_fila=214 | accion=ya_tiene_foto | producto_id=38405 | target_id=
-    original : LOSARTAN POTASICO - HIDROCLOROTIZADA 100 MG - 25 MG X 10 TABLETAS RECUBIERTAS
-    lab_real : LABORATORIO LA SANTE, C.A. | motivo: producto objetivo ya tiene foto (#38400)
-    desc     : LOSARTAN/HCT TAB REC 100/25MG X10 PHARME
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/22228.jpg
-
-id_fila=215 | accion=ambiguo | producto_id=38407 | target_id=
-    original : LOSARTAN POTASICO 50 MG X 10 TABLETAS RECUBIERTAS
-    lab_real : LABORATORIOS LETI, S.A.V. | motivo: 2+ candidatos empatados en mismo tier
-    desc     : LOSARTAN POTA COMP 50MG X10 LETI
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/3399.jpg
-
-id_fila=259 | accion=ya_tiene_foto | producto_id=38590 | target_id=
-    original : OLMESARTAN MEDOXOMILO 20 MG X 10 TABLETAS RECUBIERTAS
-    lab_real : LABORATORIO LA SANTE, C.A. | motivo: producto objetivo ya tiene foto (#38595)
-    desc     : OLMESARTAN MEDO TAB 20MG X10 PHARME
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/18568.jpg
-
-id_fila=260 | accion=ya_tiene_foto | producto_id=38591 | target_id=
+id_fila= | accion=ya_tiene_foto | producto_id=38591 | target_id=38587
     original : OLMESARTAN MEDOXOMILO 20 MG X 30 TABLETAS RECUBIERTAS
-    lab_real : LABORATORIOS LETI, S.A.V. | motivo: producto objetivo ya tiene foto (#38587)
+    lab_real : SYNOKEM PHARMACEUTICALS LIMITED | motivo: producto objetivo ya tiene foto (#38587)
     desc     : OLMESARTAN MEDOXOMIL COM/REC 20MG X 30
     foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/99097.jpg
 
-id_fila=261 | accion=ya_tiene_foto | producto_id=38592 | target_id=
+id_fila= | accion=ya_tiene_foto | producto_id=38592 | target_id=38587
     original : OLMESARTAN MEDOXOMIL 20 MG X 30 TABLETAS RECUBIERTAS
-    lab_real : LABORATORIOS LETI, S.A.V. | motivo: producto objetivo ya tiene foto (#38587)
+    lab_real : LABORATORIO LA SANTE C.A. | motivo: producto objetivo ya tiene foto (#38587)
     desc     : OLMESARTAN MEDOXOMIL COM/REC 20MG X 30
     foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/99097.jpg
 
-id_fila=265 | accion=ambiguo | producto_id=38599 | target_id=
-    original : OMEPRAZOL 20 MG X 30 CAPSULAS CON MICROGRANULOS ENTERICOS
-    lab_real : LABORATORIOS LETI, S.A.V. | motivo: 2+ candidatos empatados en mismo tier
-    desc     : OMEPRAZOL CAP/MICRO G 20MG X 30 GENVEN
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/29950.jpg
-
-id_fila=267 | accion=ya_tiene_foto | producto_id=38608 | target_id=
-    original : OMEPRAZOL 40 MG X 30 CAPSULAS CON MICROGRANULOS GASTRORRESISTENTES
-    lab_real : LABORATORIOS L.O. OFTALMI, C.A. | motivo: producto objetivo ya tiene foto (#39326)
-    desc     : OMEPRAZOL CAP 40MG X 30 OFTALMI
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/50576.jpg
-
-id_fila=268 | accion=ya_tiene_foto | producto_id=38609 | target_id=
-    original : OMEPRAZOL 40 MG X 7 CAPSULAS CON MICROGRANULOS GASTRORRESISTENTES
-    lab_real : LABORATORIOS L.O. OFTALMI, C.A. | motivo: producto objetivo ya tiene foto (#39327)
-    desc     : OMEPRAZOL CAP 40MG X 7 OFTALMI
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/29583.jpg
-
-id_fila=269 | accion=ya_tiene_foto | producto_id=38610 | target_id=
-    original : OMEPRAZOL 40 MG X 30 CAPSULAS GASTRORRESISTENTES
-    lab_real : LABORATORIOS L.O. OFTALMI, C.A. | motivo: producto objetivo ya tiene foto (#39326)
-    desc     : OMEPRAZOL CAP 40MG X 30 OFTALMI
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/50576.jpg
-
-id_fila=293 | accion=ya_tiene_foto | producto_id=38695 | target_id=
+id_fila= | accion=ya_tiene_foto | producto_id=38695 | target_id=38698
     original : PREGABALINA 150 MG X 20 CAPSULAS
-    lab_real : LABORATORIOS VALMOR, C.A. | motivo: producto objetivo ya tiene foto (#38698)
+    lab_real : REMUS PHARMACEUTICALS PVT. LTD. | motivo: producto objetivo ya tiene foto (#38698)
     desc     : PRELIVAL PREGABALINA 150 MG x20 CÁPSULAS VALMORCA (E)
     foto     : https://pccentro.net.ve/img/s/2/5/8/7/0/25870-large_default.webp
 
-id_fila=305 | accion=ya_tiene_foto | producto_id=38733 | target_id=
+id_fila= | accion=ya_tiene_foto | producto_id=38733 | target_id=37893
     original : RINIFLU 2.5 MG / 5 ML JARABE
-    lab_real : LABORATORIO LA SANTE, C.A. | motivo: producto objetivo ya tiene foto (#37893)
+    lab_real : BIOTECH LABORATORIOS C.A. | motivo: producto objetivo ya tiene foto (#37893)
     desc     : DESLORATADINA JBE PED 2,5/5ML60ML PHARME
     foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/11665.jpg
 
-id_fila=310 | accion=ya_tiene_foto | producto_id=38750 | target_id=
-    original : ROSUVASTATINA 20 MG X 10 TABLETAS RECUBIERTAS
-    lab_real : LABORATORIO LA SANTE, C.A. | motivo: producto objetivo ya tiene foto (#37525)
-    desc     : ROSUVASTATINA TAB REC 20MG X10 PHARME
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/24316.jpg
-
-id_fila=338 | accion=ya_tiene_foto | producto_id=38927 | target_id=
+id_fila= | accion=ya_tiene_foto | producto_id=38927 | target_id=39406
     original : VASATEN HCT 80 MG - 12.5 MG X 10 COMPRIMIDOS RECUBIERTOS
-    lab_real : LABORATORIOS VARGAS, S.A. | motivo: producto objetivo ya tiene foto (#39406)
+    lab_real : LABORATORIOS LETI S.A.V. | motivo: producto objetivo ya tiene foto (#39406)
     desc     : VALSARTAN HCT TAB/REC 80/12.5MG X10 VARG
     foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/50173.jpg
 
-id_fila=340 | accion=ya_tiene_foto | producto_id=38929 | target_id=
+id_fila= | accion=ya_tiene_foto | producto_id=38929 | target_id=39406
     original : VALSARTAN - HIDROCLOROTIAZIDA 80 MG - 12.5 MG X 10 TABLETAS RECUBIERTAS
-    lab_real : LABORATORIOS VARGAS, S.A. | motivo: producto objetivo ya tiene foto (#39406)
+    lab_real : CALOX INTERNATIONAL C.A. | motivo: producto objetivo ya tiene foto (#39406)
     desc     : VALSARTAN HCT TAB/REC 80/12.5MG X10 VARG
     foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/50173.jpg
 
-id_fila=342 | accion=ya_tiene_foto | producto_id=38932 | target_id=
-    original : VALSARTAN 80 MG X 14 CAPSULAS
-    lab_real : LABORATORIOS LETI, S.A.V. | motivo: producto objetivo ya tiene foto (#38921)
-    desc     : VALSARTAN CAP 80MG X14 LETI
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/22949.jpg
-
-id_fila=343 | accion=ya_tiene_foto | producto_id=38933 | target_id=
-    original : VALSARTAN 80 MG X 30 CAPSULAS
-    lab_real : LABORATORIOS LETI, S.A.V. | motivo: producto objetivo ya tiene foto (#38920)
-    desc     : VALSARTAN CAP 80MG X30 GNV LETI
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/99797.jpg
-
-id_fila=350 | accion=ambiguo | producto_id=39020 | target_id=
+id_fila= | accion=ambiguo | producto_id=39020 | target_id=39023|39319
     original : ACIDO FOLICO 10 MG / ML SOLUCION ORAL
-    lab_real : LABORATORIOS SIEGFRIED, S.A. | motivo: 2+ candidatos empatados en mismo tier
+    lab_real : LABORATORIOS LETI S.A.V. | motivo: 2+ candidatos empatados en mismo tier
     desc     : ACIDO FOLICO GTS 10MG 15ML MEY
     foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/2643.jpg
 
-id_fila=351 | accion=ya_tiene_foto | producto_id=39042 | target_id=
-    original : AMOVIN 500 MG X 3 TABLETAS RECUBIERTAS
-    lab_real : CALOX INTERNATIONAL, C.A. | motivo: producto objetivo ya tiene foto (#37770)
-    desc     : AZITROMICINA TAB 500MG X3 CLX
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/11009.jpg
+id_fila= | accion=ya_tiene_foto | producto_id=39108 | target_id=37583
+    original : BISOPROLOL FUMARATO - HIDROCLOROTIAZIDA 10 MG - 6.25 MG COMPRIMIDOS RECUBIERTOS
+    lab_real : LABORATORIOS SPEFAR VENEZOLANOS S.A. | motivo: producto objetivo ya tiene foto (#37583)
+    desc     : BIOTALOL HCT BISOPROLOL FUMARATO+HIDROCLOROTIAZIDA 10 MG+6.25 MG COMPRIMIDOS LETI (E)
+    foto     : https://pccentro.net.ve/img/s/6/9/8/7/9/69879-large_default.webp
 
-id_fila=358 | accion=ya_tiene_foto | producto_id=39110 | target_id=
+id_fila= | accion=ambiguo | producto_id=39110 | target_id=39054|39106
     original : BISOPROLOL FUMARATO 2.5 MG COMPRIMIDOS RECUBIERTOS
-    lab_real : CALOX INTERNATIONAL, C.A. | motivo: producto objetivo ya tiene foto (#39055)
+    lab_real : LABORATORIOS SPEFAR VENEZOLANOS S.A. | motivo: 2+ candidatos empatados en mismo tier
     desc     : BISOPROLOL TAB 2,5MG X 30 CALOX
     foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/97002.jpg
 
-id_fila=368 | accion=ya_tiene_foto | producto_id=39179 | target_id=
+id_fila= | accion=ambiguo | producto_id=39179 | target_id=37380|38504
     original : DESLORATADINA - MONTELUKAST 5 MG - 10 MG COMPRIMIDOS RECUBIERTOS
-    lab_real : LABORATORIOS L.O. OFTALMI, C.A. | motivo: producto objetivo ya tiene foto (#39560)
+    lab_real : LABORATORIOS LETI S.A.V. | motivo: 2+ candidatos empatados en mismo tier
     desc     : AIRON DUO MONTELUKAST+DESLORATADINA 10MG+5MG x10 TABLETAS OFTALMI (E)
     foto     : https://pccentro.net.ve/img/s/7/2/5/2/6/72526-large_default.webp
 
-id_fila=385 | accion=ambiguo | producto_id=39328 | target_id=
-    original : OMEPRAZOL 20 MG X 28 CAPSULAS
-    lab_real : CALOX INTERNATIONAL, C.A. | motivo: 2+ candidatos empatados en mismo tier
-    desc     : OMEPRAZOL CAP 20MG X28 CLX
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/8254.jpg
-
-id_fila=392 | accion=ambiguo | producto_id=39361 | target_id=
+id_fila= | accion=ambiguo | producto_id=39361 | target_id=38777|38857
     original : SERTRALINA 100 MG COMPRIMIDOS
-    lab_real : MEGALABS, S.A. | motivo: 2+ candidatos empatados en mismo tier
+    lab_real : LABORATORIOS SPEFAR VENEZOLANOS S.A. | motivo: 2+ candidatos empatados en mismo tier
     desc     : TIALIN SERTRALINA 100MG x10 COMPRIMIDOS MEGALABS (E)
     foto     : https://pccentro.net.ve/img/s/8/4/0/2/8/84028-large_default.webp
 
-id_fila=395 | accion=ya_tiene_foto | producto_id=39384 | target_id=
-    original : TARVINA 20 MG X 10 TABLETAS RECUBIERTAS
-    lab_real : LABORATORIOS LETI, S.A.V. | motivo: producto objetivo ya tiene foto (#38749)
-    desc     : ATORVASTATINA COMP 20MG X10 LETI
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/4070.jpg
-
-id_fila=396 | accion=ya_tiene_foto | producto_id=39385 | target_id=
+id_fila= | accion=ya_tiene_foto | producto_id=39385 | target_id=37525
     original : TARVINA 20 MG X 30 TABLETAS RECUBIERTAS
-    lab_real : LABORATORIO LA SANTE, C.A. | motivo: producto objetivo ya tiene foto (#37525)
+    lab_real : GEMA LABS C.A. | motivo: producto objetivo ya tiene foto (#37525)
     desc     : ATORVASTATINA TAB REC 20MG X30 PHARME
     foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/22227.jpg
 
-id_fila=399 | accion=ya_tiene_foto | producto_id=39422 | target_id=
+id_fila= | accion=ya_tiene_foto | producto_id=39422 | target_id=38089
     original : ALERVAX 120 MG X 10 TABLETAS RECUBIERTAS
-    lab_real : CALOX INTERNATIONAL, C.A. | motivo: producto objetivo ya tiene foto (#38089)
+    lab_real : PROCAPS S.A. | motivo: producto objetivo ya tiene foto (#38089)
     desc     : FEXOFENADINA TAB 120MG X10 CLX
     foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/92005.jpg
 
-id_fila=401 | accion=ya_tiene_foto | producto_id=39437 | target_id=
-    original : AZITROMICINA 500 MG X 3 TABLETA RECUBIERTA
-    lab_real : CALOX INTERNATIONAL, C.A. | motivo: producto objetivo ya tiene foto (#37770)
-    desc     : AZITROMICINA TAB 500MG X3 CLX
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/11009.jpg
-
-id_fila=416 | accion=ya_tiene_foto | producto_id=39517 | target_id=
+id_fila= | accion=ya_tiene_foto | producto_id=39517 | target_id=38163
     original : GLICLAZIDA 80 MG X 20 TABLETAS
-    lab_real : MEGALABS, S.A. | motivo: producto objetivo ya tiene foto (#38163)
+    lab_real : CALOX INTERNATIONAL C.A. | motivo: producto objetivo ya tiene foto (#38163)
     desc     : GLIDAN GLICLAZIDA 80 MG x20 TABLETAS MEGALABS (E)
     foto     : https://pccentro.net.ve/img/s/8/4/0/3/8/84038-large_default.webp
 
-id_fila=423 | accion=ambiguo | producto_id=39556 | target_id=
-    original : OPRABLU 20 MG X 30 CAPSULAS
-    lab_real : LABORATORIOS LETI, S.A.V. | motivo: 2+ candidatos empatados en mismo tier
-    desc     : OMEPRAZOL CAP/MICRO G 20MG X 30 GENVEN
-    foto     : https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/29950.jpg
-
+id_fila= | accion=ya_tiene_foto | producto_id=39545 | target_id=37377
+    original : DESLORATADINA - MONTELUKAST 5 MG - 10 MG X 30 TABLETAS RECUBIERTAS
+    lab_real : MASCOT HEALTH SERIES PVT. LTD. | motivo: producto objetivo ya tiene foto (#37377)
+    desc     : AIRCOF PLUS MONTELUKAST+DESLORATADINA 10MG+5MG x30 TABLETAS COFASA (E)
+    foto     : https://pccentro.net.ve/img/s/8/1/9/4/8/81948-large_default.webp
