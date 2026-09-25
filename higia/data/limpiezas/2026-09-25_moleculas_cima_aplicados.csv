@@ -1,0 +1,256 @@
+producto_id,nombre,molecula,ref_id,ref_nombre,metodo,atc_id,resultado
+37378,AIRFEN 0.05% SOLUCION NASAL,Oximetazolina,2622,Oximetazolina,exacto,5850,INSERTADO
+37456,ANALPER PLUS 500 MG,Acetaminofén,34,Acetaminofen,exacto,,INSERTADO
+37456,ANALPER PLUS 500 MG,Hioscina (Butilescopolamina),553,Butilescopolamina Bromuro,alias_cima,237,INSERTADO
+37464,ANGRIP X 8 COMPRIMIDOS,Acetaminofén,34,Acetaminofen,exacto,,INSERTADO
+37464,ANGRIP X 8 COMPRIMIDOS,Cafeína,564,Cafeina,exacto,5546,INSERTADO
+37464,ANGRIP X 8 COMPRIMIDOS,Clorfeniramina,847,Clorfeniramina,exacto,2282,INSERTADO
+37465,ANGRIP X 4 COMPRIMIDOS,Acetaminofén,34,Acetaminofen,exacto,,INSERTADO
+37465,ANGRIP X 4 COMPRIMIDOS,Cafeína,564,Cafeina,exacto,5546,INSERTADO
+37465,ANGRIP X 4 COMPRIMIDOS,Clorfeniramina,847,Clorfeniramina,exacto,2282,INSERTADO
+37466,ANGRIP X 15 COMPRIMIDOS,Acetaminofén,34,Acetaminofen,exacto,,INSERTADO
+37466,ANGRIP X 15 COMPRIMIDOS,Cafeína,564,Cafeina,exacto,5546,INSERTADO
+37466,ANGRIP X 15 COMPRIMIDOS,Clorfeniramina,847,Clorfeniramina,exacto,2282,INSERTADO
+37474,ANTILAX PLUS 2 MG,Loperamida,2121,Loperamida,exacto,482,INSERTADO
+37474,ANTILAX PLUS 2 MG,Simeticona,3179,Simeticona,exacto,,INSERTADO
+37482,APLACAL 750 MG,Carbonato de Calcio,572,Calcio Carbonato,alias_cima,80,INSERTADO
+37483,APLACAL 750 MG,Carbonato de Calcio,572,Calcio Carbonato,alias_cima,80,INSERTADO
+37490,ARESAN 20 MG,Rabeprazol Sódico,2958,Rabeprazol Sodico,exacto,133,INSERTADO
+37491,ARESAN 20 MG,Rabeprazol Sódico,2958,Rabeprazol Sodico,exacto,133,INSERTADO
+37497,ASAPROL 81 MG,Ácido Acetilsalicílico,47,Acetilsalicilico Acido,alias_cima,4728,INSERTADO
+37498,ASAPROL 81 MG,Ácido Acetilsalicílico,47,Acetilsalicilico Acido,alias_cima,4728,INSERTADO
+37504,ASPRINIL 81 MG,Ácido Acetilsalicílico,47,Acetilsalicilico Acido,alias_cima,4728,INSERTADO
+37505,ASPRINIL 81 MG,Ácido Acetilsalicílico,47,Acetilsalicilico Acido,alias_cima,4728,INSERTADO
+37529,ATROVERAN 10 MG / ML,N-Butil-Bromuro de Hioscina,553,Butilescopolamina Bromuro,alias_cima,237,INSERTADO
+37537,AZACARD 81 MG,Ácido Acetilsalicílico,47,Acetilsalicilico Acido,alias_cima,4728,INSERTADO
+37538,AZACARD 81 MG,Ácido Acetilsalicílico,47,Acetilsalicilico Acido,alias_cima,4728,INSERTADO
+37539,AZACARD 81 MG,Ácido Acetilsalicílico,47,Acetilsalicilico Acido,alias_cima,4728,INSERTADO
+37561,BENZODIAZOL 0.25 MG - 5 MG,Dequalinio,1020,Dequalinio,exacto,,INSERTADO
+37561,BENZODIAZOL 0.25 MG - 5 MG,Lidocaína,2081,Lidocaina,exacto,1297,INSERTADO
+37563,BENZODIAZOL 0.25 MG - 5 MG,Dequalinio,1020,Dequalinio,exacto,,INSERTADO
+37563,BENZODIAZOL 0.25 MG - 5 MG,Lidocaína,2081,Lidocaina,exacto,1297,INSERTADO
+37564,BENZODIAZOL 0.25 MG - 5 MG,Dequalinio,1020,Dequalinio,exacto,,INSERTADO
+37564,BENZODIAZOL 0.25 MG - 5 MG,Lidocaína,2081,Lidocaina,exacto,1297,INSERTADO
+37565,BEPRODERM 0.05% - 0.1%,Betametasona,458,Betametasona,exacto,6450,INSERTADO
+37565,BEPRODERM 0.05% - 0.1%,Gentamicina,1614,Gentamicina,exacto,6641,INSERTADO
+37566,BETADINE 8% SOLUCION TOPICO BUCAL,Iodopovidona,2857,Povidona Iodada,alias_cima,2638,INSERTADO
+37567,BETADUO 6.430 MG - 2.631 MG / ML,Betametasona,458,Betametasona,exacto,6450,INSERTADO
+37570,BETAGEN SOLSPEN X 1 AMPOLLA,Betametasona,458,Betametasona,exacto,6450,INSERTADO
+37575,BEXILON 4 MG / 5 ML,Bromhexina,530,Bromhexina,exacto,6110,INSERTADO
+37609,BROFLEMA 8 MG / 5 ML,Bromhexina,530,Bromhexina,exacto,6110,INSERTADO
+37649,CANDER HCT 16 MG - 12.5 MG,Candesartán,588,Candesartan,exacto,1973,INSERTADO
+37649,CANDER HCT 16 MG - 12.5 MG,Hidroclorotiazida,1739,Hidroclorotiazida,exacto,1555,INSERTADO
+37650,CANDER HCT 16 MG - 12.5 MG,Candesartán,588,Candesartan,exacto,1973,INSERTADO
+37650,CANDER HCT 16 MG - 12.5 MG,Hidroclorotiazida,1739,Hidroclorotiazida,exacto,1555,INSERTADO
+37687,CARIBAN 10 MG-10 MG,Clorfeniramina,847,Clorfeniramina,exacto,2282,INSERTADO
+37687,CARIBAN 10 MG-10 MG,Codeína,893,Codeina,exacto,6135,INSERTADO
+37703,CEBION 1 G,Vitamina C (Ácido Ascórbico),308,Ascorbico Acido,alias_cima,,INSERTADO
+37768,CALCITREX D3 1500 MG - 200 UI,Calcio,571,Calcio,exacto,93,INSERTADO
+37768,CALCITREX D3 1500 MG - 200 UI,Vitamina D3,3735,Vitamina D3,exacto,,INSERTADO
+37785,CLODOXIN 10 MG - 100 MG,Clordiazepóxido,842,Clordiazepoxido,exacto,5313,INSERTADO
+37785,CLODOXIN 10 MG - 100 MG,Amitriptilina,209,Amitriptilina,exacto,5462,INSERTADO
+37810,CLORACE 125 - 0.5 MG / 5 ML,Clorfeniramina,847,Clorfeniramina,exacto,2282,INSERTADO
+37810,CLORACE 125 - 0.5 MG / 5 ML,Betametasona,458,Betametasona,exacto,6450,INSERTADO
+37811,CLORACE 500 MG - 4 MG,Clorfeniramina,847,Clorfeniramina,exacto,2282,INSERTADO
+37811,CLORACE 500 MG - 4 MG,Betametasona,458,Betametasona,exacto,6450,INSERTADO
+37812,CLORACE 500 MG - 4 MG,Clorfeniramina,847,Clorfeniramina,exacto,2282,INSERTADO
+37812,CLORACE 500 MG - 4 MG,Betametasona,458,Betametasona,exacto,6450,INSERTADO
+37865,DECA LENTERMINA COMPLEX,Dexametasona,1034,Dexametasona,exacto,6447,INSERTADO
+37866,DECALONA 4 MG / ML,Dexametasona,1034,Dexametasona,exacto,6447,INSERTADO
+37883,DERMAZOL 0.05% LOCION CAPILAR,Clobetasol,816,Clobetasol,exacto,2425,INSERTADO
+37885,DERMOVATE 0.05% CREMA,Clobetasol Propionato,817,Clobetasol Propionato,exacto,4951,INSERTADO
+37886,DEROVIT 1000 UI,Vitamina D (Colecalciferol),901,Colecalciferol,alias_cima,704,INSERTADO
+37908,PREVERAL CON DEXTROMETORFANO,Dextrometorfano,1053,Dextrometorfano,exacto,6140,INSERTADO
+37908,PREVERAL CON DEXTROMETORFANO,Guaifenesina,1694,Guaifenesina,exacto,6096,INSERTADO
+37914,DIAFORMINA 1000 MG,Metformina,2280,Metformina,exacto,598,INSERTADO
+37915,DIAFORMINA 500 MG,Metformina,2280,Metformina,exacto,598,INSERTADO
+37940,DIFENAC 1% GEL,Diclofenaco,1073,Diclofenaco,exacto,2675,INSERTADO
+37941,DIGLET 1000 U.I.,Vitamina D3 (Colecalciferol),901,Colecalciferol,alias_cima,704,INSERTADO
+37942,DIGLET 5000 U.I.,Vitamina D3 (Colecalciferol),901,Colecalciferol,alias_cima,704,INSERTADO
+37943,DIGLET 200 UI,Vitamina D3 (Colecalciferol),901,Colecalciferol,alias_cima,704,INSERTADO
+37944,DIKLASON 100 MG,Diclofenaco,1073,Diclofenaco,exacto,2675,INSERTADO
+37945,DIKLASON BI 150 MG,Diclofenaco,1073,Diclofenaco,exacto,2675,INSERTADO
+37947,DILOTEX 5 MG,Amlodipino,212,Amlodipino,exacto,1879,INSERTADO
+37948,DILOTEX 10 MG,Amlodipino,212,Amlodipino,exacto,1879,INSERTADO
+38012,ERILON 1 MG / ML LOCION,Permetrina,2740,Permetrina,exacto,5817,INSERTADO
+38027,ESMIRTAL 20 MG,Esomeprazol,1310,Esomeprazol,exacto,134,INSERTADO
+38053,EUKENE 40 MG,Olmesartán Medoxomilo,2576,Olmesartan Medoxomilo,exacto,1975,INSERTADO
+38058,EUTEBROL 20 MG,Citalopram,777,Citalopram,exacto,5479,INSERTADO
+38062,EZOLIUM 20 MG,Esomeprazol,1310,Esomeprazol,exacto,134,INSERTADO
+38063,EZOLIUM 40 MG,Esomeprazol,1310,Esomeprazol,exacto,134,INSERTADO
+38065,FARBICIL 1% CREMA,Terbinafina,3348,Terbinafina,exacto,2184,INSERTADO
+38066,FEBRATIC 15 MG / ML,Paracetamol,1,Paracetamol,exacto,18,INSERTADO
+38093,MONOSULPA X 260,Sulfadiazina de Plata,3246,Sulfadiazina Argentica,alias_cima,2349,INSERTADO
+38094,FISIOLIN 0.65%,Cloruro de Sodio,3995,Sodio Cloruro,alias_cima,7330,INSERTADO
+38100,FLAVOL 300 MG,Aciclovir,56,Aciclovir,exacto,2362,INSERTADO
+38105,FLEMIBAR 20 MG - 2500 MG / 5 ML,Ambroxol,181,Ambroxol,exacto,5950,INSERTADO
+38136,FULGRAM 875 MG - 125 MG,Amoxicilina,221,Amoxicilina,exacto,3196,INSERTADO
+38136,FULGRAM 875 MG - 125 MG,Ácido Clavulánico,808,Clavulanico Acido,alias_cima,,INSERTADO
+38152,GENESA 3 MG-20 MCG,Drospirenona,1171,Drospirenona,exacto,2846,INSERTADO
+38152,GENESA 3 MG-20 MCG,Etinilestradiol,1357,Etinilestradiol,exacto,2859,INSERTADO
+38153,GENESA 3 MG-20 MCG,Drospirenona,1171,Drospirenona,exacto,2846,INSERTADO
+38153,GENESA 3 MG-20 MCG,Etinilestradiol,1357,Etinilestradiol,exacto,2859,INSERTADO
+38157,GENURIN 200 MG,Flavoxato,1461,Flavoxato,exacto,2969,INSERTADO
+38163,GLIDAN 80 MG,Gliclazida,1645,Gliclazida,exacto,609,INSERTADO
+38165,GLIFORMIN 850 MG,Metformina,2280,Metformina,exacto,598,INSERTADO
+38172,GLUCOFAGE 500 MG XR,Metformina,2280,Metformina,exacto,598,INSERTADO
+38178,GRATIO 500 MG,Claritromicina,801,Claritromicina,exacto,3365,INSERTADO
+38180,GULAPER 250 MG / 5 ML,Amoxicilina,221,Amoxicilina,exacto,3196,INSERTADO
+38182,GULAPER 100 MG / 5 ML,Amoxicilina,221,Amoxicilina,exacto,3196,INSERTADO
+38212,IBUN 600 MG,Ibuprofeno,3877,Ibuprofeno,exacto,4605,INSERTADO
+38238,IDOXEN 75 MG,Venlafaxina,3626,Venlafaxina,exacto,5512,INSERTADO
+38239,IDOXEN 150 MG,Venlafaxina,3626,Venlafaxina,exacto,5512,INSERTADO
+38241,ILTUX 20 MG,Olmesartán Medoxomilo,2576,Olmesartan Medoxomilo,exacto,1975,INSERTADO
+38249,FLUTIXAIR 125 MG - 25 MCG / DOSIS,Fluticasona,1496,Fluticasona,exacto,2418,INSERTADO
+38249,FLUTIXAIR 125 MG - 25 MCG / DOSIS,Salmeterol,3113,Salmeterol,exacto,5972,INSERTADO
+38251,IPROXIN 500 MG,Ciprofloxacina,764,Ciprofloxacino,alias_cima,6356,INSERTADO
+38268,KATRIN 30 MG / ML,Ketorolaco,1956,Ketorolaco,exacto,4590,INSERTADO
+38304,KLAS 100 MG,Claritromicina,801,Claritromicina,exacto,3365,INSERTADO
+38326,LETISAN 500 MG,Fenofibrato,1431,Fenofibrato,exacto,2031,INSERTADO
+38327,LETISAN 500 MG,Fenofibrato,1431,Fenofibrato,exacto,2031,INSERTADO
+38329,LEVAMOX 750 MG,Levofloxacino,2067,Levofloxacino,exacto,6358,INSERTADO
+38355,LINEZID 2 MG / ML,Linezolid,4043,Linezolid,exacto,7347,INSERTADO
+38364,LISOMUCIN 4 MG / 5 ML,Carbocisteína,613,Carbocisteina,exacto,6111,INSERTADO
+38365,LISOMUCIN 8 MG / 5 ML,Carbocisteína,613,Carbocisteina,exacto,6111,INSERTADO
+38368,LODIPIN 10 MG,Amlodipino,212,Amlodipino,exacto,1879,INSERTADO
+38370,LOFLOX 400 MG,Levofloxacino,2067,Levofloxacino,exacto,6358,INSERTADO
+38371,LOGANIL 250 MG / 5 ML,Cefadroxilo,666,Cefadroxilo,exacto,3258,INSERTADO
+38372,LOGANIL 100 MG / 5 ML,Cefadroxilo,666,Cefadroxilo,exacto,3258,INSERTADO
+38393,LORECORT 1 MG - 0.05 MG / 5 ML,Loratadina,2125,Loratadina,exacto,6257,INSERTADO
+38393,LORECORT 1 MG - 0.05 MG / 5 ML,Betametasona,458,Betametasona,exacto,6450,INSERTADO
+38413,LOWPRES 150 MCG / ML,Desmopresina,1026,Desmopresina,exacto,3050,INSERTADO
+38432,MAXIFUR 50 MG,Nitrofurantoína,2518,Nitrofurantoina,exacto,3455,INSERTADO
+38507,MONTRAX 10 MG,Montelukast,2375,Montelukast,exacto,6078,INSERTADO
+38508,MONTRAX 10 MG,Montelukast,2375,Montelukast,exacto,6078,INSERTADO
+38509,MONTRAX 4 MG,Montelukast,2375,Montelukast,exacto,6078,INSERTADO
+38510,MONTRAX 5 MG,Montelukast,2375,Montelukast,exacto,6078,INSERTADO
+38511,MONTRAX 5 MG,Montelukast,2375,Montelukast,exacto,6078,INSERTADO
+38519,MUCLAR 30 MG - 5 MG,Ambroxol,181,Ambroxol,exacto,5950,INSERTADO
+38519,MUCLAR 30 MG - 5 MG,Carbocisteína,613,Carbocisteina,exacto,6111,INSERTADO
+38520,MUCOBROL 4 MG / 5 ML,Bromhexina,530,Bromhexina,exacto,6110,INSERTADO
+38523,MULTIDERM 2% UNGUENTO,Mupirocina,2388,Mupirocina,exacto,5901,INSERTADO
+38526,MUVETT 300 MG,Trimebutina,3514,Trimebutina,exacto,173,INSERTADO
+38529,NACLODIN 0.150 MG,Clonidina,829,Clonidina,exacto,6460,INSERTADO
+38530,NAFINA 1% CREMA,Terbinafina,3348,Terbinafina,exacto,2184,INSERTADO
+38545,NEULEVAL 500 MG,Levetiracetam,2056,Levetiracetam,exacto,5164,INSERTADO
+38546,NEULEVAL 750 MG,Levetiracetam,2056,Levetiracetam,exacto,5164,INSERTADO
+38576,NOTOLAC 20 MG,Ketorolaco,1956,Ketorolaco,exacto,4590,INSERTADO
+38577,NOTOLAC 20 MG,Ketorolaco,1956,Ketorolaco,exacto,4590,INSERTADO
+38588,OLMECAR 40 MG,Olmesartán Medoxomilo,2576,Olmesartan Medoxomilo,exacto,1975,INSERTADO
+38700,PRESIDERM 2% UNGUENTO,Mupirocina,2388,Mupirocina,exacto,5901,INSERTADO
+38704,PROTOSULFIL 1% CREMA,Sulfadiazina de Plata,3246,Sulfadiazina Argentica,alias_cima,2349,INSERTADO
+38754,ROVARTAL 40 MG,Rosuvastatina,3060,Rosuvastatina,exacto,2020,INSERTADO
+38763,SALBUTAN 100 MCG / DOSIS,Salbutamol,3105,Salbutamol,exacto,5962,INSERTADO
+38811,SULIXTRA 0.4 MG,Tamsulosina,3293,Tamsulosina,exacto,3009,INSERTADO
+38841,TAMSULON 0.4 MG,Tamsulosina,3293,Tamsulosina,exacto,3009,INSERTADO
+38858,TIALIN 50 MG,Sertralina,3156,Sertralina,exacto,5481,INSERTADO
+38859,TIALIN 50 MG,Sertralina,3156,Sertralina,exacto,5481,INSERTADO
+38861,TILODRIN 4 MG / ML,Dextrometorfano,1053,Dextrometorfano,exacto,6140,INSERTADO
+38862,TILODRIN 30 MG / 15 ML,Dextrometorfano,1053,Dextrometorfano,exacto,6140,INSERTADO
+38889,TRAMAL LONG 150 MG,Tramadol,3473,Tramadol,exacto,5004,INSERTADO
+38910,UROSINA 0.4 MG,Tamsulosina,3293,Tamsulosina,exacto,3009,INSERTADO
+38912,VALPRON 250 MG / 5 ML,Ácido Valproico,3595,Valproico Acido,alias_cima,5150,INSERTADO
+38936,VASPITOR 40 MG,Atorvastatina,329,Atorvastatina,exacto,2018,INSERTADO
+38937,VASPITOR 40 MG,Atorvastatina,329,Atorvastatina,exacto,2018,INSERTADO
+38980,VONAU FLASH 4 MG,Ondansetrón,2587,Ondansetron,exacto,301,INSERTADO
+38996,ZOLPIDEX 10 MG,Zolpidem,4073,Zolpidem,exacto,7323,INSERTADO
+38997,ZOLPIDEX 10 MG,Zolpidem,4073,Zolpidem,exacto,7323,INSERTADO
+39064,APLACAL 750 MG,Carbonato de Calcio,572,Calcio Carbonato,alias_cima,80,INSERTADO
+39065,APLACAL 750 MG,Carbonato de Calcio,572,Calcio Carbonato,alias_cima,80,INSERTADO
+39066,APLACAL 750 MG,Carbonato de Calcio,572,Calcio Carbonato,alias_cima,80,INSERTADO
+39067,APLACAL 750 MG,Carbonato de Calcio,572,Calcio Carbonato,alias_cima,80,INSERTADO
+39068,APLACAL 750 MG,Carbonato de Calcio,572,Calcio Carbonato,alias_cima,80,INSERTADO
+39069,APLACAL 750 MG,Carbonato de Calcio,572,Calcio Carbonato,alias_cima,80,INSERTADO
+39088,ATROVERAN 10 MG,N-Butil-Bromuro de Hioscina,553,Butilescopolamina Bromuro,alias_cima,237,INSERTADO
+39089,ATROVERAN FORTE 20 MG,N-Butil-Bromuro de Hioscina,553,Butilescopolamina Bromuro,alias_cima,237,INSERTADO
+39104,BIPROLIL 2.5 MG,Bisoprolol,3830,Bisoprolol,exacto,1815,INSERTADO
+39138,CIFARCAINA HIPERBARA AL 5%,Bupivacaína,545,Bupivacaina,exacto,4925,INSERTADO
+39273,KLINCOSAL 262 MG - 100 MG,Metronidazol,2320,Metronidazol,exacto,2719,INSERTADO
+39274,KLINCOSAL 262 MG - 500 MG / 15 ML,Metronidazol,2320,Metronidazol,exacto,2719,INSERTADO
+39275,KLINCOSAL 262 MG - 500 MG / 15 ML,Metronidazol,2320,Metronidazol,exacto,2719,INSERTADO
+39343,PROTOSULFIL 1% POLVO,Sulfadiazina de Plata,3246,Sulfadiazina Argentica,alias_cima,2349,INSERTADO
+39344,CARNITENE 1 G / 10 ML,L-Carnitina,2027,L-carnitina,exacto,5559,INSERTADO
+39418,ACRYLARM 0.2% GEL OFTALMICO,Hialuronato de Sodio,1733,Hialuronico Acido,alias_cima,,INSERTADO
+39540,MAXIFURFORTE 100 MG,Nitrofurantoína,2518,Nitrofurantoina,exacto,3455,INSERTADO
+39547,ACECOL 600 MG,Acetilcisteína,42,Acetilcisteina,exacto,6736,INSERTADO
+39548,ACECOL 600 MG,Acetilcisteína,42,Acetilcisteina,exacto,6736,INSERTADO
+39550,NEMAX 16% - 6%,Fosfato de Sodio Dibásico,1531,Fosfato Disodio,alias_cima,,INSERTADO
+39576,FLUDINAX 0.9%,Cloruro de Sodio,3995,Sodio Cloruro,alias_cima,7330,INSERTADO
+39577,SILVEDERMA 1% CREMA,Sulfadiazina de Plata,3246,Sulfadiazina Argentica,alias_cima,2349,INSERTADO
+39597,UDOX 75 MG,Venlafaxina,3626,Venlafaxina,exacto,5512,INSERTADO
+39635,AGUA OXIG ALVA INYECTABLE,Peróxido de Hidrógeno (Agua Oxigenada),4053,Peroxido De Hidrogeno,alias_cima,30,INSERTADO
+39655,AUGMENTIN BID 875 MG - 125 MG,Amoxicilina,221,Amoxicilina,exacto,3196,INSERTADO
+39655,AUGMENTIN BID 875 MG - 125 MG,Ácido Clavulánico,808,Clavulanico Acido,alias_cima,,INSERTADO
+39696,6 MG X 30 COMPRIMIDOS,Deflazacort,1000,Deflazacort,exacto,3094,INSERTADO
+39698,SODICO 4 MG / 1 ML,Dexametasona Fosfato Sódico,1034,Dexametasona,tokens_agnostico_orden,6447,INSERTADO
+39700,SODICO 8 MG / 2 ML,Dexametasona Fosfato Sódico,1034,Dexametasona,tokens_agnostico_orden,6447,INSERTADO
+39830,PREVERAL DEXTRO REFORM 120 ML,Dextrometorfano,1053,Dextrometorfano,exacto,6140,INSERTADO
+39830,PREVERAL DEXTRO REFORM 120 ML,Guaifenesina,1694,Guaifenesina,exacto,6096,INSERTADO
+39898,ANGIOFLUX 250LSU,Diosmina,1120,Diosmina,exacto,1765,INSERTADO
+39898,ANGIOFLUX 250LSU,Hesperidina,1729,Hesperidina,exacto,1778,INSERTADO
+37396,ALGOREN 10 MG X 20 TABLETAS,propranolol,2912,Propranolol,exacto,1796,INSERTADO
+37455,AMPLIDER 50 MG X 10 CAPSULAS BLANDAS,amilorida,198,Amilorida,exacto,1631,INSERTADO
+37455,AMPLIDER 50 MG X 10 CAPSULAS BLANDAS,hidroclorotiazida,1739,Hidroclorotiazida,exacto,1555,INSERTADO
+37471,ANTAAR 1.25 MG X 10 TABLETAS RECUBIERTAS,indapamida,1845,Indapamida,exacto,1589,INSERTADO
+37470,ANTAAR 1.25 MG X 30 TABLETAS RECUBIERTAS,indapamida,1845,Indapamida,exacto,1589,INSERTADO
+37526,ATRIMON 10 MG X 10 COMPRIMIDOS,zolpidem,4073,Zolpidem,exacto,7323,INSERTADO
+37534,AVELOX 400 MG X 5 COMPRIMIDOS RECUBIERTOS,moxifloxacino,2384,Moxifloxacino,exacto,6360,INSERTADO
+37576,BILOL 2.5 MG X 10 TABLETAS RECUBIERTAS,bisoprolol,3830,Bisoprolol,exacto,1815,INSERTADO
+37578,BIOCOR AMLO 40 MG - 5 MG X 30 TABLETAS RECUBIERTAS,bisoprolol,3830,Bisoprolol,exacto,1815,INSERTADO
+37578,BIOCOR AMLO 40 MG - 5 MG X 30 TABLETAS RECUBIERTAS,amlodipino,212,Amlodipino,exacto,1879,INSERTADO
+37577,BIOCOR AMLO 20 MG - 5 MG X 30 TABLETAS RECUBIERTAS,bisoprolol,3830,Bisoprolol,exacto,1815,INSERTADO
+37577,BIOCOR AMLO 20 MG - 5 MG X 30 TABLETAS RECUBIERTAS,amlodipino,212,Amlodipino,exacto,1879,INSERTADO
+39098,BIOCOR 20 MG X 30 TABLETAS RECUBIERTAS,bisoprolol,3830,Bisoprolol,exacto,1815,INSERTADO
+39524,BIOCORTIN 500 MG X 1 AMPOLLA,bisoprolol,3830,Bisoprolol,exacto,1815,INSERTADO
+37579,BIOCOR 40 MG X 30 TABLETAS RECUBIERTAS,bisoprolol,3830,Bisoprolol,exacto,1815,INSERTADO
+37581,BIOTALOL 2.5 MG X 30 COMPRIMIDOS RECUBIERTOS,bisoprolol,3830,Bisoprolol,exacto,1815,INSERTADO
+37582,BIOTALOL 1.25 MG X 30 COMPRIMIDOS RECUBIERTOS,bisoprolol,3830,Bisoprolol,exacto,1815,INSERTADO
+37583,BIOTALOL 10 MG X 30 COMPRIMIDOS RECUBIERTOS,bisoprolol,3830,Bisoprolol,exacto,1815,INSERTADO
+37580,BIOTALOL 2.5 MG X 10 COMPRIMIDOS RECUBIERTOS,bisoprolol,3830,Bisoprolol,exacto,1815,INSERTADO
+37584,BIPRIN 300 MG X 10 CAPSULAS BLANDAS,piridoxina (vitamina B6),2789,Piridoxina,alias_cima,729,INSERTADO
+37637,CALCIBON 200 MG X 30 TABLETAS RECUBIERTOS,calcio carbonato,572,Calcio Carbonato,exacto,80,INSERTADO
+37645,CALOXPIRINA 81 MG X 30 TABLETAS ENTERICAS,ácido acetilsalicílico,47,Acetilsalicilico Acido,alias_cima,4728,INSERTADO
+37646,CALOXPIRINA 81 MG X 100 TABLETAS ENTERICAS,ácido acetilsalicílico,47,Acetilsalicilico Acido,alias_cima,4728,INSERTADO
+37648,CAMPAL 50 MG X 20 TABLETAS ENTERICAS,captopril,604,Captopril,exacto,1921,INSERTADO
+37665,CANFIR 500 MG X 30 COMPRIMIDOS RECUBIERTOS DE LIBERACION PROLONGADA,cefalexina,668,Cefalexina,exacto,3254,INSERTADO
+37731,CETRAL D 5 MG - 60 MG / 5 ML SOLUCION ORAL,cetirizina,710,Cetirizina,exacto,6544,INSERTADO
+37731,CETRAL D 5 MG - 60 MG / 5 ML SOLUCION ORAL,pseudoefedrina,2938,Pseudoefedrina,exacto,5911,INSERTADO
+37750,CIPROFLOX 500 MG X 12 TABLETAS RECUBIERTAS,ciprofloxacino,764,Ciprofloxacino,exacto,6356,INSERTADO
+37771,CLARIX 0.25 MG / ML SOLUCION NASAL,claritromicina,801,Claritromicina,exacto,3365,INSERTADO
+37775,CLENBUNAL 0.014 MG / ML SOLUCION ORAL,clenbuterol,4235,Clenbuterol,exacto,5974,INSERTADO
+37787,CLOFEN 1.8 MG / ML SUSPENSION ORAL,diclofenaco,1073,Diclofenaco,exacto,2675,INSERTADO
+37825,CO-SULTRIN 40 MG - 200 MG / 5 ML X 20 SUSPENSION,trimetoprim,3519,Trimetoprima,alias_cima,3319,INSERTADO
+37825,CO-SULTRIN 40 MG - 200 MG / 5 ML X 20 SUSPENSION,sulfametoxazol,3249,Sulfametoxazol,exacto,3333,INSERTADO
+37834,COLYPAN 200 MG X 10 TABLETAS,trimebutina,3514,Trimebutina,exacto,173,INSERTADO
+37838,CORAZEM 60 MG X 20 TABLETAS RECUBIERTAS,diltiazem,1111,Diltiazem,exacto,1906,INSERTADO
+37844,CORENTEL 1.25 MG X 30 COMPRIMIDOS RECUBIERTOS,bisoprolol,3830,Bisoprolol,exacto,1815,INSERTADO
+37846,CORENTEL 5 MG X 10 COMPRIMIDOS RECUBIERTOS,bisoprolol,3830,Bisoprolol,exacto,1815,INSERTADO
+37842,CORENTEL 10 MG X 30 COMPRIMIDOS RECUBIERTOS,bisoprolol,3830,Bisoprolol,exacto,1815,INSERTADO
+37843,CORENTEL 1.25 MG X 10 COMPRIMIDOS RECUBIERTOS,bisoprolol,3830,Bisoprolol,exacto,1815,INSERTADO
+37841,CORENTEL 10 MG X 10 COMPRIMIDOS RECUBIERTOS,bisoprolol,3830,Bisoprolol,exacto,1815,INSERTADO
+37845,CORENTEL 5 MG X 30 COMPRIMIDOS RECUBIERTOS,bisoprolol,3830,Bisoprolol,exacto,1815,INSERTADO
+37860,DALCITRIN 2 % UNGUENTO,miconazol nitrato,2333,Miconazol Nitrato,exacto,456,INSERTADO
+37869,DECOBEL 8 MG / 2 ML SOLUCION INYECTABLE,dexametasona,1034,Dexametasona,exacto,6447,INSERTADO
+37876,DENCOFEN 1.16 % CREMA EN BASE GEL,diclofenaco dietilamina,1074,Diclofenaco Dietilamina,exacto,2675,INSERTADO
+37878,DENUAL 150 MG X 1 COMPRIMIDO RECUBIERTO,ácido ibandrónico,1807,Ibandronico Acido,alias_cima,4828,INSERTADO
+37880,DERAIN 15 % CREMA,ácido azelaico,361,Azelaico Acido,alias_cima,2619,INSERTADO
+37918,DIAGESIC 1.8 MG / ML SUSPENSION ORAL,diclofenaco,1073,Diclofenaco,exacto,2675,INSERTADO
+37959,DIPLOZ 1 MG X 30 TABLETAS RECUBIERTAS,clonazepam,828,Clonazepam,exacto,5143,INSERTADO
+37961,DOBET 2 % - 0.5 % SOLUCION OFTALMICA,ketoconazol,1954,Ketoconazol,exacto,2726,INSERTADO
+37961,DOBET 2 % - 0.5 % SOLUCION OFTALMICA,betametasona,458,Betametasona,exacto,6450,INSERTADO
+37962,DOBRACID 300 MG X 30 COMPRIMIDOS RECUBIERTOS DE LIBERACION PROLONGADA,ácido ursodesoxicólico,3559,Ursodeoxicolico Acido,alias_cima,328,INSERTADO
+37963,DOBRACID 300 MG X 10 COMPRIMIDOS RECUBIERTOS DE LIBERACION PROLONGADA,ácido ursodesoxicólico,3559,Ursodeoxicolico Acido,alias_cima,328,INSERTADO
+37969,DOLAK 10 MG X 10 COMPRIMIDOS,ketorolaco,1956,Ketorolaco,exacto,4590,INSERTADO
+37968,DOLAK 10 MG X 20 COMPRIMIDOS,ketorolaco,1956,Ketorolaco,exacto,4590,INSERTADO
+39489,DOLAK 30 MG X 4 COMPRIMIDOS SUBLINGUALES,ketorolaco,1956,Ketorolaco,exacto,4590,INSERTADO
+37970,DOLAK 20 MG X 10 COMPRIMIDOS RECUBIERTOS,ketorolaco,1956,Ketorolaco,exacto,4590,INSERTADO
+39490,DOLAK 30 MG X 1 COMPRIMIDO SUBLINGUAL,ketorolaco,1956,Ketorolaco,exacto,4590,INSERTADO
+39491,DOLAK 30 MG X 2 COMPRIMIDOS SUBLINGUALES,ketorolaco,1956,Ketorolaco,exacto,4590,INSERTADO
+37971,DOLCAN 9 MG / 5 ML SUSPENSION ORAL,ibuprofeno,3877,Ibuprofeno,exacto,4605,INSERTADO
+37990,DUROVAL 50 MG X 3 TABLETAS RECUBIERTAS,sildenafilo,3165,Sildenafilo,exacto,2984,INSERTADO
+37991,DUROVAL 50 MG X 10 TABLETAS RECUBIERTAS,sildenafilo,3165,Sildenafilo,exacto,2984,INSERTADO
+37988,DUROVAL 50 MG X 2 TABLETAS RECUBIERTAS,sildenafilo,3165,Sildenafilo,exacto,2984,INSERTADO
+37989,DUROVAL 50 MG X 1 TABLETA RECUBIERTA,sildenafilo,3165,Sildenafilo,exacto,2984,INSERTADO
+39222,FLOMED 0.15 % - 0.25 % SOLUCION TOPICA BUCAL,cetilpiridinio,3925,Cetilpiridinio,exacto,2533,INSERTADO
+38658,PERTEN 1 % GEL TOPICO,clotrimazol,878,Clotrimazol,exacto,2720,INSERTADO
+39340,PERTEN 1 % CREMA,clotrimazol,878,Clotrimazol,exacto,2720,INSERTADO
