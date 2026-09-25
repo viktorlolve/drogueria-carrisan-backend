@@ -1,0 +1,801 @@
+producto_id,nombre_comercial,estado,molecula_propuesta,n_moleculas
+37305,ACALIX 60 MG,ok,Diltiazem,1
+37322,ACETAMINOFEN - HIOSCINA N BUTIL BROMURO,ok,Acetaminofén; Hioscina N-Butilbromuro,2
+37323,ACETAMINOFEN - HIOSCINA N BUTIL BROMURO,ok,Acetaminofén; Hioscina N-Butilbromuro,2
+37325,ACETAMINOFEN - CLORFENIRAMINA,ok,Acetaminofén; Clorfeniramina,2
+37326,ACETAMINOFEN - TRAMADOL,ok,Acetaminofén; Tramadol,2
+37337,MONARC- M 250 U.,ok,Factor de Coagulación VIII,1
+37345,ACIDO ACETILSALICILICO 81 MG,ok,Ácido Acetilsalicílico,1
+37346,ACIDO ACETILSALICILICO 81 MG,ok,Ácido Acetilsalicílico,1
+37366,ACIDO IBANDRONICO 150 MG,ok,Ácido Ibandrónico,1
+37374,AGUA BIDESTILADA INYECTABLE,ok,Agua Bidestilada,1
+37375,AGUA DESTILADA ESTERIL,ok,Agua Destilada,1
+37378,AIRFEN 0.05 % SOLUCION NASAL,sin_informacion,(No se encontró información),1
+37395,ALGIOL 5 MG,sin_informacion,(No se encontró información),1
+37396,ALGOREN 10 MG,sin_informacion,(No se encontró información),1
+37420,AMIKACINA 100 MG / 2 ML,ok,Amikacina,1
+37429,AMLODIPINA 10 MG,ok,Amlodipino,1
+37433,AMLODIPINA 5 MG,ok,Amlodipino,1
+37438,AMOXICILINA 500 MG,ok,Amoxicilina,1
+37439,AMOXICILINA - ACIDO CLAVULANICO,ok,Amoxicilina; Ácido Clavulánico,2
+37446,AMOXICILINA 125 MG / 5 ML,ok,Amoxicilina,1
+37455,AMPLIDER 50 MG,sin_informacion,(No se encontró información),1
+37456,ANALPER PLUS 500 MG,sin_informacion,(No se encontró información),1
+37464,ANGRIP X 8 COMPRIMIDOS,sin_informacion,(No se encontró información),1
+37465,ANGRIP X 4 COMPRIMIDOS,sin_informacion,(No se encontró información),1
+37466,ANGRIP X 15 COMPRIMIDOS,sin_informacion,(No se encontró información),1
+37470,ANTAAR 1.25 MG,sin_informacion,(No se encontró información),1
+37471,ANTAAR 1.25 MG,sin_informacion,(No se encontró información),1
+37474,ANTILAX PLUS 2 MG,sin_informacion,(No se encontró información),1
+37476,APIRET 120 MG / 5 ML,sin_informacion,(No se encontró información),1
+37477,APIRET 160 MG / 5 ML,sin_informacion,(No se encontró información),1
+37482,APLACAL 750 MG,sin_informacion,(No se encontró información),1
+37483,APLACAL 750 MG,sin_informacion,(No se encontró información),1
+37490,ARESAN 20 MG,sin_informacion,(No se encontró información),1
+37491,ARESAN 20 MG,sin_informacion,(No se encontró información),1
+37497,ASAPROL 81 MG,sin_informacion,(No se encontró información),1
+37498,ASAPROL 81 MG,sin_informacion,(No se encontró información),1
+37504,ASPRINIL 81 MG,sin_informacion,(No se encontró información),1
+37505,ASPRINIL 81 MG,sin_informacion,(No se encontró información),1
+37510,ATAPEC 100 MG,sin_informacion,(No se encontró información),1
+37522,ATORVASTATINA 20 MG,ok,Atorvastatina,1
+37526,ATRIMON 10 MG,sin_informacion,(No se encontró información),1
+37527,ATROBEL 10 MG / ML,sin_informacion,(No se encontró información),1
+37528,ATROPINA SULFATO 1 MG / ML,ok,Atropina Sulfato,1
+37529,ATROVERAN 10 MG / ML,sin_informacion,(No se encontró información),1
+37534,AVELOX 400 MG,sin_informacion,(No se encontró información),1
+37537,AZACARD 81 MG,sin_informacion,(No se encontró información),1
+37538,AZACARD 81 MG,sin_informacion,(No se encontró información),1
+37539,AZACARD 81 MG,sin_informacion,(No se encontró información),1
+37547,AZITROMICINA 500 MG,ok,Azitromicina,1
+37557,BENCIDAMINA CLORHIDRATO 0.15 %,ok,Bencidamina Clorhidrato,1
+37561,BENZODIAZOL 0.25 MG - 5 MG,sin_informacion,(No se encontró información),1
+37563,BENZODIAZOL 0.25 MG - 5 MG,sin_informacion,(No se encontró información),1
+37564,BENZODIAZOL 0.25 MG - 5 MG,sin_informacion,(No se encontró información),1
+37565,BEPRODERM 0.05 % - 0.1 %,sin_informacion,(No se encontró información),1
+37566,BETADINE 8 % SOLUCION TOPICO BUCAL,sin_informacion,(No se encontró información),1
+37567,BETADUO 6.430 MG - 2.631 MG / ML,sin_informacion,(No se encontró información),1
+37570,BETAGEN SOLSPEN X 1 AMPOLLA,sin_informacion,(No se encontró información),1
+37575,BEXILON 4 MG / 5 ML,sin_informacion,(No se encontró información),1
+37576,BILOL 2.5 MG,sin_informacion,(No se encontró información),1
+37577,BIOCOR AMLO 20 MG - 5 MG,sin_informacion,(No se encontró información),1
+37578,BIOCOR AMLO 40 MG - 5 MG,sin_informacion,(No se encontró información),1
+37579,BIOCOR 40 MG,sin_informacion,(No se encontró información),1
+37580,BIOTALOL 2.5 MG,sin_informacion,(No se encontró información),1
+37581,BIOTALOL 2.5 MG,sin_informacion,(No se encontró información),1
+37582,BIOTALOL 1.25 MG,sin_informacion,(No se encontró información),1
+37583,BIOTALOL 10 MG,sin_informacion,(No se encontró información),1
+37584,BIPRIN 300 MG,sin_informacion,(No se encontró información),1
+37589,BISOPROLOL FUMARATO 5 MG,ok,Bisoprolol Fumarato,1
+37595,BISOPROLOL FUMARATO 1.25 MG,ok,Bisoprolol Fumarato,1
+37609,BROFLEMA 8 MG / 5 ML,sin_informacion,(No se encontró información),1
+37615,BROMEXINA CLORHIDRATO 4 MG / 5 ML,ok,Bromexina Clorhidrato,1
+37616,BROMHEXINA CLORHIDRATO 8 MG / 5 ML,ok,Bromhexina Clorhidrato,1
+37617,BROMHEXINA CLORHIDRATO 8 MG / 5 ML,ok,Bromhexina Clorhidrato,1
+37637,CALCIBON 200 MG,sin_informacion,(No se encontró información),1
+37645,CALOXPIRINA 81 MG,sin_informacion,(No se encontró información),1
+37646,CALOXPIRINA 81 MG,sin_informacion,(No se encontró información),1
+37648,CAMPAL 50 MG,sin_informacion,(No se encontró información),1
+37649,CANDER HCT 16 MG - 12.5 MG,sin_informacion,(No se encontró información),1
+37650,CANDER HCT 16 MG - 12.5 MG,sin_informacion,(No se encontró información),1
+37655,CANDESARTAN CILETEXILO – HIDROCLOROTIAZIDA,ok,Candesartán Cilexetilo; Hidroclorotiazida,2
+37663,CANDESARTAN 8 MG,ok,Candesartán,1
+37665,CANFIR 500 MG,sin_informacion,(No se encontró información),1
+37668,OXIGENO MEDICINAL,ok,Oxígeno,1
+37687,CARIBAN 10 MG-10 MG,sin_informacion,(No se encontró información),1
+37703,CEBION 1 G,sin_informacion,(No se encontró información),1
+37704,CEFADROXILO 500 MG,ok,Cefadroxilo,1
+37719,CEFTRIAXONA 1 G,ok,Ceftriaxona,1
+37731,CETRAL D 5 MG - 60 MG / 5 ML,sin_informacion,(No se encontró información),1
+37734,VITAMINA C 500 MG,ok,Vitamina C,1
+37735,VITAMINA C 500 MG,ok,Vitamina C,1
+37742,CIFARCAINA AL 2 %,sin_informacion,(No se encontró información),1
+37743,CIFARCAINA AL 1 %,sin_informacion,(No se encontró información),1
+37750,CIPROFLOX 500 MG,sin_informacion,(No se encontró información),1
+37751,CIPROFLOXACINA 500 MG,ok,Ciprofloxacina,1
+37752,CIPROFLOXACINA 500 MG,ok,Ciprofloxacina,1
+37753,CIPROFLOXACINA 200 MG / 100 ML,ok,Ciprofloxacina,1
+37755,CIPROFLOXACINA 500 MG,ok,Ciprofloxacina,1
+37756,CIPROFLOXACINA 500 MG,ok,Ciprofloxacina,1
+37757,CIPROFLOXACINA 500 MG,ok,Ciprofloxacina,1
+37758,CIPROFLOXACINA 500 MG,ok,Ciprofloxacina,1
+37759,CIPROFLOXACINA 500 MG,ok,Ciprofloxacina,1
+37760,CIPROFLOXACINA 500 MG,ok,Ciprofloxacina,1
+37762,CIPROFLOXACINO 500 MG,ok,Ciprofloxacino,1
+37766,CITRATO DE CALCIO 1190 MG,ok,Citrato de Calcio,1
+37767,CITRATO DE CALCIO 1190 MG,ok,Citrato de Calcio,1
+37768,CALCITREX D3 1500 MG - 200 UI,sin_informacion,(No se encontró información),1
+37771,CLARIX 0.25 MG / ML,sin_informacion,(No se encontró información),1
+37775,CLENBUNAL 0.014 MG / ML,sin_informacion,(No se encontró información),1
+37776,CLENBUTEROL CLORHIDRATO 10 MCG / 5 ML,ok,Clenbuterol Clorhidrato,1
+37785,CLODOXIN 10 MG - 100 MG,sin_informacion,(No se encontró información),1
+37787,CLOFEN 1.8 MG / ML,sin_informacion,(No se encontró información),1
+37794,CLONIDINA CLORHIDRATO 0.150 MG / ML,ok,Clonidina Clorhidrato,1
+37795,CLONIDINA CLORHIDRATO 0.150 MG / ML,ok,Clonidina Clorhidrato,1
+37805,CLOPIDOGREL 75 MG,ok,Clopidogrel,1
+37810,CLORACE 125 - 0.5 MG / 5 ML,sin_informacion,(No se encontró información),1
+37811,CLORACE 500 MG - 4 MG,sin_informacion,(No se encontró información),1
+37812,CLORACE 500 MG - 4 MG,sin_informacion,(No se encontró información),1
+37818,CLORURO DE POTASIO 2 MEQ / ML,ok,Cloruro de Potasio,1
+37819,SOLUCION ISOTONICA DE CLORURO DE SODIO,ok,Cloruro de Sodio,1
+37820,CLORURO DE SODIO 0.9 %,ok,Cloruro de Sodio,1
+37825,CO-SULTRIN 40 MG - 200 MG / 5 ML,sin_informacion,(No se encontró información),1
+37832,COLOZIN® (LACTOBACILLUS PLANTARUM - PEDIOCOCCUS ACIDILACTICI),ok,Lactobacillus plantarum; Pediococcus acidilactici,2
+37834,COLYPAN 200 MG,sin_informacion,(No se encontró información),1
+37835,COMPLEJO DE VITAMINA B,ok,Complejo de Vitamina B,1
+37838,CORAZEM 60 MG,sin_informacion,(No se encontró información),1
+37841,CORENTEL 10 MG,sin_informacion,(No se encontró información),1
+37842,CORENTEL 10 MG,sin_informacion,(No se encontró información),1
+37843,CORENTEL 1.25 MG,sin_informacion,(No se encontró información),1
+37844,CORENTEL 1.25 MG,sin_informacion,(No se encontró información),1
+37845,CORENTEL 5 MG,sin_informacion,(No se encontró información),1
+37846,CORENTEL 5 MG,sin_informacion,(No se encontró información),1
+37860,DALCITRIN 2 % UNGUENTO,sin_informacion,(No se encontró información),1
+37865,DECA LENTERMINA COMPLEX,sin_informacion,(No se encontró información),1
+37866,DECALONA 4 MG / ML,sin_informacion,(No se encontró información),1
+37869,DECOBEL 8 MG / 2 ML,sin_informacion,(No se encontró información),1
+37876,DENCOFEN 1.16 % CREMA,sin_informacion,(No se encontró información),1
+37878,DENUAL 150 MG,sin_informacion,(No se encontró información),1
+37880,DERAIN 15 % CREMA,sin_informacion,(No se encontró información),1
+37883,DERMAZOL 0.05 % LOCION CAPILAR,sin_informacion,(No se encontró información),1
+37885,DERMOVATE 0.05 % CREMA,sin_informacion,(No se encontró información),1
+37886,DEROVIT 1000 UI,sin_informacion,(No se encontró información),1
+37901,DEXAMETASONA FOSFATO SODICO 4 MG / ML,ok,Dexametasona Fosfato Sódico,1
+37902,DEXAMETASONA FOSFATO SODICO 8 MG / 2 ML,ok,Dexametasona Fosfato Sódico,1
+37908,PREVERAL CON DEXTROMETORFANO,sin_informacion,(No se encontró información),1
+37909,DEXTROMETORFANO 15 MG / 5 ML,ok,Dextrometorfano,1
+37911,DEXTROSA 50 %,ok,Dextrosa,1
+37914,DIAFORMINA 1000 MG,sin_informacion,(No se encontró información),1
+37915,DIAFORMINA 500 MG,sin_informacion,(No se encontró información),1
+37918,DIAGESIC 1.8 MG / ML,sin_informacion,(No se encontró información),1
+37932,DICLOFENAC SODICO 50 MG,ok,Diclofenaco Sódico,1
+37934,DICLOFENACO POTASICO 50 MG,ok,Diclofenaco Potásico,1
+37940,DIFENAC 1 % GEL,sin_informacion,(No se encontró información),1
+37941,DIGLET 1000 U.I.,sin_informacion,(No se encontró información),1
+37942,DIGLET 5000 U.I.,sin_informacion,(No se encontró información),1
+37943,DIGLET 200 UI,sin_informacion,(No se encontró información),1
+37944,DIKLASON 100 MG,sin_informacion,(No se encontró información),1
+37945,DIKLASON BI 150 MG,sin_informacion,(No se encontró información),1
+37947,DILOTEX 5 MG,sin_informacion,(No se encontró información),1
+37948,DILOTEX 10 MG,sin_informacion,(No se encontró información),1
+37957,DIOSMINA-HESPERIDINA,ok,Diosmina; Hesperidina,2
+37959,DIPLOZ 1 MG,sin_informacion,(No se encontró información),1
+37961,DOBET 2 % - 0.5 %,sin_informacion,(No se encontró información),1
+37962,DOBRACID 300 MG,sin_informacion,(No se encontró información),1
+37963,DOBRACID 300 MG,sin_informacion,(No se encontró información),1
+37968,DOLAK 10 MG,sin_informacion,(No se encontró información),1
+37969,DOLAK 10 MG,sin_informacion,(No se encontró información),1
+37970,DOLAK 20 MG,sin_informacion,(No se encontró información),1
+37971,DOLCAN 9 MG / 5 ML,sin_informacion,(No se encontró información),1
+37988,DUROVAL 50 MG,sin_informacion,(No se encontró información),1
+37989,DUROVAL 50 MG,sin_informacion,(No se encontró información),1
+37990,DUROVAL 50 MG,sin_informacion,(No se encontró información),1
+37991,DUROVAL 50 MG,sin_informacion,(No se encontró información),1
+37994,DUVADILAN 10 MG,sin_informacion,(No se encontró información),1
+38003,ENALAPRIL MALEATO 10 MG,ok,Enalapril Maleato,1
+38008,ENTEROGERMINA (ESPORAS DE BACILLUS CLAUSII),ok,Bacillus clausii,1
+38012,ERILON 1 MG / ML LOCION,sin_informacion,(No se encontró información),1
+38021,ESCITALOPRAM 10 MG,ok,Escitalopram,1
+38022,ESCITALOPRAM 10 MG,ok,Escitalopram,1
+38025,ESCITALOPRAM 5 MG,ok,Escitalopram,1
+38027,ESMIRTAL 20 MG,sin_informacion,(No se encontró información),1
+38035,ESOMEPRAZOL 20 MG,ok,Esomeprazol,1
+38053,EUKENE 40 MG,sin_informacion,(No se encontró información),1
+38058,EUTEBROL 20 MG,sin_informacion,(No se encontró información),1
+38062,EZOLIUM 20 MG,sin_informacion,(No se encontró información),1
+38063,EZOLIUM 40 MG,sin_informacion,(No se encontró información),1
+38065,FARBICIL 1 % CREMA,sin_informacion,(No se encontró información),1
+38066,FEBRATIC 15 MG / ML,sin_informacion,(No se encontró información),1
+38075,FERGANIC 40 MG,sin_informacion,(No se encontró información),1
+38076,FERGANIC 40 MG,sin_informacion,(No se encontró información),1
+38077,FERGANIC 40 MG,sin_informacion,(No se encontró información),1
+38078,FERGANIC 20 MG / ML,sin_informacion,(No se encontró información),1
+38082,FERGANIC 40 MG / 15 ML,sin_informacion,(No se encontró información),1
+38083,FERGANIC 100 MG / 5 ML,sin_informacion,(No se encontró información),1
+38086,FESTAL (PANCREATINA DE ORIGEN PORCINO),ok,Pancreatina,1
+38087,FESTAL (PANCREATINA DE ORIGEN PORCINO),ok,Pancreatina,1
+38091,FINASTERIDE 5 MG,ok,Finasteride,1
+38092,NIAZOL 1 MG / ML,sin_informacion,(No se encontró información),1
+38093,MONOSULPA X 260,sin_informacion,(No se encontró información),1
+38094,FISIOLIN 0.65 %,sin_informacion,(No se encontró información),1
+38100,FLAVOL 300 MG,sin_informacion,(No se encontró información),1
+38105,FLEMIBAR 20 MG - 2500 MG / 5 ML,sin_informacion,(No se encontró información),1
+38109,FLODONT 0.15 %,sin_informacion,(No se encontró información),1
+38110,FLOMED 0.15 % - 0.25 %,sin_informacion,(No se encontró información),1
+38124,FLUMAZENIL 0.5 MG / 5 ML,ok,Flumazenil,1
+38126,FLUOXETINA 20 MG,ok,Fluoxetina,1
+38132,FOSFATO DE POTASIO MONOBASICO 1 MEQ / ML,ok,Fosfato de Potasio Monobásico,1
+38133,FOSFOLIT 21.6 G - 8.1 G / 45 ML,sin_informacion,(No se encontró información),1
+38136,FULGRAM 875 MG - 125 MG,sin_informacion,(No se encontró información),1
+38152,GENESA 3 MG-20 MCG,sin_informacion,(No se encontró información),1
+38153,GENESA 3 MG-20 MCG,sin_informacion,(No se encontró información),1
+38157,GENURIN 200 MG,sin_informacion,(No se encontró información),1
+38163,GLIDAN 80 MG,sin_informacion,(No se encontró información),1
+38165,GLIFORMIN 850 MG,sin_informacion,(No se encontró información),1
+38172,GLUCOFAGE 500 MG XR,sin_informacion,(No se encontró información),1
+38173,GLUCONATO FERROSO,ok,Gluconato Ferroso,1
+38178,GRATIO 500 MG,sin_informacion,(No se encontró información),1
+38180,GULAPER 250 MG / 5 ML,sin_informacion,(No se encontró información),1
+38182,GULAPER 100 MG / 5 ML,sin_informacion,(No se encontró información),1
+38183,GYNODERAIN 0.6 G,sin_informacion,(No se encontró información),1
+38189,HEXANTFLEM 250 MG / 5 ML,sin_informacion,(No se encontró información),1
+38192,VALSARTAN -HIDROCLOROTIAZIDA,ok,Valsartán; Hidroclorotiazida,2
+38195,LOSARTAN POTASICO - HIDROCLOROTIAZIDA,ok,Losartán Potásico; Hidroclorotiazida,2
+38196,LOSARTAN POTASICO - HIDROCLOROTIAZIDA,ok,Losartán Potásico; Hidroclorotiazida,2
+38198,BUTILBROMURO DE HIOSCINA 20 MG / ML,ok,Butilbromuro de Hioscina,1
+38200,HIRUDOID (POLISULFATO DE MUCOPOLISACARIDO),ok,Polisulfato de Mucopolisacárido,1
+38212,IBUN 600 MG,sin_informacion,(No se encontró información),1
+38238,IDOXEN 75 MG,sin_informacion,(No se encontró información),1
+38239,IDOXEN 150 MG,sin_informacion,(No se encontró información),1
+38240,ILANA 600 MG,sin_informacion,(No se encontró información),1
+38241,ILTUX 20 MG,sin_informacion,(No se encontró información),1
+38249,FLUTIXAIR 125 MG - 25 MCG / DOSIS,sin_informacion,(No se encontró información),1
+38251,IPROXIN 500 MG,sin_informacion,(No se encontró información),1
+38258,IRBESARTAN -HIDROCLOROTIAZIDA,ok,Irbesartán; Hidroclorotiazida,2
+38268,KATRIN 30 MG / ML,sin_informacion,(No se encontró información),1
+38298,KETOROLACO TROMETAMINA 30 MG / ML,ok,Ketorolaco Trometamina,1
+38304,KLAS 100 MG,sin_informacion,(No se encontró información),1
+38305,L - CARNITINA 1 G / 10 ML,ok,L-Carnitina,1
+38306,LACTBET 3000 U,sin_informacion,(No se encontró información),1
+38307,LACTBET 3000 U,sin_informacion,(No se encontró información),1
+38317,LENTOCILIN 6.3.3,sin_informacion,(No se encontró información),1
+38318,LEPRIT 25 MG,sin_informacion,(No se encontró información),1
+38326,LETISAN 500 MG,sin_informacion,(No se encontró información),1
+38327,LETISAN 500 MG,sin_informacion,(No se encontró información),1
+38329,LEVAMOX 750 MG,sin_informacion,(No se encontró información),1
+38348,LEVOSULPIRIDE 25 MG,ok,Levosulpiride,1
+38353,LIDOCAINA - EPINEFRINA,ok,Lidocaína; Epinefrina,2
+38355,LINEZID 2 MG / ML,sin_informacion,(No se encontró información),1
+38356,LIOLACTIL X 20 SOBRES,sin_informacion,(No se encontró información),1
+38357,LIOLACTIL (LACTOBACILOS RHAMNOSUS),ok,Lactobacillus rhamnosus,1
+38358,LIPACOMB 40 MG - 10 MG,sin_informacion,(No se encontró información),1
+38364,LISOMUCIN 4 MG / 5 ML,sin_informacion,(No se encontró información),1
+38365,LISOMUCIN 8 MG / 5 ML,sin_informacion,(No se encontró información),1
+38368,LODIPIN 10 MG,sin_informacion,(No se encontró información),1
+38369,LODIPIN VL 10 MG - 160 MG,sin_informacion,(No se encontró información),1
+38370,LOFLOX 400 MG,sin_informacion,(No se encontró información),1
+38371,LOGANIL 250 MG / 5 ML,sin_informacion,(No se encontró información),1
+38372,LOGANIL 100 MG / 5 ML,sin_informacion,(No se encontró información),1
+38388,LORATADINA 10 MG,ok,Loratadina,1
+38393,LORECORT 1 MG - 0.05 MG / 5 ML,sin_informacion,(No se encontró información),1
+38398,LOSARTAN POTASICO - HIDROCLOROTIAZIDA,ok,Losartán Potásico; Hidroclorotiazida,2
+38402,LOSARTAN POTASICO - HIDROCLOROTIAZIDA,ok,Losartán Potásico; Hidroclorotiazida,2
+38403,LOSARTAN POTASICO - HIDROCLOROTIAZIDA,ok,Losartán Potásico; Hidroclorotiazida,2
+38413,LOWPRES 150 MCG / ML,sin_informacion,(No se encontró información),1
+38420,MADECASSOL 1 % UNGUENTO,ok,Centella asiatica,1
+38430,MATERNAVIT,sin_informacion,(No se encontró información),1
+38432,MAXIFUR 50 MG,sin_informacion,(No se encontró información),1
+38437,MELIGEN 10 MG,sin_informacion,(No se encontró información),1
+38448,MEROPENEM 1 G - 0.5 G,ok,Meropenem,1
+38450,DIPIRONA 1 G / 2 ML,ok,Dipirona,1
+38451,DIPIRONA 1 G / 2 ML,ok,Dipirona,1
+38457,METFORMINA CLORHIDRATO 500 MG,ok,Metformina Clorhidrato,1
+38458,METFORMINA 500 MG,ok,Metformina,1
+38461,METFORMINA CLORHIDRATO 850 MG,ok,Metformina Clorhidrato,1
+38462,METFORMINA CLORHIDRATO 850 MG,ok,Metformina Clorhidrato,1
+38463,SITAGLIPTINA-METFORMINA CLORHIDRATO,ok,Sitagliptina; Metformina Clorhidrato,2
+38464,METFORMINA CLORHIDRATO 1000 MG,ok,Metformina Clorhidrato,1
+38465,SITAGLIPTINA -METFORMINA CLORHIDRATO,ok,Sitagliptina; Metformina Clorhidrato,2
+38466,METILPREDNISOLONA 125 MG,ok,Metilprednisolona,1
+38476,METRONIDAZOL 500 MG / 100 ML,ok,Metronidazol,1
+38479,METRONIDAZOL BENZOIL 125 MG / 5 ML,ok,Metronidazol Benzoil,1
+38491,MILAX 50 %,sin_informacion,(No se encontró información),1
+38492,MIOVIT COMPOSITUM CON LIDOCAINA,sin_informacion,(No se encontró información),1
+38493,MIOVIT COMPOSITUM CON LIDOCAINA,sin_informacion,(No se encontró información),1
+38494,MIOVIT COMPOSITUM CON LIDOCAINA,sin_informacion,(No se encontró información),1
+38495,MIOVIT X 10 COMPRIMIDOS,sin_informacion,(No se encontró información),1
+38496,MIOVIT X 30 COMPRIMIDOS,sin_informacion,(No se encontró información),1
+38507,MONTRAX 10 MG,sin_informacion,(No se encontró información),1
+38508,MONTRAX 10 MG,sin_informacion,(No se encontró información),1
+38509,MONTRAX 4 MG,sin_informacion,(No se encontró información),1
+38510,MONTRAX 5 MG,sin_informacion,(No se encontró información),1
+38511,MONTRAX 5 MG,sin_informacion,(No se encontró información),1
+38515,MOXIDEX 0.5 -0.1 %,sin_informacion,(No se encontró información),1
+38519,MUCLAR 30 MG - 5 MG,sin_informacion,(No se encontró información),1
+38520,MUCOBROL 4 MG / 5 ML,sin_informacion,(No se encontró información),1
+38523,MULTIDERM 2 % UNGUENTO,sin_informacion,(No se encontró información),1
+38524,MULTIVIRAL X 30 CAPSULAS,sin_informacion,(No se encontró información),1
+38525,MUPIROCIN 2 % UNGUENTO,ok,Mupirocina,1
+38526,MUVETT 300 MG,sin_informacion,(No se encontró información),1
+38528,N-BUTIL BROMURO DE HIOSCINA 20 MG / ML,ok,N-Butil Bromuro de Hioscina,1
+38529,NACLODIN 0.150 MG,sin_informacion,(No se encontró información),1
+38530,NAFINA 1 % CREMA,sin_informacion,(No se encontró información),1
+38543,NEOSTIGMINA 0.5 MG / ML,ok,Neostigmina,1
+38544,NEOSTIGMINA 0.5 MG / ML,ok,Neostigmina,1
+38545,NEULEVAL 500 MG,sin_informacion,(No se encontró información),1
+38546,NEULEVAL 750 MG,sin_informacion,(No se encontró información),1
+38556,NIMODIPINA 30 MG,ok,Nimodipina,1
+38557,NIPE PLUS,sin_informacion,(No se encontró información),1
+38560,NITAX 500 MG,sin_informacion,(No se encontró información),1
+38561,NITAZOXANIDA 500 MG,ok,Nitazoxanida,1
+38564,NITROFURANTOINA 50 MG,ok,Nitrofurantoína,1
+38565,NITROFURANTOINA 50 MG,ok,Nitrofurantoína,1
+38576,NOTOLAC 20 MG,sin_informacion,(No se encontró información),1
+38577,NOTOLAC 20 MG,sin_informacion,(No se encontró información),1
+38580,NYTAXIN 500 MG,sin_informacion,(No se encontró información),1
+38581,PREDNISOLONA ACETATO 1 %,ok,Prednisolona Acetato,1
+38584,OFAFLAN 2 MG / ML,sin_informacion,(No se encontró información),1
+38585,OFTERRA UNGUENTO OFTALMICO,sin_informacion,(No se encontró información),1
+38588,OLMECAR 40 MG,sin_informacion,(No se encontró información),1
+38589,OLMESARTAN MEDOXOMIL 40 MG - HIDROLOCOTIAZIDA,ok,Olmesartán Medoxomil; Hidroclorotiazida,2
+38592,OLMESARTAN MEDOXOMIL 20 MG,ok,Olmesartán Medoxomil,1
+38596,OMEPRAZOL 20 MG,ok,Omeprazol,1
+38597,OMEPRAZOL 20 MG,ok,Omeprazol,1
+38598,OMEPRAZOL 20 MG,ok,Omeprazol,1
+38599,OMEPRAZOL 20 MG,ok,Omeprazol,1
+38600,OMEPRAZOL 20 MG,ok,Omeprazol,1
+38601,OMEPRAZOL 20 MG,ok,Omeprazol,1
+38602,OMEPRAZOL 20 MG,ok,Omeprazol,1
+38608,OMEPRAZOL 40 MG,ok,Omeprazol,1
+38609,OMEPRAZOL 40 MG,ok,Omeprazol,1
+38610,OMEPRAZOL 40 MG,ok,Omeprazol,1
+38611,OMEPRAZOL 40 MG,ok,Omeprazol,1
+38614,OMMUNAL (LISADO BACTERIANO),ok,Lisado Bacteriano,1
+38617,ONDANSETRON 8 MG / 4 ML,ok,Ondansetrón,1
+38618,ONDANSETRON 8 MG / 4 ML,ok,Ondansetrón,1
+38628,OTANOL 50 MG / ML,sin_informacion,(No se encontró información),1
+38631,OXOLAMINA JARABE,ok,Oxolamina,1
+38635,PANTOPRAZOL 40 MG,ok,Pantoprazol,1
+38636,PANTOPRAZOL 40 MG,ok,Pantoprazol,1
+38642,PASIM 10 MG / ML,sin_informacion,(No se encontró información),1
+38643,PASOLAX,sin_informacion,(No se encontró información),1
+38652,PEPTO-BISMOL 525 MG / 30 ML,sin_informacion,(No se encontró información),1
+38653,PEREBRON 28 MG / 5 ML,sin_informacion,(No se encontró información),1
+38654,PEREBRON 28 MG / 5 ML,sin_informacion,(No se encontró información),1
+38655,PERIDONT 0.12 %,sin_informacion,(No se encontró información),1
+38657,PERTEN 1 %,sin_informacion,(No se encontró información),1
+38659,PERTEN 1 %,sin_informacion,(No se encontró información),1
+38662,PIMADOL 10 MG,sin_informacion,(No se encontró información),1
+38663,PINAVERIUM BROMURO 100 MG,ok,Pinaveerium Bromuro,1
+38664,PINAVERIUM BROMURO 100 MG,ok,Pinaveerium Bromuro,1
+38667,PIPERAZINA 500 MG / 5 ML,ok,Piperazina,1
+38674,OTODON 2 % - 5 %,sin_informacion,(No se encontró información),1
+38675,POLIAMIN 10 %,ok,Aminoácidos Cristalinos,1
+38677,POTAX 10 MEQ,sin_informacion,(No se encontró información),1
+38684,PREDNISOLONA 5 MG,ok,Prednisolona,1
+38685,PREDNISOLONA 5 MG,ok,Prednisolona,1
+38700,PRESIDERM 2 % UNGUENTO,sin_informacion,(No se encontró información),1
+38701,PREVERAL CON CODEINA,sin_informacion,(No se encontró información),1
+38702,PROPRANOLOL 40 MG,ok,Propranolol,1
+38704,PROTOSULFIL 1 % CREMA,sin_informacion,(No se encontró información),1
+38705,PROVICAR 2 G / 10 ML,sin_informacion,(No se encontró información),1
+38708,QUETIAPINA 100 MG,ok,Quetiapina,1
+38709,QUETIAPINA 100 MG,ok,Quetiapina,1
+38710,QUETIAPINA 25 MG,ok,Quetiapina,1
+38716,OTIRILIN 4 % - 1 %,sin_informacion,(No se encontró información),1
+38731,RINARIS 2.5 MG - 30 MG / 5 ML,sin_informacion,(No se encontró información),1
+38732,SOLUCION DE RINGER LACTATO,ok,Solución de Ringer Lactato,1
+38735,RINOMAX 0.25 % - 0.125 % - 0.25 %,sin_informacion,(No se encontró información),1
+38754,ROVARTAL 40 MG,sin_informacion,(No se encontró información),1
+38763,SALBUTAN 100 MCG / DOSIS,sin_informacion,(No se encontró información),1
+38764,SARIFAN COMPOSITUM,sin_informacion,(No se encontró información),1
+38794,SILDEX 100 MG,sin_informacion,(No se encontró información),1
+38795,SILDEX 100 MG,sin_informacion,(No se encontró información),1
+38803,SITAGLIS MET 50 MG-1000 MG,ok,Sitagliptina; Metformina,2
+38806,SUCRALFATO 100 MG / ML,ok,Sucralfato,1
+38809,SULFADIAZINA DE PLATA 1 %,ok,Sulfadiazina de Plata,1
+38811,SULIXTRA 0.4 MG,sin_informacion,(No se encontró información),1
+38812,SULIXTRA DUO 0.4 MG - 0.5 MG,sin_informacion,(No se encontró información),1
+38813,SULIXTRA DUO 0.4 MG - 0.5 MG,sin_informacion,(No se encontró información),1
+38838,TAMOA 250 MG / 5 ML,sin_informacion,(No se encontró información),1
+38841,TAMSULON 0.4 MG,sin_informacion,(No se encontró información),1
+38845,TANTUN 0.1 %,sin_informacion,(No se encontró información),1
+38856,TERBINAFINA CLORHIDRATO 1 %,ok,Terbinafina Clorhidrato,1
+38858,TIALIN 50 MG,sin_informacion,(No se encontró información),1
+38859,TIALIN 50 MG,sin_informacion,(No se encontró información),1
+38860,TIDOR 2 % - 0.5 %,sin_informacion,(No se encontró información),1
+38861,TILODRIN 4 MG / ML,sin_informacion,(No se encontró información),1
+38862,TILODRIN 30 MG / 15 ML,sin_informacion,(No se encontró información),1
+38880,TONERVOL 5 MG,sin_informacion,(No se encontró información),1
+38884,TRACEVAL 500 MG - 50 MG,sin_informacion,(No se encontró información),1
+38885,TRACEVAL 325 MG - 37.5 MG,sin_informacion,(No se encontró información),1
+38889,TRAMAL LONG 150 MG,sin_informacion,(No se encontró información),1
+38893,TRIMEBUTINA MALEATO 200 MG,ok,Trimebutina Maleato,1
+38894,TRIMEBUTINA MALEATO 200 MG,ok,Trimebutina Maleato,1
+38896,FLUTIXAIR 250 MCG -25 MCG,sin_informacion,(No se encontró información),1
+38908,ULTAMYN 750 MG,sin_informacion,(No se encontró información),1
+38910,UROSINA 0.4 MG,sin_informacion,(No se encontró información),1
+38911,VALACICLOVIR 500 MG,ok,Valaciclovir,1
+38912,VALPRON 250 MG / 5 ML,sin_informacion,(No se encontró información),1
+38922,VALSARTAN - HIDROCLOROTIAZIDA,ok,Valsartán; Hidroclorotiazida,2
+38924,VALSARTAN - HIDROCLOROTIAZIDA,ok,Valsartán; Hidroclorotiazida,2
+38925,VALSARTAN - HIDROCLOROTIAZIDA,ok,Valsartán; Hidroclorotiazida,2
+38936,VASPITOR 40 MG,sin_informacion,(No se encontró información),1
+38937,VASPITOR 40 MG,sin_informacion,(No se encontró información),1
+38938,VASSLUTEN HCT 300 MG - 12.5 MG,sin_informacion,(No se encontró información),1
+38939,VASSLUTEN HCT 150 MG - 12.5 MG,sin_informacion,(No se encontró información),1
+38958,VITAMINA B12 5 MG / ML,ok,Vitamina B12,1
+38959,VITAMINA B12 500 MCG,ok,Vitamina B12,1
+38960,VITAMINA C 500 MG / 5 ML,ok,Vitamina C,1
+38967,VITAMINA C 100 MG / 5 ML,ok,Vitamina C,1
+38970,VITAMINA K1 10 MG / ML,ok,Vitamina K1,1
+38971,VITADYN C 500 MG,sin_informacion,(No se encontró información),1
+38972,VITADYN C 500 MG,sin_informacion,(No se encontró información),1
+38973,VITAMINA E 100 MG,ok,Vitamina E,1
+38975,VITENOL CREMA,sin_informacion,(No se encontró información),1
+38976,VIZERUL 75 MG,sin_informacion,(No se encontró información),1
+38977,VIZERUL 75 MG,sin_informacion,(No se encontró información),1
+38978,VIZERUL 150 MG / 10 ML,sin_informacion,(No se encontró información),1
+38979,VOLCOFEN 75 MG / 3 ML,sin_informacion,(No se encontró información),1
+38980,VONAU FLASH 4 MG,sin_informacion,(No se encontró información),1
+38991,ZILDON 10 MG,sin_informacion,(No se encontró información),1
+38996,ZOLPIDEX 10 MG,sin_informacion,(No se encontró información),1
+38997,ZOLPIDEX 10 MG,sin_informacion,(No se encontró información),1
+39000,ZONTRICON 100 MG / 5 ML,sin_informacion,(No se encontró información),1
+39002,ZOST 50 MG,sin_informacion,(No se encontró información),1
+39003,ZOST 50 MG,sin_informacion,(No se encontró información),1
+39004,ZOST 50 MG,sin_informacion,(No se encontró información),1
+39014,ACETAMINOFEN 120 MG / 5 ML,ok,Acetaminofén,1
+39024,DEXTROSA AL 5 % EN AGUA DESTILADA,ok,Dextrosa,1
+39037,AMLODIPINO 10 MG,ok,Amlodipino,1
+39040,AMLODIPINO 5 MG,ok,Amlodipino,1
+39044,AMOXICILINA 250 MG / 5 ML,ok,Amoxicilina,1
+39064,APLACAL 750 MG,sin_informacion,(No se encontró información),1
+39065,APLACAL 750 MG,sin_informacion,(No se encontró información),1
+39066,APLACAL 750 MG,sin_informacion,(No se encontró información),1
+39067,APLACAL 750 MG,sin_informacion,(No se encontró información),1
+39068,APLACAL 750 MG,sin_informacion,(No se encontró información),1
+39069,APLACAL 750 MG,sin_informacion,(No se encontró información),1
+39087,ATORVASTATINA 40 MG,ok,Atorvastatina,1
+39088,ATROVERAN 10 MG,sin_informacion,(No se encontró información),1
+39089,ATROVERAN FORTE 20 MG,sin_informacion,(No se encontró información),1
+39096,BETAMETASONA 4 MG / ML,ok,Betametasona,1
+39097,BICARBONATO DE SODIO AL 5 %,ok,Bicarbonato de Sodio,1
+39099,OLMESARTAN MEDOXOMILO 40 MG,ok,Olmesartán Medoxomilo,1
+39104,BIPROLIL 2.5 MG,sin_informacion,(No se encontró información),1
+39109,BISOPROLOL FUMARATO - HIDROCLOROTIZIDA,ok,Bisoprolol Fumarato; Hidroclorotiazida,2
+39111,BISOPROLOL FUMARATO - HIDROCLOROTIAZIDA,ok,Bisoprolol Fumarato; Hidroclorotiazida,2
+39136,CLORHIDRATO DE MORFINA 10 MG / ML,ok,Clorhidrato de Morfina,1
+39138,CIFARCAINA HIPERBARA AL 5 %,sin_informacion,(No se encontró información),1
+39139,CIPROFLOXACINA 500 MG,ok,Ciprofloxacina,1
+39140,CIPROFLOXACINA 500 MG,ok,Ciprofloxacina,1
+39141,CIPROFLOXACINA 500 MG,ok,Ciprofloxacina,1
+39142,CIPROFLOXACINA 750 MG,ok,Ciprofloxacina,1
+39150,CLORURO DE POTASIO 7.5 %,ok,Cloruro de Potasio,1
+39151,CLORURO DE SODIO AL 20 %,ok,Cloruro de Sodio,1
+39158,COMPLEJO DE VITAMINA B,ok,Complejo de Vitamina B,1
+39238,GLUCONATO DE CALCIO AL 10 %,ok,Gluconato de Calcio,1
+39248,IBUPROFENO 400 MG-TIOCOLCHICOSIDO 4 MG,ok,Ibuprofeno; Tiocolchicósido,2
+39273,KLINCOSAL 262 MG - 100 MG,sin_informacion,(No se encontró información),1
+39274,KLINCOSAL 262 MG - 500 MG / 15 ML,sin_informacion,(No se encontró información),1
+39275,KLINCOSAL 262 MG - 500 MG / 15 ML,sin_informacion,(No se encontró información),1
+39313,NAFAZOLINA CLORHIDRATO 0.12 MG / ML,ok,Nafazolina Clorhidrato,1
+39324,OLMESARTAN MEDOXOMIL 20 MG,ok,Olmesartán Medoxomil,1
+39325,OLMESARTAN MEDOXOMILO 20 MG,ok,Olmesartán Medoxomilo,1
+39326,OMEPRAZOL 40 MG,ok,Omeprazol,1
+39327,OMEPRAZOL 40 MG,ok,Omeprazol,1
+39328,OMEPRAZOL 20 MG,ok,Omeprazol,1
+39329,OMEPRAZOL 20 MG,ok,Omeprazol,1
+39330,OMEPRAZOL 20 MG,ok,Omeprazol,1
+39334,OXOLAMINA 28 MG / 5 ML,ok,Oxolamina,1
+39335,OXOLAMINA 50 MG / 5 ML,ok,Oxolamina,1
+39339,OXOLAMINA 50 MG / 5 ML,ok,Oxolamina,1
+39343,PROTOSULFIL 1 % POLVO,sin_informacion,(No se encontró información),1
+39344,CARNITENE 1 G / 10 ML,sin_informacion,(No se encontró información),1
+39352,REHIDROSOL 45 MEQ / L,sin_informacion,(No se encontró información),1
+39354,REHIDROSOL 60 MEQ / L,sin_informacion,(No se encontró información),1
+39356,SOLUCION RINGER LACTATO,ok,Solución Ringer Lactato,1
+39367,DEXTROSA AL 5 % EN SOLUCION FISIOLOGICA,ok,Dextrosa,1
+39376,SULTAMICILINA 750 MG,ok,Sultamicilina,1
+39392,TERBINAFINA 1 % CREMA,ok,Terbinafina,1
+39397,TRIMETOPRIM / SULFAMETOXASOL,ok,Trimetoprim; Sulfametoxazol,2
+39403,VALSARTAN-HIDROCLOROTIAZIDA,ok,Valsartán; Hidroclorotiazida,2
+39418,ACRYLARM 0.2 % GEL OFTALMICO,sin_informacion,(No se encontró información),1
+39421,ALILUB 1.4 %,sin_informacion,(No se encontró información),1
+39449,HIOSCINA N-BUTILBROMURO 10 MG,ok,Hioscina N-Butilbromuro,1
+39496,CARBONATO DE CALCIO 750 MG,ok,Carbonato de Calcio,1
+39540,MAXIFURFORTE 100 MG,sin_informacion,(No se encontró información),1
+39547,ACECOL 600 MG,sin_informacion,(No se encontró información),1
+39548,ACECOL 600 MG,sin_informacion,(No se encontró información),1
+39550,NEMAX 16 % - 6 %,sin_informacion,(No se encontró información),1
+39551,FOSFATO DE SODIO MONOBASICO - FOSFATO DE SODIO DIBASICO,ok,Fosfato de Sodio Monobásico; Fosfato de Sodio Dibásico,2
+39563,PEPSADEL 262 MG,sin_informacion,(No se encontró información),1
+39576,FLUDINAX 0.9 %,sin_informacion,(No se encontró información),1
+39577,SILVEDERMA 1 % CREMA,sin_informacion,(No se encontró información),1
+39597,UDOX 75 MG,sin_informacion,(No se encontró información),1
+39612,Ketoprofeno 100mgs x Ampolla,ok,Ketoprofeno,1
+39613,Dipirona ampolla,ok,Dipirona,1
+39614,Dexanetasona 8mgs/4ml ampolla,ok,Dexametasona,1
+39615,Ondansetron 8mgs x ampolla,ok,Ondansetrón,1
+39616,Tramadol 100mgs x ampolla,ok,Tramadol,1
+39617,"Solucion 0,9% 100ml",ok,Cloruro de Sodio,1
+39618,ACIDO IBANDRONICO 150 MG,ok,Ácido Ibandrónico,1
+39619,ACIDO TRANEXAMICO 500 MG,ok,Ácido Tranexámico,1
+39620,ACECLOFENACO 100 MG,ok,Aceclofenaco,1
+39621,ACETAMINOFEN 650 MG,ok,Acetaminofén,1
+39622,ACETAMINOFEN 150 MG / 5 ML,ok,Acetaminofén,1
+39623,ACETAMINOFEN 120 MG / 5 ML,ok,Acetaminofén,1
+39624,ACETAMINOFEN 500 MG,ok,Acetaminofén,1
+39625,ACETAMINOFEN 500 MG,ok,Acetaminofén,1
+39626,ACETAZOLAMIDA 250 MG,ok,Acetazolamida,1
+39627,ACETAZOLAMIDA 250 MG,ok,Acetazolamida,1
+39628,ACICLOVIR 250 MG,ok,Aciclovir,1
+39629,ACICLOVIR 200 MG,ok,Aciclovir,1
+39630,ACICLOVIR 200 MG,ok,Aciclovir,1
+39631,ACIDO ASCORBICO 500 MG / 5 ML,ok,Ácido Ascórbico,1
+39632,ACIDO FOLICO 10 MG / 2 ML,ok,Ácido Fólico,1
+39633,ADAPALENO - CLINDAMICINA,ok,Adapaleno; Clindamicina,2
+39634,ADRENALINA 1 MG / ML,ok,Adrenalina,1
+39635,AGUA OXIG ALVA INYECTABLE,sin_informacion,(No se encontró información),1
+39636,ALBENDAZOL 400 MG,ok,Albendazol,1
+39637,ALBENDAZOL 200 MG,ok,Albendazol,1
+39638,ALENDRONATO SODICO 70 MG,ok,Alendronato Sódico,1
+39639,AMIKACINA 500 MG / 2 ML,ok,Amikacina,1
+39640,AMIKACINA 100 MG / 2 ML,ok,Amikacina,1
+39641,AMLODIPINA 10 MG,ok,Amlodipino,1
+39642,AMLODIPINA 10 MG,ok,Amlodipino,1
+39643,AMLODIPINA 5 MG,ok,Amlodipino,1
+39644,AMOXICILINA 500 MG,ok,Amoxicilina,1
+39645,AMOXICILINA 500 MG,ok,Amoxicilina,1
+39646,AMOXICILINA 125 MG / 5 ML,ok,Amoxicilina,1
+39647,ANASTROZOL 1 MG,ok,Anastrozol,1
+39648,APIXABAN 2.5 MG,ok,Apixabán,1
+39649,ATAPEC 100 MG,sin_informacion,(No se encontró información),1
+39650,ATENOLOL 100 MG,ok,Atenolol,1
+39651,ATENOLOL 50 MG,ok,Atenolol,1
+39652,ATENOLOL 50 MG,ok,Atenolol,1
+39653,ATORVASTATINA 20 MG,ok,Atorvastatina,1
+39654,ATORVASTATINA 40 MG,ok,Atorvastatina,1
+39655,AUGMENTIN BID 875 MG - 125 MG,sin_informacion,(No se encontró información),1
+39656,AZITROMICINA 500 MG,ok,Azitromicina,1
+39657,AZITROMICINA 200 MG / 5 ML,ok,Azitromicina,1
+39658,BACITRACINA 500 UI / 20 G,ok,Bacitracina,1
+39659,BISACODILO 5 MG,ok,Bisacodilo,1
+39660,BISOPROLOL FUMARATO 10 MG,ok,Bisoprolol Fumarato,1
+39661,BISOPROLOL FUMARATO 5 MG,ok,Bisoprolol Fumarato,1
+39662,VALSARTAN 160 MG,ok,Valsartán,1
+39663,CLORHIDRATO DE BROMEXINA 8 MG / 5 ML,ok,Bromexina,1
+39664,BROMEXINA CLORHIDRATO 4 MG / 5 ML,ok,Bromexina Clorhidrato,1
+39665,BROMHEXINA PED4MG 5 ML / 120 ML,ok,Bromhexina,1
+39666,CARBAMAZEPINA 200 MG,ok,Carbamazepina,1
+39667,CARBAMAZEPINA 200 MG,ok,Carbamazepina,1
+39668,CARBAMAZEPINA 200 MG,ok,Carbamazepina,1
+39669,CARBAMAZEPINA 400 MG,ok,Carbamazepina,1
+39670,CEFAZOLINA SODICO 1 G,ok,Cefazolina Sódico,1
+39671,CEFTRIAXONA 1 G,ok,Ceftriaxona,1
+39672,CEFTRIAXONA 1 G,ok,Ceftriaxona,1
+39673,CELECOXIB 200 MG,ok,Celecoxib,1
+39674,CETIRIZINA 5 MG / 5 ML,ok,Cetirizina,1
+39675,CILOSTAZOL 50 MG,ok,Cilostazol,1
+39676,CILOSTAZOL 100 MG,ok,Cilostazol,1
+39677,CIPROFLOXACINA 500 MG,ok,Ciprofloxacina,1
+39678,CIPROFLOXACINA INF INY200MG CRDIST 100 ML,ok,Ciprofloxacina,1
+39679,CIPROFLOXACINA 500 MG,ok,Ciprofloxacina,1
+39680,CIPROFLOXACINA 500 MG,ok,Ciprofloxacina,1
+39681,CIPROFLOXACINA 500 MG,ok,Ciprofloxacina,1
+39682,CIPROFLOXACINO 500 MG,ok,Ciprofloxacino,1
+39683,CITALOPRAM 40 MG,ok,Citalopram,1
+39684,CITRATO CA VIT D3,ok,Citrato de Calcio; Vitamina D3,2
+39685,CLOMIFENO CITRATO 50 MG,ok,Clomifeno,1
+39686,CLOPIDOGREL 75 MG,ok,Clopidogrel,1
+39687,CLOPIDOGREL 75 MG,ok,Clopidogrel,1
+39688,CLOPIDOGREL 75 MG,ok,Clopidogrel,1
+39689,CLORHID MEBEVERINA 200 MG,ok,Mebeverina,1
+39690,CLORURO SODICO 0.9 %,ok,Cloruro Sódico,1
+39691,CLORURO MAGNES 25 G,ok,Cloruro de Magnesio,1
+39692,CLOTRIMAZOL 100 MG,ok,Clotrimazol,1
+39693,CLOTRIMAZOL 500 MG,ok,Clotrimazol,1
+39694,COMPLEJO 2 ML X 3,ok,Complejo de Vitamina B,1
+39695,DILTIAZEM 60 MG,ok,Diltiazem,1
+39696,6 MG X 30 COMPRIMIDOS,sin_informacion,(No se encontró información),1
+39697,PORTU 4 MG,sin_informacion,(No se encontró información),1
+39698,SODICO 4 MG / 1 ML,sin_informacion,(No se encontró información),1
+39699,DEXAMETASONA FOSFATO SODICO 8 MG / 2 ML,ok,Dexametasona Fosfato Sódico,1
+39700,SODICO 8 MG / 2 ML,sin_informacion,(No se encontró información),1
+39701,DIACEREINA 50 MG,ok,Diacereína,1
+39702,CARVEDILOL 25 MG,ok,Carvedilol,1
+39703,DICLOFENACO SODICO 75 MG / 3 ML,ok,Diclofenaco Sódico,1
+39704,DICLOFENACO POTASICO 50 MG,ok,Diclofenaco Potásico,1
+39705,DICLOFENAC POTASICO 50 MG,ok,Diclofenac Potásico,1
+39706,DIOSMINA 600 MG,ok,Diosmina,1
+39707,DIOSMINA - HESPERIDINA,ok,Diosmina; Hesperidina,2
+39708,DIOSMINA-HESPERIDINA,ok,Diosmina; Hesperidina,2
+39709,DOBUTAMINA 250 MG / 5 ML,ok,Dobutamina,1
+39710,DOMPERIDONA 10 MG,ok,Domperidona,1
+39711,DOMPERIDONA 10 MG,ok,Domperidona,1
+39712,DOMPERIDONA 10 MG,ok,Domperidona,1
+39713,DOXICICLINA 100 MG,ok,Doxiciclina,1
+39714,ENALAPRIL 20 MG,ok,Enalapril,1
+39715,ENALAPRIL MALEATO - HIDROCLOROTIAZIDA,ok,Enalapril Maleato; Hidroclorotiazida,2
+39716,ERITROMICINA 500 MG,ok,Eritromicina,1
+39717,ESCITALOPRAM 10 MG,ok,Escitalopram,1
+39718,ESCITALOPRAM 10 MG,ok,Escitalopram,1
+39719,ESCITALOPRAM 20 MG,ok,Escitalopram,1
+39720,ESCITALOPRAM 10 MG,ok,Escitalopram,1
+39721,ESCITALOPRAM 20 MG,ok,Escitalopram,1
+39722,ESCITALOPRAM 5 MG,ok,Escitalopram,1
+39723,FEXOFENADINA CLORHIDRATO 180 MG,ok,Fexofenadina Clorhidrato,1
+39724,FLAVOXUNI FLAVOXATO 200 MG,ok,Flavoxato,1
+39725,FLAVOXATO 200 MG,ok,Flavoxato,1
+39726,FLAVOXATO CLORHIDRATO 200 MG,ok,Flavoxato Clorhidrato,1
+39727,FLUCONAZOL 200 MG,ok,Fluconazol,1
+39728,FLUCONAZOL 200 MG / 100 ML,ok,Fluconazol,1
+39729,FLUCONAZOL 200 MG,ok,Fluconazol,1
+39730,FLUCONAZOL 200 MG / 100 ML,ok,Fluconazol,1
+39731,FLUCONAZOL 150 MG,ok,Fluconazol,1
+39732,FLUNARIZINA 10 MG,ok,Flunarizina,1
+39733,FLUOXETINA 20 MG,ok,Fluoxetina,1
+39734,FUROSEMIDA 20 MG / 2 ML,ok,Furosemida,1
+39735,GENTAMICINA 160 MG / 2 ML,ok,Gentamicina,1
+39736,GENTAMICINA 160 MG / 2 ML,ok,Gentamicina,1
+39737,GLIBENCLAMIDA 5 MG,ok,Glibenclamida,1
+39738,GLIBENCLAMIDA 5 MG,ok,Glibenclamida,1
+39739,GLIMEPIRIDA 2 MG,ok,Glimepirida,1
+39740,IRBESARTAN 150 MG,ok,Irbesartán,1
+39741,IRBESARTAN 300 MG,ok,Irbesartán,1
+39742,ITRACONAZOL 100 MG,ok,Itraconazol,1
+39743,KETOPROFENO 100 MG / 2 ML,ok,Ketoprofeno,1
+39744,KETOROLACO TROMETAMOL 30 MG / ML,ok,Ketorolaco Trometamol,1
+39745,KETOROLACO TROMETAMINA 30 MG / ML,ok,Ketorolaco Trometamina,1
+39746,KETOROLACO TROMETAMINA 20 MG,ok,Ketorolaco Trometamina,1
+39747,LAMOTRIGINA 100 MG,ok,Lamotrigina,1
+39748,LAMOTRIGINA 100 MG,ok,Lamotrigina,1
+39749,LERCANIDIPINO 20 MG,ok,Lercanidipino,1
+39750,LETROZOL 2.5 MG,ok,Letrozol,1
+39751,LEVETIRACETAM 500 MG,ok,Levetiracetam,1
+39752,LEVOFLOXACINA INF CRDIST 500 MG / 100 ML,ok,Levofloxacina,1
+39753,LEVOFLOXACINA 750 MG,ok,Levofloxacino,1
+39754,LEVOFLOXACINA 750 MG,ok,Levofloxacino,1
+39755,LEVOFLOXACINA 500 MG,ok,Levofloxacino,1
+39756,LEVOFLOXACINA 500 MG,ok,Levofloxacino,1
+39757,LEVOFLOXACINO 500 MG,ok,Levofloxacino,1
+39758,LEVOFLOXACINO 500 MG,ok,Levofloxacino,1
+39759,LEVOFLOXACINO 750 MG,ok,Levofloxacino,1
+39760,LEVONORGESTREL 1.5 MG,ok,Levonorgestrel,1
+39761,LEVOTIROXINA SODICO 100 MCG,ok,Levotiroxina Sódico,1
+39762,LEVOTIROXINA SODICO 100 MCG,ok,Levotiroxina Sódico,1
+39763,LEVOTIROXINA SODICO 50 MCG,ok,Levotiroxina Sódico,1
+39764,LOPERAMIDA 2 MG,ok,Loperamida,1
+39765,LOPERAMIDA PORTU 2 MG,ok,Loperamida,1
+39766,LORATADINA 10 MG,ok,Loratadina,1
+39767,LORATADINA 5 MG / 5 ML,ok,Loratadina,1
+39768,LOSARTAN HCT 50 MG,ok,Losartán; Hidroclorotiazida,2
+39769,LOSARTAN HCT 50 MG,ok,Losartán; Hidroclorotiazida,2
+39770,MAGNESIO GLICINATO,ok,Magnesio Glicinato,1
+39771,MATERNAVIT,sin_informacion,(No se encontró información),1
+39772,MEDROXIPROGESTERONA 10 MG,ok,Medroxiprogesterona,1
+39773,MELOXICAM 15 MG,ok,Meloxicam,1
+39774,MELOXICAM 7.5 MG,ok,Meloxicam,1
+39775,MEMANTINA CLORHIDRATO 10 MG,ok,Memantina,1
+39776,MEMANTINA CLORHIDRATO 10 MG,ok,Memantina,1
+39777,MEMANTINA CLORHIDRATO 10 MG,ok,Memantina,1
+39778,MEROPENEM 1 G,ok,Meropenem,1
+39779,CLORHIDRATO DE METFORMINA 500 MG,ok,Metformina,1
+39780,METFORMINA LP 1000 MG,ok,Metformina,1
+39781,METFORMINA 500 MG,ok,Metformina,1
+39782,METFORMINA CLORHIDRATO 500 MG,ok,Metformina,1
+39783,METFORMINA CLORHIDRATO 850 MG,ok,Metformina,1
+39784,METOCLOPRAMIDA 10 MG / 2 ML,ok,Metoclopramida,1
+39785,METOCLOPRAMIDA 10 MG,ok,Metoclopramida,1
+39786,METRONIDAZOL 0.75 % GEL,ok,Metronidazol,1
+39787,METRONIDAZOL 500 MG / 100 ML,ok,Metronidazol,1
+39788,METRONIDAZOL 500 MG,ok,Metronidazol,1
+39789,METRONIDAZOL 500 MG / 100 ML,ok,Metronidazol,1
+39790,METRONIDAZOL 500 MG,ok,Metronidazol,1
+39791,BETAHISTINA 16 MG,ok,Betahistina,1
+39792,MIRTAZAPINA 15 MG,ok,Mirtazapina,1
+39793,MIRTAZAPINA 30 MG,ok,Mirtazapina,1
+39794,MOXIFLOXACINA 400 MG,ok,Moxifloxacino,1
+39795,NAPROXENO 250 MG,ok,Naproxeno,1
+39796,LOSARTAN HCT TABR 50 MG,ok,Losartán; Hidroclorotiazida,2
+39797,NIFEDIPINA 10 MG,ok,Nifedipino,1
+39798,NITROFURANTOINA LAPROFF 100 MG,ok,Nitrofurantoína,1
+39799,NITROFURANTOINA 100 MG,ok,Nitrofurantoína,1
+39800,NITROFURANTOINA 50 MG,ok,Nitrofurantoína,1
+39801,NITROFURAZONA 2 MG / 30 G,ok,Nitrofurazona,1
+39802,PREDNISOLONA 3 MG / 60 ML,ok,Prednisolona,1
+39803,OLANZAPINA 5 MG,ok,Olanzapina,1
+39804,OLMESARTAN MEDOXOMIL 40 MG - HIDROLOCOTIAZIDA,ok,Olmesartán Medoxomil; Hidroclorotiazida,2
+39805,OLMESARTAN MEDOXOMILO 20 MG,ok,Olmesartán Medoxomilo,1
+39806,OLMESARTAN MEDOXOMILO 40 MG,ok,Olmesartán Medoxomilo,1
+39807,OLMESARTAN MEDOXOMILO 40 MG,ok,Olmesartán Medoxomilo,1
+39808,OMEPRAZOL 20 MG,ok,Omeprazol,1
+39809,OMEPRAZOL 20 MG,ok,Omeprazol,1
+39810,OMEPRAZOL 40 MG,ok,Omeprazol,1
+39811,OMMUNAL (LISADO BACTERIANO),ok,Lisado Bacteriano,1
+39812,ONDANSETRON 8 MG / 4 ML,ok,Ondansetrón,1
+39813,ONDANSETRON 8 MG / 4 ML,ok,Ondansetrón,1
+39814,CRISPLUS ORLISTAT ELEA ZUOZ 120 MG,ok,Orlistat,1
+39815,OXCARBAZEPINA 300 MG,ok,Oxcarbazepina,1
+39816,OXOLAMINA 120 ML,ok,Oxolamina,1
+39817,PANTOPRAZOL 40 MG,ok,Pantoprazol,1
+39818,PARACETAMOL PORTU 100 MG / 10 ML,ok,Paracetamol,1
+39819,PARACETAMOL 1 G / 100 ML,ok,Paracetamol,1
+39820,PAROXETINA 20 MG,ok,Paroxetina,1
+39821,PREGABALINA 150 MG,ok,Pregabalina,1
+39822,PENTOXIFILINA 400 MG,ok,Pentoxifilina,1
+39823,PIRACETAM 400 MG,ok,Piracetam,1
+39824,PREDNISOLONA 3 MG / 60 ML,ok,Prednisolona,1
+39825,PREDNISOLONA 5 ML,ok,Prednisolona,1
+39826,PREDNISOLONA 5 MG,ok,Prednisolona,1
+39827,PREDNISOLONA 5 MG,ok,Prednisolona,1
+39828,PREDNISONA 5 MG,ok,Prednisona,1
+39829,PREGABALINA 75 MG,ok,Pregabalina,1
+39830,PREVERAL DEXTRO REFORM 120 ML,sin_informacion,(No se encontró información),1
+39831,PROPRANOLOL CLORH 40 MG,ok,Propranolol,1
+39832,QUETIAPINA FARMAMED 100 MG,ok,Quetiapina,1
+39833,QUETIAPINA 100 MG,ok,Quetiapina,1
+39834,QUETIAPINA 25 MG,ok,Quetiapina,1
+39835,QUETIAPINA 300 MG,ok,Quetiapina,1
+39836,RANITIDINA 50 MG / 2 ML,ok,Ranitidina,1
+39837,RANITIDINA 150 MG,ok,Ranitidina,1
+39838,RANITIDINA 300 MG,ok,Ranitidina,1
+39839,HIDROXICLOROQUINA 200 MG,ok,Hidroxicloroquina,1
+39840,RIVAROXABAN 15 MG,ok,Rivaroxabán,1
+39841,RIVAROXABAN 20 MG,ok,Rivaroxabán,1
+39842,RIVAROXABAN 20 MG,ok,Rivaroxabán,1
+39843,ROSUVASTATINA 10 MG,ok,Rosuvastatina,1
+39844,ROSUVASTATINA 20 MG,ok,Rosuvastatina,1
+39845,ROSUVASTATINA 20 MG,ok,Rosuvastatina,1
+39846,ROSUVASTATINA 10 MG,ok,Rosuvastatina,1
+39847,SERTRALINA 50 MG,ok,Sertralina,1
+39848,SERTRALINA 50 MG,ok,Sertralina,1
+39849,SERTRALINA 50 MG,ok,Sertralina,1
+39850,SERTRALINA 50 MG,ok,Sertralina,1
+39851,SUCRALFATO 1 G,ok,Sucralfato,1
+39852,SUCRALFATO 1 G,ok,Sucralfato,1
+39853,TACROLIMUS 0.03 % UNGUENTO,ok,Tacrolimus,1
+39854,TAMSULOSINA HCL 0.4 MG,ok,Tamsulosina,1
+39855,TAMSULOSINA TAMSUHEM 0.4 MG,ok,Tamsulosina,1
+39856,TAMSULOSINA CLORHIDRATO 0.4 MG,ok,Tamsulosina,1
+39857,TEOFILINA 80 MG / 15 ML,ok,Teofilina,1
+39858,TIMOLOL 0.5 %,ok,Timolol,1
+39859,TIOCOLCHICOSIDO 4 MG / 2 ML,ok,Tiocolchicósido,1
+39860,TIOCOLCHICOSIDO 4 MG / 2 ML,ok,Tiocolchicósido,1
+39861,TIOCOLCHICOSIDO IMP 4 MG / 2 ML,ok,Tiocolchicósido,1
+39862,TIZANIDINA 2 MG,ok,Tizanidina,1
+39863,TRIMEBUTINA MALEATO 200 MG,ok,Trimebutina,1
+39864,VALSARTAN 160 MG,ok,Valsartán,1
+39865,VALSARTAN 160 MG,ok,Valsartán,1
+39866,VALSARTAN HCT TABREC 80 MG,ok,Valsartán; Hidroclorotiazida,2
+39867,VALSARTAN 160 MG,ok,Valsartán,1
+39868,VILDAGLIPTINA 50 MG,ok,Vildagliptina,1
+39869,BITEX COMPLEJO VITAMINA B1 B2 B6 B12 NATURALIFES,ok,"Complejo Vitamina B1, B2, B6, B12",1
+39870,VITAMINA MANDARINA TIRA TABLETA MASTICABLE UNIDADES 500 MG,ok,Vitamina C,1
+39871,VORICONAZOL 200 MG,ok,Voriconazol,1
+39872,ACETAMINOFEN 120 MG / 5 ML,ok,Acetaminofén,1
+39873,AZITROMICINA 500 MG,ok,Azitromicina,1
+39874,BISOPROLOL FUMARATO 1.25 MG,ok,Bisoprolol,1
+39875,BISOPROLOL FUMARATO 5 MG,ok,Bisoprolol,1
+39876,BISOPROLOL HCT 2.5 MG,ok,Bisoprolol; Hidroclorotiazida,2
+39877,ZYRTEC DICLORHIDRATO CETIRIZINA GSK FARMA 1 MG / 1 ML,ok,Cetirizina,1
+39878,CLARITROMICINA 500 MG,ok,Claritromicina,1
+39879,CLORURO MAGNES 25 G,ok,Cloruro de Magnesio,1
+39880,DICLOFENAC DIETILAMINO 1.16 % GEL,ok,Diclofenac Dietilamino,1
+39881,EMPAGLIFLOZINA 10 MG,ok,Empagliflozina,1
+39882,MONTELUKAST 10 MG,ok,Montelukast,1
+39883,HIDROCLOROTIAZIDA 12.5 MG,ok,Hidroclorotiazida,1
+39884,LOSARTAN POTASICO 100 MG,ok,Losartán,1
+39885,MELOXICAM 15 MG,ok,Meloxicam,1
+39886,METFORMINA CLORHIDRATO 850 MG,ok,Metformina,1
+39887,ACETAMINOFEN 650 MG,ok,Acetaminofén,1
+39888,MONTELUKAST 10 MG,ok,Montelukast,1
+39889,QUETIAPINA 100 MG,ok,Quetiapina,1
+39890,QUETIAPINA 25 MG,ok,Quetiapina Hemifumarato,1
+39891,QUETIAPINA 25 MG,ok,Quetiapina,1
+39892,CYNT SIMVASTATINA 20 MG,ok,Simvastatina,1
+39893,SALBUTAMOL INH 100 MCG,ok,Salbutamol,1
+39894,SALBUTAMOL INH 100 MCG,ok,Salbutamol,1
+39895,SERTRALINA 50 MG,ok,Sertralina,1
+39896,SULTAMICILINA 750 MG,ok,Sultamicilina,1
+39897,ALBENDAZOL 200 MG,ok,Albendazol,1
+39898,ANGIOFLUX 250LSU,sin_informacion,(No se encontró información),1
+39899,AZITROMICINA 500 MG,ok,Azitromicina,1
+39900,BUDESONIDA 50 MCG / DOSIS,ok,Budesonida,1
+39901,HIOSCINA N-BUTILBROMURO 10 MG,ok,Butilbromuro de Hioscina,1
+39902,CLINDAMICINA 15 G GEL,ok,Clindamicina,1
+39903,CLORTALIDONA 12.5 MG,ok,Clortalidona,1
+39904,CLOTRIMAZOL VAG 20 G CREMA,ok,Clotrimazol,1
+39905,DAPAGLIFLOZINA 10 MG,ok,Dapagliflozina,1
+39906,DICLOFENAC SODICO 50 G GEL,ok,Diclofenaco Sódico,1
+39907,DYMAZOL CLOTRIMAZOL OVULOS VAGINAL 200 MG,ok,Clotrimazol,1
+39908,FLUCONAZOL 200 MG / 100 ML,ok,Fluconazol,1
+39909,GABAPENTINA 300 MG,ok,Gabapentina,1
+39910,GLUTAMINA VIT B12 X 60,ok,Glutamina; Vitamina B12,2
+39911,HIDROCORTISONA SODICO 500 MG,ok,Hidrocortisona Sódico,1
+39912,KETOPROFENO 2.5 % GEL,ok,Ketoprofeno,1
+39913,DALCITRIN MUPIROCINA UNGUENTO,ok,Mupirocina,1
+39914,OMEPRAZOL 40 MG,ok,Omeprazol,1
+39915,PENTOXIFILINA 400 MG,ok,Pentoxifilina,1
+39916,RANITIDINA 150 MG / 10 ML,ok,Ranitidina,1
+39917,DIOSMINA HESPER 450 MG,ok,Diosmina; Hesperidina,2

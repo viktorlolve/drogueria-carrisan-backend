@@ -1,0 +1,18 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const f = path.join(__dirname, '..', 'data', 'limpiezas', '2026-09-24_sin_molecula.csv');
+const txt = fs.readFileSync(f, 'utf8');
+const lines = txt.split(/\r?\n/);
+console.log('total lineas:', lines.length);
+const idx = lines.findIndex((l) => l.includes('ACA MI TRABAJO'));
+console.log('bloque del dueno empieza en linea:', idx + 1);
+const bloque = lines.slice(idx + 2).filter((l) => l.trim() !== '');
+console.log('lineas de datos en el bloque:', bloque.length);
+console.log('--- muestra cruda (JSON) ---');
+for (const l of bloque.slice(0, 6)) console.log(JSON.stringify(l));
+console.log('--- separadores usados ---');
+console.log('con tab:', bloque.filter((l) => l.includes('\t')).length);
+console.log('con 2+ espacios:', bloque.filter((l) => / {2,}/.test(l)).length);
+console.log('con ; :', bloque.filter((l) => l.includes(';')).length);

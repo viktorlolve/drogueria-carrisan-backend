@@ -1,0 +1,471 @@
+producto_id,molecula_id,propuesta,ref_nombre,metodo,score,atc_id
+37305,1111,Diltiazem,Diltiazem,exacto,1,1906
+37322,34,Acetaminofén,Acetaminofen,exacto,1,
+37323,34,Acetaminofén,Acetaminofen,exacto,1,
+37325,34,Acetaminofén,Acetaminofen,exacto,1,
+37325,847,Clorfeniramina,Clorfeniramina,exacto,1,2282
+37326,34,Acetaminofén,Acetaminofen,exacto,1,
+37326,3473,Tramadol,Tramadol,exacto,1,5004
+37345,47,Ácido Acetilsalicílico,Acetilsalicilico Acido,fuzzy,1,4728
+37346,47,Ácido Acetilsalicílico,Acetilsalicilico Acido,fuzzy,1,4728
+37366,1807,Ácido Ibandrónico,Ibandronico Acido,fuzzy,1,4828
+37420,194,Amikacina,Amikacina,exacto,1,2344
+37429,212,Amlodipino,Amlodipino,exacto,1,1879
+37433,212,Amlodipino,Amlodipino,exacto,1,1879
+37438,221,Amoxicilina,Amoxicilina,exacto,1,3196
+37439,221,Amoxicilina,Amoxicilina,exacto,1,3196
+37439,808,Ácido Clavulánico,Clavulanico Acido,fuzzy,1,
+37446,221,Amoxicilina,Amoxicilina,exacto,1,3196
+37522,329,Atorvastatina,Atorvastatina,exacto,1,2018
+37528,340,Atropina Sulfato,Atropina Sulfato,exacto,1,233
+37547,366,Azitromicina,Azitromicina,exacto,1,3366
+37589,494,Bisoprolol Fumarato,Bisoprolol Fumarato,exacto,1,1815
+37595,494,Bisoprolol Fumarato,Bisoprolol Fumarato,exacto,1,1815
+37655,589,Candesartán Cilexetilo,Candesartan Cilexetilo,exacto,1,1973
+37655,1739,Hidroclorotiazida,Hidroclorotiazida,exacto,1,1555
+37663,588,Candesartán,Candesartan,exacto,1,1973
+37668,4125,Oxígeno,Oxigeno,exacto,1,6785
+37704,666,Cefadroxilo,Cefadroxilo,exacto,1,3258
+37719,687,Ceftriaxona,Ceftriaxona,exacto,1,3281
+37734,3732,Vitamina C,Vitamina C,exacto,1,
+37735,3732,Vitamina C,Vitamina C,exacto,1,
+37751,764,Ciprofloxacina,Ciprofloxacino,fuzzy,0.765,6356
+37752,764,Ciprofloxacina,Ciprofloxacino,fuzzy,0.765,6356
+37753,764,Ciprofloxacina,Ciprofloxacino,fuzzy,0.765,6356
+37755,764,Ciprofloxacina,Ciprofloxacino,fuzzy,0.765,6356
+37756,764,Ciprofloxacina,Ciprofloxacino,fuzzy,0.765,6356
+37757,764,Ciprofloxacina,Ciprofloxacino,fuzzy,0.765,6356
+37758,764,Ciprofloxacina,Ciprofloxacino,fuzzy,0.765,6356
+37759,764,Ciprofloxacina,Ciprofloxacino,fuzzy,0.765,6356
+37760,764,Ciprofloxacina,Ciprofloxacino,fuzzy,0.765,6356
+37762,764,Ciprofloxacino,Ciprofloxacino,exacto,1,6356
+37805,3940,Clopidogrel,Clopidogrel,exacto,1,936
+37818,874,Cloruro de Potasio,Cloruro De Potasio,exacto,1,775
+37819,3995,Cloruro de Sodio,Sodio Cloruro,fuzzy,0.824,7330
+37820,3995,Cloruro de Sodio,Sodio Cloruro,fuzzy,0.824,7330
+37832,1976,Lactobacillus plantarum,Lactobacillus Plantarum,exacto,1,
+37901,1037,Dexametasona Fosfato Sódico,Dexametasona Fosfato Sodio,fuzzy,0.833,6447
+37902,1037,Dexametasona Fosfato Sódico,Dexametasona Fosfato Sodio,fuzzy,0.833,6447
+37909,1053,Dextrometorfano,Dextrometorfano,exacto,1,6140
+37911,1055,Dextrosa,Dextrosa,exacto,1,
+37932,1076,Diclofenaco Sódico,Diclofenaco Sodico,exacto,1,2675
+37957,1120,Diosmina,Diosmina,exacto,1,1765
+37957,1729,Hesperidina,Hesperidina,exacto,1,1778
+38003,1228,Enalapril Maleato,Enalapril Maleato,exacto,1,1922
+38021,1282,Escitalopram,Escitalopram,exacto,1,5485
+38022,1282,Escitalopram,Escitalopram,exacto,1,5485
+38025,1282,Escitalopram,Escitalopram,exacto,1,5485
+38035,1310,Esomeprazol,Esomeprazol,exacto,1,134
+38086,2650,Pancreatina,Pancreatina,exacto,1,
+38087,2650,Pancreatina,Pancreatina,exacto,1,
+38124,1475,Flumazenil,Flumazenil,exacto,1,6738
+38126,1490,Fluoxetina,Fluoxetina,exacto,1,5478
+38192,3596,Valsartán,Valsartan,exacto,1,1970
+38192,1739,Hidroclorotiazida,Hidroclorotiazida,exacto,1,1555
+38195,2132,Losartán Potásico,Losartan Potasico,exacto,1,1968
+38195,1739,Hidroclorotiazida,Hidroclorotiazida,exacto,1,1555
+38196,2132,Losartán Potásico,Losartan Potasico,exacto,1,1968
+38196,1739,Hidroclorotiazida,Hidroclorotiazida,exacto,1,1555
+38258,1912,Irbesartán,Irbesartan,exacto,1,1971
+38258,1739,Hidroclorotiazida,Hidroclorotiazida,exacto,1,1555
+38305,2027,L-Carnitina,L-carnitina,exacto,1,5559
+38348,2077,Levosulpiride,Levosulpirida,fuzzy,0.75,5294
+38353,2081,Lidocaína,Lidocaina,exacto,1,1297
+38353,1244,Epinefrina,Epinefrina,exacto,1,6457
+38357,1978,Lactobacillus rhamnosus,Lactobacillus Rhamnosus,exacto,1,
+38388,2125,Loratadina,Loratadina,exacto,1,6257
+38398,2132,Losartán Potásico,Losartan Potasico,exacto,1,1968
+38398,1739,Hidroclorotiazida,Hidroclorotiazida,exacto,1,1555
+38402,2132,Losartán Potásico,Losartan Potasico,exacto,1,1968
+38402,1739,Hidroclorotiazida,Hidroclorotiazida,exacto,1,1555
+38403,2132,Losartán Potásico,Losartan Potasico,exacto,1,1968
+38403,1739,Hidroclorotiazida,Hidroclorotiazida,exacto,1,1555
+38420,703,Centella asiatica,Centella Asiatica Exto,fuzzy,0.783,6619
+38448,4112,Meropenem,Meropenem,exacto,1,7345
+38450,1124,Dipirona,Dipirona,exacto,1,
+38451,1124,Dipirona,Dipirona,exacto,1,
+38458,2280,Metformina,Metformina,exacto,1,598
+38463,3184,Sitagliptina,Sitagliptina,exacto,1,651
+38465,3184,Sitagliptina,Sitagliptina,exacto,1,651
+38466,2299,Metilprednisolona,Metilprednisolona,exacto,1,3085
+38476,2320,Metronidazol,Metronidazol,exacto,1,2719
+38525,2388,Mupirocina,Mupirocina,exacto,1,5901
+38543,2437,Neostigmina,Neostigmina,exacto,1,5603
+38544,2437,Neostigmina,Neostigmina,exacto,1,5603
+38564,2518,Nitrofurantoína,Nitrofurantoina,exacto,1,3455
+38565,2518,Nitrofurantoína,Nitrofurantoina,exacto,1,3455
+38581,2874,Prednisolona Acetato,Prednisolona Acetato,exacto,1,3087
+38589,2576,Olmesartán Medoxomil,Olmesartan Medoxomilo,fuzzy,0.87,1975
+38589,1739,Hidroclorotiazida,Hidroclorotiazida,exacto,1,1555
+38592,2576,Olmesartán Medoxomil,Olmesartan Medoxomilo,fuzzy,0.87,1975
+38596,2584,Omeprazol,Omeprazol,exacto,1,130
+38597,2584,Omeprazol,Omeprazol,exacto,1,130
+38598,2584,Omeprazol,Omeprazol,exacto,1,130
+38599,2584,Omeprazol,Omeprazol,exacto,1,130
+38600,2584,Omeprazol,Omeprazol,exacto,1,130
+38601,2584,Omeprazol,Omeprazol,exacto,1,130
+38602,2584,Omeprazol,Omeprazol,exacto,1,130
+38608,2584,Omeprazol,Omeprazol,exacto,1,130
+38609,2584,Omeprazol,Omeprazol,exacto,1,130
+38610,2584,Omeprazol,Omeprazol,exacto,1,130
+38611,2584,Omeprazol,Omeprazol,exacto,1,130
+38617,2587,Ondansetrón,Ondansetron,exacto,1,301
+38618,2587,Ondansetrón,Ondansetron,exacto,1,301
+38631,4270,Oxolamina,Oxolamina,exacto,1,6151
+38635,2656,Pantoprazol,Pantoprazol,exacto,1,131
+38636,2656,Pantoprazol,Pantoprazol,exacto,1,131
+38684,2873,Prednisolona,Prednisolona,exacto,1,3087
+38685,2873,Prednisolona,Prednisolona,exacto,1,3087
+38702,2912,Propranolol,Propranolol,exacto,1,1796
+38708,2948,Quetiapina,Quetiapina,exacto,1,5281
+38709,2948,Quetiapina,Quetiapina,exacto,1,5281
+38710,2948,Quetiapina,Quetiapina,exacto,1,5281
+38803,3184,Sitagliptina,Sitagliptina,exacto,1,651
+38803,2280,Metformina,Metformina,exacto,1,598
+38806,4236,Sucralfato,Sucralfato,exacto,1,148
+38893,3515,Trimebutina Maleato,Trimebutina Maleato,exacto,1,173
+38894,3515,Trimebutina Maleato,Trimebutina Maleato,exacto,1,173
+38911,3582,Valaciclovir,Valaciclovir,exacto,1,3547
+38922,3596,Valsartán,Valsartan,exacto,1,1970
+38922,1739,Hidroclorotiazida,Hidroclorotiazida,exacto,1,1555
+38924,3596,Valsartán,Valsartan,exacto,1,1970
+38924,1739,Hidroclorotiazida,Hidroclorotiazida,exacto,1,1555
+38925,3596,Valsartán,Valsartan,exacto,1,1970
+38925,1739,Hidroclorotiazida,Hidroclorotiazida,exacto,1,1555
+38958,3726,Vitamina B12,Vitamina B12,exacto,1,714
+38959,3726,Vitamina B12,Vitamina B12,exacto,1,714
+38960,3732,Vitamina C,Vitamina C,exacto,1,
+38967,3732,Vitamina C,Vitamina C,exacto,1,
+38970,3739,Vitamina K1,Vitamina K1,exacto,1,
+38973,3736,Vitamina E,Vitamina E,exacto,1,
+39014,34,Acetaminofén,Acetaminofen,exacto,1,
+39024,1055,Dextrosa,Dextrosa,exacto,1,
+39037,212,Amlodipino,Amlodipino,exacto,1,1879
+39040,212,Amlodipino,Amlodipino,exacto,1,1879
+39044,221,Amoxicilina,Amoxicilina,exacto,1,3196
+39087,329,Atorvastatina,Atorvastatina,exacto,1,2018
+39096,458,Betametasona,Betametasona,exacto,1,6450
+39097,3193,Bicarbonato de Sodio,Sodio Bicarbonato,fuzzy,0.857,110
+39099,2576,Olmesartán Medoxomilo,Olmesartan Medoxomilo,exacto,1,1975
+39109,494,Bisoprolol Fumarato,Bisoprolol Fumarato,exacto,1,1815
+39109,1739,Hidroclorotiazida,Hidroclorotiazida,exacto,1,1555
+39111,494,Bisoprolol Fumarato,Bisoprolol Fumarato,exacto,1,1815
+39111,1739,Hidroclorotiazida,Hidroclorotiazida,exacto,1,1555
+39139,764,Ciprofloxacina,Ciprofloxacino,fuzzy,0.765,6356
+39140,764,Ciprofloxacina,Ciprofloxacino,fuzzy,0.765,6356
+39141,764,Ciprofloxacina,Ciprofloxacino,fuzzy,0.765,6356
+39142,764,Ciprofloxacina,Ciprofloxacino,fuzzy,0.765,6356
+39150,874,Cloruro de Potasio,Cloruro De Potasio,exacto,1,775
+39151,3995,Cloruro de Sodio,Sodio Cloruro,fuzzy,0.824,7330
+39248,3877,Ibuprofeno,Ibuprofeno,exacto,1,4605
+39248,4000,Tiocolchicósido,Tiocolchicosido,exacto,1,7246
+39324,2576,Olmesartán Medoxomil,Olmesartan Medoxomilo,fuzzy,0.87,1975
+39325,2576,Olmesartán Medoxomilo,Olmesartan Medoxomilo,exacto,1,1975
+39326,2584,Omeprazol,Omeprazol,exacto,1,130
+39327,2584,Omeprazol,Omeprazol,exacto,1,130
+39328,2584,Omeprazol,Omeprazol,exacto,1,130
+39329,2584,Omeprazol,Omeprazol,exacto,1,130
+39330,2584,Omeprazol,Omeprazol,exacto,1,130
+39334,4270,Oxolamina,Oxolamina,exacto,1,6151
+39335,4270,Oxolamina,Oxolamina,exacto,1,6151
+39339,4270,Oxolamina,Oxolamina,exacto,1,6151
+39367,1055,Dextrosa,Dextrosa,exacto,1,
+39376,4234,Sultamicilina,Sultamicilina,exacto,1,3249
+39392,3348,Terbinafina,Terbinafina,exacto,1,2184
+39397,3519,Trimetoprim,Trimetoprima,fuzzy,0.769,3319
+39397,3249,Sulfametoxazol,Sulfametoxazol,exacto,1,3333
+39403,3596,Valsartán,Valsartan,exacto,1,1970
+39403,1739,Hidroclorotiazida,Hidroclorotiazida,exacto,1,1555
+39496,572,Carbonato de Calcio,Calcio Carbonato,fuzzy,0.833,80
+39612,4101,Ketoprofeno,Ketoprofeno,exacto,1,4607
+39613,1124,Dipirona,Dipirona,exacto,1,
+39614,1034,Dexametasona,Dexametasona,exacto,1,6447
+39615,2587,Ondansetrón,Ondansetron,exacto,1,301
+39616,3473,Tramadol,Tramadol,exacto,1,5004
+39617,3995,Cloruro de Sodio,Sodio Cloruro,fuzzy,0.824,7330
+39618,1807,Ácido Ibandrónico,Ibandronico Acido,fuzzy,1,4828
+39619,3480,Ácido Tranexámico,Tranexamico Acido,fuzzy,1,998
+39620,17,Aceclofenaco,Aceclofenaco,exacto,1,4591
+39621,34,Acetaminofén,Acetaminofen,exacto,1,
+39622,34,Acetaminofén,Acetaminofen,exacto,1,
+39623,34,Acetaminofén,Acetaminofen,exacto,1,
+39624,34,Acetaminofén,Acetaminofen,exacto,1,
+39625,34,Acetaminofén,Acetaminofen,exacto,1,
+39626,40,Acetazolamida,Acetazolamida,exacto,1,6478
+39627,40,Acetazolamida,Acetazolamida,exacto,1,6478
+39628,56,Aciclovir,Aciclovir,exacto,1,2362
+39629,56,Aciclovir,Aciclovir,exacto,1,2362
+39630,56,Aciclovir,Aciclovir,exacto,1,2362
+39631,308,Ácido Ascórbico,Ascorbico Acido,fuzzy,1,
+39632,1505,Ácido Fólico,Folico Acido,fuzzy,1,1106
+39633,76,Adapaleno,Adapaleno,exacto,1,2598
+39633,812,Clindamicina,Clindamicina,exacto,1,2609
+39634,84,Adrenalina,Adrenalina,exacto,1,
+39636,108,Albendazol,Albendazol,exacto,1,5776
+39637,108,Albendazol,Albendazol,exacto,1,5776
+39638,123,Alendronato Sódico,Alendronato Sodio,fuzzy,0.762,
+39639,194,Amikacina,Amikacina,exacto,1,2344
+39640,194,Amikacina,Amikacina,exacto,1,2344
+39641,212,Amlodipino,Amlodipino,exacto,1,1879
+39642,212,Amlodipino,Amlodipino,exacto,1,1879
+39643,212,Amlodipino,Amlodipino,exacto,1,1879
+39644,221,Amoxicilina,Amoxicilina,exacto,1,3196
+39645,221,Amoxicilina,Amoxicilina,exacto,1,3196
+39646,221,Amoxicilina,Amoxicilina,exacto,1,3196
+39647,233,Anastrozol,Anastrozol,exacto,1,4338
+39648,271,Apixabán,Apixaban,exacto,1,985
+39650,322,Atenolol,Atenolol,exacto,1,1811
+39651,322,Atenolol,Atenolol,exacto,1,1811
+39652,322,Atenolol,Atenolol,exacto,1,1811
+39653,329,Atorvastatina,Atorvastatina,exacto,1,2018
+39654,329,Atorvastatina,Atorvastatina,exacto,1,2018
+39656,366,Azitromicina,Azitromicina,exacto,1,3366
+39657,366,Azitromicina,Azitromicina,exacto,1,3366
+39658,378,Bacitracina,Bacitracina,exacto,1,3464
+39659,487,Bisacodilo,Bisacodilo,exacto,1,364
+39660,494,Bisoprolol Fumarato,Bisoprolol Fumarato,exacto,1,1815
+39661,494,Bisoprolol Fumarato,Bisoprolol Fumarato,exacto,1,1815
+39662,3596,Valsartán,Valsartan,exacto,1,1970
+39665,530,Bromhexina,Bromhexina,exacto,1,6110
+39666,605,Carbamazepina,Carbamazepina,exacto,1,5145
+39667,605,Carbamazepina,Carbamazepina,exacto,1,5145
+39668,605,Carbamazepina,Carbamazepina,exacto,1,5145
+39669,605,Carbamazepina,Carbamazepina,exacto,1,5145
+39670,671,Cefazolina Sódico,Cefazolina Sodica,fuzzy,0.8,3257
+39671,687,Ceftriaxona,Ceftriaxona,exacto,1,3281
+39672,687,Ceftriaxona,Ceftriaxona,exacto,1,3281
+39673,3850,Celecoxib,Celecoxib,exacto,1,4636
+39674,710,Cetirizina,Cetirizina,exacto,1,6544
+39675,746,Cilostazol,Cilostazol,exacto,1,953
+39676,746,Cilostazol,Cilostazol,exacto,1,953
+39677,764,Ciprofloxacina,Ciprofloxacino,fuzzy,0.765,6356
+39678,764,Ciprofloxacina,Ciprofloxacino,fuzzy,0.765,6356
+39679,764,Ciprofloxacina,Ciprofloxacino,fuzzy,0.765,6356
+39680,764,Ciprofloxacina,Ciprofloxacino,fuzzy,0.765,6356
+39681,764,Ciprofloxacina,Ciprofloxacino,fuzzy,0.765,6356
+39682,764,Ciprofloxacino,Ciprofloxacino,exacto,1,6356
+39683,777,Citalopram,Citalopram,exacto,1,5479
+39684,3735,Vitamina D3,Vitamina D3,exacto,1,
+39685,3938,Clomifeno,Clomifeno,exacto,1,7174
+39686,3940,Clopidogrel,Clopidogrel,exacto,1,936
+39687,3940,Clopidogrel,Clopidogrel,exacto,1,936
+39688,3940,Clopidogrel,Clopidogrel,exacto,1,936
+39689,2204,Mebeverina,Mebeverina,exacto,1,172
+39691,2161,Cloruro de Magnesio,Magnesio Cloruro,fuzzy,0.85,
+39692,878,Clotrimazol,Clotrimazol,exacto,1,2720
+39693,878,Clotrimazol,Clotrimazol,exacto,1,2720
+39695,1111,Diltiazem,Diltiazem,exacto,1,1906
+39699,1037,Dexametasona Fosfato Sódico,Dexametasona Fosfato Sodio,fuzzy,0.833,6447
+39701,1058,Diacereína,Diacereina,exacto,1,4653
+39702,646,Carvedilol,Carvedilol,exacto,1,1827
+39703,1076,Diclofenaco Sódico,Diclofenaco Sodico,exacto,1,2675
+39706,1120,Diosmina,Diosmina,exacto,1,1765
+39707,1120,Diosmina,Diosmina,exacto,1,1765
+39707,1729,Hesperidina,Hesperidina,exacto,1,1778
+39708,1120,Diosmina,Diosmina,exacto,1,1765
+39708,1729,Hesperidina,Hesperidina,exacto,1,1778
+39709,1131,Dobutamina,Dobutamina,exacto,1,1327
+39710,1139,Domperidona,Domperidona,exacto,1,290
+39711,1139,Domperidona,Domperidona,exacto,1,290
+39712,1139,Domperidona,Domperidona,exacto,1,290
+39713,1156,Doxiciclina,Doxiciclina,exacto,1,49
+39714,1227,Enalapril,Enalapril,exacto,1,1922
+39715,1228,Enalapril Maleato,Enalapril Maleato,exacto,1,1922
+39715,1739,Hidroclorotiazida,Hidroclorotiazida,exacto,1,1555
+39716,1271,Eritromicina,Eritromicina,exacto,1,2610
+39717,1282,Escitalopram,Escitalopram,exacto,1,5485
+39718,1282,Escitalopram,Escitalopram,exacto,1,5485
+39719,1282,Escitalopram,Escitalopram,exacto,1,5485
+39720,1282,Escitalopram,Escitalopram,exacto,1,5485
+39721,1282,Escitalopram,Escitalopram,exacto,1,5485
+39722,1282,Escitalopram,Escitalopram,exacto,1,5485
+39724,1461,Flavoxato,Flavoxato,exacto,1,2969
+39725,1461,Flavoxato,Flavoxato,exacto,1,2969
+39727,1468,Fluconazol,Fluconazol,exacto,1,3475
+39728,1468,Fluconazol,Fluconazol,exacto,1,3475
+39729,1468,Fluconazol,Fluconazol,exacto,1,3475
+39730,1468,Fluconazol,Fluconazol,exacto,1,3475
+39731,1468,Fluconazol,Fluconazol,exacto,1,3475
+39732,1476,Flunarizina,Flunarizina,exacto,1,5640
+39733,1490,Fluoxetina,Fluoxetina,exacto,1,5478
+39734,1564,Furosemida,Furosemida,exacto,1,1608
+39735,1614,Gentamicina,Gentamicina,exacto,1,6641
+39736,1614,Gentamicina,Gentamicina,exacto,1,6641
+39737,1633,Glibenclamida,Glibenclamida,exacto,1,601
+39738,1633,Glibenclamida,Glibenclamida,exacto,1,601
+39739,1649,Glimepirida,Glimepirida,exacto,1,612
+39740,1912,Irbesartán,Irbesartan,exacto,1,1971
+39741,1912,Irbesartán,Irbesartan,exacto,1,1971
+39742,1938,Itraconazol,Itraconazol,exacto,1,3476
+39743,4101,Ketoprofeno,Ketoprofeno,exacto,1,4607
+39744,1957,Ketorolaco Trometamol,Ketorolaco Trometamol,exacto,1,1161
+39747,1991,Lamotrigina,Lamotrigina,exacto,1,5159
+39748,1991,Lamotrigina,Lamotrigina,exacto,1,5159
+39749,2044,Lercanidipino,Lercanidipino,exacto,1,1891
+39750,4105,Letrozol,Letrozol,exacto,1,7242
+39751,2056,Levetiracetam,Levetiracetam,exacto,1,5164
+39752,2067,Levofloxacina,Levofloxacino,fuzzy,0.75,6358
+39753,2067,Levofloxacino,Levofloxacino,exacto,1,6358
+39754,2067,Levofloxacino,Levofloxacino,exacto,1,6358
+39755,2067,Levofloxacino,Levofloxacino,exacto,1,6358
+39756,2067,Levofloxacino,Levofloxacino,exacto,1,6358
+39757,2067,Levofloxacino,Levofloxacino,exacto,1,6358
+39758,2067,Levofloxacino,Levofloxacino,exacto,1,6358
+39759,2067,Levofloxacino,Levofloxacino,exacto,1,6358
+39760,4107,Levonorgestrel,Levonorgestrel,exacto,1,2839
+39761,2079,Levotiroxina Sódico,Levotiroxina Sodica,fuzzy,0.818,3113
+39762,2079,Levotiroxina Sódico,Levotiroxina Sodica,fuzzy,0.818,3113
+39763,2079,Levotiroxina Sódico,Levotiroxina Sodica,fuzzy,0.818,3113
+39764,2121,Loperamida,Loperamida,exacto,1,482
+39765,2121,Loperamida,Loperamida,exacto,1,482
+39766,2125,Loratadina,Loratadina,exacto,1,6257
+39767,2125,Loratadina,Loratadina,exacto,1,6257
+39768,2131,Losartán,Losartan,exacto,1,1968
+39768,1739,Hidroclorotiazida,Hidroclorotiazida,exacto,1,1555
+39769,2131,Losartán,Losartan,exacto,1,1968
+39769,1739,Hidroclorotiazida,Hidroclorotiazida,exacto,1,1555
+39772,2213,Medroxiprogesterona,Medroxiprogesterona,exacto,1,2842
+39773,2230,Meloxicam,Meloxicam,exacto,1,4602
+39774,2230,Meloxicam,Meloxicam,exacto,1,4602
+39775,2231,Memantina,Memantina,exacto,1,5594
+39776,2231,Memantina,Memantina,exacto,1,5594
+39777,2231,Memantina,Memantina,exacto,1,5594
+39778,4112,Meropenem,Meropenem,exacto,1,7345
+39779,2280,Metformina,Metformina,exacto,1,598
+39780,2280,Metformina,Metformina,exacto,1,598
+39781,2280,Metformina,Metformina,exacto,1,598
+39782,2280,Metformina,Metformina,exacto,1,598
+39783,2280,Metformina,Metformina,exacto,1,598
+39784,2307,Metoclopramida,Metoclopramida,exacto,1,288
+39785,2307,Metoclopramida,Metoclopramida,exacto,1,288
+39786,2320,Metronidazol,Metronidazol,exacto,1,2719
+39787,2320,Metronidazol,Metronidazol,exacto,1,2719
+39788,2320,Metronidazol,Metronidazol,exacto,1,2719
+39789,2320,Metronidazol,Metronidazol,exacto,1,2719
+39790,2320,Metronidazol,Metronidazol,exacto,1,2719
+39791,453,Betahistina,Betahistina,exacto,1,5638
+39792,2352,Mirtazapina,Mirtazapina,exacto,1,5507
+39793,2352,Mirtazapina,Mirtazapina,exacto,1,5507
+39794,2384,Moxifloxacino,Moxifloxacino,exacto,1,6360
+39795,2418,Naproxeno,Naproxeno,exacto,1,2796
+39796,2131,Losartán,Losartan,exacto,1,1968
+39796,1739,Hidroclorotiazida,Hidroclorotiazida,exacto,1,1555
+39797,4045,Nifedipino,Nifedipino,exacto,1,1883
+39798,2518,Nitrofurantoína,Nitrofurantoina,exacto,1,3455
+39799,2518,Nitrofurantoína,Nitrofurantoina,exacto,1,3455
+39800,2518,Nitrofurantoína,Nitrofurantoina,exacto,1,3455
+39801,2519,Nitrofurazona,Nitrofurazona,exacto,1,
+39802,2873,Prednisolona,Prednisolona,exacto,1,3087
+39803,2569,Olanzapina,Olanzapina,exacto,1,5280
+39804,2576,Olmesartán Medoxomil,Olmesartan Medoxomilo,fuzzy,0.87,1975
+39804,1739,Hidroclorotiazida,Hidroclorotiazida,exacto,1,1555
+39805,2576,Olmesartán Medoxomilo,Olmesartan Medoxomilo,exacto,1,1975
+39806,2576,Olmesartán Medoxomilo,Olmesartan Medoxomilo,exacto,1,1975
+39807,2576,Olmesartán Medoxomilo,Olmesartan Medoxomilo,exacto,1,1975
+39808,2584,Omeprazol,Omeprazol,exacto,1,130
+39809,2584,Omeprazol,Omeprazol,exacto,1,130
+39810,2584,Omeprazol,Omeprazol,exacto,1,130
+39812,2587,Ondansetrón,Ondansetron,exacto,1,301
+39813,2587,Ondansetrón,Ondansetron,exacto,1,301
+39814,2598,Orlistat,Orlistat,exacto,1,536
+39815,2610,Oxcarbazepina,Oxcarbazepina,exacto,1,5146
+39816,4270,Oxolamina,Oxolamina,exacto,1,6151
+39817,2656,Pantoprazol,Pantoprazol,exacto,1,131
+39818,1,Paracetamol,Paracetamol,exacto,1,18
+39819,1,Paracetamol,Paracetamol,exacto,1,18
+39820,2676,Paroxetina,Paroxetina,exacto,1,5480
+39821,2880,Pregabalina,Pregabalina,exacto,1,5166
+39822,2729,Pentoxifilina,Pentoxifilina,exacto,1,1671
+39823,2781,Piracetam,Piracetam,exacto,1,5550
+39824,2873,Prednisolona,Prednisolona,exacto,1,3087
+39825,2873,Prednisolona,Prednisolona,exacto,1,3087
+39826,2873,Prednisolona,Prednisolona,exacto,1,3087
+39827,2873,Prednisolona,Prednisolona,exacto,1,3087
+39828,2879,Prednisona,Prednisona,exacto,1,3088
+39829,2880,Pregabalina,Pregabalina,exacto,1,5166
+39831,2912,Propranolol,Propranolol,exacto,1,1796
+39832,2948,Quetiapina,Quetiapina,exacto,1,5281
+39833,2948,Quetiapina,Quetiapina,exacto,1,5281
+39834,2948,Quetiapina,Quetiapina,exacto,1,5281
+39835,2948,Quetiapina,Quetiapina,exacto,1,5281
+39836,2971,Ranitidina,Ranitidina,exacto,1,116
+39837,2971,Ranitidina,Ranitidina,exacto,1,116
+39838,2971,Ranitidina,Ranitidina,exacto,1,116
+39839,1758,Hidroxicloroquina,Hidroxicloroquina,exacto,1,5711
+39840,3046,Rivaroxabán,Rivaroxaban,exacto,1,984
+39841,3046,Rivaroxabán,Rivaroxaban,exacto,1,984
+39842,3046,Rivaroxabán,Rivaroxaban,exacto,1,984
+39843,3060,Rosuvastatina,Rosuvastatina,exacto,1,2020
+39844,3060,Rosuvastatina,Rosuvastatina,exacto,1,2020
+39845,3060,Rosuvastatina,Rosuvastatina,exacto,1,2020
+39846,3060,Rosuvastatina,Rosuvastatina,exacto,1,2020
+39847,3156,Sertralina,Sertralina,exacto,1,5481
+39848,3156,Sertralina,Sertralina,exacto,1,5481
+39849,3156,Sertralina,Sertralina,exacto,1,5481
+39850,3156,Sertralina,Sertralina,exacto,1,5481
+39851,4236,Sucralfato,Sucralfato,exacto,1,148
+39852,4236,Sucralfato,Sucralfato,exacto,1,148
+39853,3274,Tacrolimus,Tacrolimus,exacto,1,2646
+39854,3293,Tamsulosina,Tamsulosina,exacto,1,3009
+39855,3293,Tamsulosina,Tamsulosina,exacto,1,3009
+39856,3293,Tamsulosina,Tamsulosina,exacto,1,3009
+39857,3340,Teofilina,Teofilina,exacto,1,6052
+39858,4196,Timolol,Timolol,exacto,1,1797
+39859,4000,Tiocolchicósido,Tiocolchicosido,exacto,1,7246
+39860,4000,Tiocolchicósido,Tiocolchicosido,exacto,1,7246
+39861,4000,Tiocolchicósido,Tiocolchicosido,exacto,1,7246
+39862,3440,Tizanidina,Tizanidina,exacto,1,4786
+39863,3514,Trimebutina,Trimebutina,exacto,1,173
+39864,3596,Valsartán,Valsartan,exacto,1,1970
+39865,3596,Valsartán,Valsartan,exacto,1,1970
+39866,3596,Valsartán,Valsartan,exacto,1,1970
+39866,1739,Hidroclorotiazida,Hidroclorotiazida,exacto,1,1555
+39867,3596,Valsartán,Valsartan,exacto,1,1970
+39868,3644,Vildagliptina,Vildagliptina,exacto,1,652
+39870,3732,Vitamina C,Vitamina C,exacto,1,
+39871,3752,Voriconazol,Voriconazol,exacto,1,3477
+39872,34,Acetaminofén,Acetaminofen,exacto,1,
+39873,366,Azitromicina,Azitromicina,exacto,1,3366
+39874,3830,Bisoprolol,Bisoprolol,exacto,1,1815
+39875,3830,Bisoprolol,Bisoprolol,exacto,1,1815
+39876,3830,Bisoprolol,Bisoprolol,exacto,1,1815
+39876,1739,Hidroclorotiazida,Hidroclorotiazida,exacto,1,1555
+39877,710,Cetirizina,Cetirizina,exacto,1,6544
+39878,801,Claritromicina,Claritromicina,exacto,1,3365
+39879,2161,Cloruro de Magnesio,Magnesio Cloruro,fuzzy,0.85,
+39881,1225,Empagliflozina,Empagliflozina,exacto,1,667
+39882,2375,Montelukast,Montelukast,exacto,1,6078
+39883,1739,Hidroclorotiazida,Hidroclorotiazida,exacto,1,1555
+39884,2131,Losartán,Losartan,exacto,1,1968
+39885,2230,Meloxicam,Meloxicam,exacto,1,4602
+39886,2280,Metformina,Metformina,exacto,1,598
+39887,34,Acetaminofén,Acetaminofen,exacto,1,
+39888,2375,Montelukast,Montelukast,exacto,1,6078
+39889,2948,Quetiapina,Quetiapina,exacto,1,5281
+39890,2950,Quetiapina Hemifumarato,Quetiapina Hemifumarato,exacto,1,5281
+39891,2948,Quetiapina,Quetiapina,exacto,1,5281
+39892,3181,Simvastatina,Simvastatina,exacto,1,2014
+39893,3105,Salbutamol,Salbutamol,exacto,1,5962
+39894,3105,Salbutamol,Salbutamol,exacto,1,5962
+39895,3156,Sertralina,Sertralina,exacto,1,5481
+39896,4234,Sultamicilina,Sultamicilina,exacto,1,3249
+39897,108,Albendazol,Albendazol,exacto,1,5776
+39899,366,Azitromicina,Azitromicina,exacto,1,3366
+39900,541,Budesonida,Budesonida,exacto,1,496
+39902,812,Clindamicina,Clindamicina,exacto,1,2609
+39903,869,Clortalidona,Clortalidona,exacto,1,1583
+39904,878,Clotrimazol,Clotrimazol,exacto,1,2720
+39905,964,Dapagliflozina,Dapagliflozina,exacto,1,665
+39906,1076,Diclofenaco Sódico,Diclofenaco Sodico,exacto,1,2675
+39907,878,Clotrimazol,Clotrimazol,exacto,1,2720
+39908,1468,Fluconazol,Fluconazol,exacto,1,3475
+39909,1571,Gabapentina,Gabapentina,exacto,1,5065
+39910,1671,Glutamina,Glutamina,exacto,1,1221
+39910,3726,Vitamina B12,Vitamina B12,exacto,1,714
+39912,4101,Ketoprofeno,Ketoprofeno,exacto,1,4607
+39913,2388,Mupirocina,Mupirocina,exacto,1,5901
+39914,2584,Omeprazol,Omeprazol,exacto,1,130
+39915,2729,Pentoxifilina,Pentoxifilina,exacto,1,1671
+39916,2971,Ranitidina,Ranitidina,exacto,1,116
+39917,1120,Diosmina,Diosmina,exacto,1,1765
+39917,1729,Hesperidina,Hesperidina,exacto,1,1778
