@@ -64,6 +64,45 @@ export const ALIAS = {
   'cloruro sodico': 'Sodio Cloruro',
   'gluconato de calcio': 'Gluconato Calcio Monohidrato',
   'cloruro de calcio': 'Calcio Cloruro',
+  // 2026-09-25: marcas resueltas por el dueno
+  'algio': 'Bisoprolol',
+  'apiret': 'Acetaminofen',
+  'cifarcaina': 'Lidocaina',
+  'gluconato calcio': 'Gluconato Calcio Monohidrato',
+  'agua para preparaciones inyectables': 'Agua Para Preparaciones Inyectables',
+  'agua bidestilada': 'Agua Para Preparaciones Inyectables',
+  'agua destilada': 'Agua Para Preparaciones Inyectables',
+  'polisulfato de mucopolisacarido': 'Condroitina Sulfato Sodio',
+  'factor de coagulacion viii': 'Factor Viii Humano',
+  'factor antihemofilico viii': 'Factor Viii Humano',
+  // 2026-09-26: las 15 moleculas nuevas creadas con ATC (ids 4284-4298)
+  'citrato calcio': 'Citrato de Calcio',
+  'calcio citrato': 'Citrato de Calcio',
+  'nitazoxanido': 'Nitazoxanida',
+  'lactasa': 'Tilactasa',
+  'lactasa enzima': 'Tilactasa',
+  'beta galactosidasa': 'Tilactasa',
+  'bacillus clausii': 'Esporas de Bacillus clausii',
+  'bacillus clausii esporas': 'Esporas de Bacillus clausii',
+  'subsalicilato de bismuto': 'Bismuto Subsalicilato',
+  'bismuto subsalicilato': 'Bismuto Subsalicilato',
+  'complejo b': 'Vitaminas del Complejo B',
+  'complejo de vitamina b': 'Vitaminas del Complejo B',
+  'complejo vitamina b1 b2 b6 b12': 'Vitaminas del Complejo B',
+  'vitaminas del grupo b': 'Vitaminas del Complejo B',
+  'sales de rehidratacion oral': 'Sales de Rehidratación Oral',
+  'rehidrosol': 'Sales de Rehidratación Oral',
+  'alcohol polivinilico': 'Alcohol Polivinílico',
+  'polivinil alcohol': 'Alcohol Polivinílico',
+  'magnesio bisglicinato': 'Magnesio Glicinato',
+  'bisglicinato de magnesio': 'Magnesio Glicinato',
+  'lisados bacterianos': 'Lisado Bacteriano',
+  'lisado de bacterias': 'Lisado Bacteriano',
+  'aminoacidos cristalinos': 'Aminoácidos',
+  'aminoacidos libres': 'Aminoácidos',
+  'triticum vulgare': 'Extracto Acuoso de Triticum vulgare',
+  'fenoxietanol': 'Extracto Acuoso de Triticum vulgare',
+  'vitamina b5': 'Pantotenico Acido',
 };
 // Propuestas con equivalencia real pero mas de un candidato plausible: van a revision del dueno.
 export const REVISION = {
@@ -76,15 +115,16 @@ export const REVISION = {
 // OJO: solo entradas CONFIRMADAS por consulta a moleculas_referencias. Antes este listado
 // incluia falsos negativos (butilescopolamina, diclofenac potasico, gluconato ferroso,
 // bromexina) que SI existen en CIMA -> movidos a ALIAS el 2026-09-25.
+// 2026-09-26: las 15 moleculas creadas (nitazoxanida, isoxsuprina, clemastina, lactasa,
+// citrato de calcio, piperazina, magnesio glicinato, aminoacidos, alcohol polivinilico,
+// sales de rehidratacion oral, lisado bacteriano, bacillus clausii, subsalicilato de bismuto,
+// complejo de vitamina b, triticum vulgare) + los derechados por el dueno tambien salieron
+// de esta lista -> ahora son ALIAS.
 export const NO_CIMA = [
-  'nitazoxanida', 'attapulgita', 'pectina', 'papaverina', 'isoxsuprina', 'clemastina',
-  'cloruro de amonio', 'lactasa', 'multivitaminico', 'multivitaminas', 'minerales',
-  'complejo b', 'sales de rehidratacion oral', 'alcohol polivinilico', 'subsalicilato de bismuto',
-  'lactobacillus lb inactivado y medio de cultivo fermentado', 'complejo de vitamina b',
-  'complejo vitamina b1 b2 b6 b12', 'lisado bacteriano', 'agua bidestilada', 'agua destilada',
-  'agua para preparaciones inyectables', 'pediococcus acidilactici', 'bacillus clausii',
-  'polisulfato de mucopolisacarido', 'aminoacidos cristalinos', 'aminoacidos',
-  'solucion de ringer lactato', 'solucion ringer lactato', 'factor de coagulacion viii',
-  'factor antihemofilico viii', 'citrato de calcio', 'magnesio glicinato', 'piperazina',
-  'gluconato calcio', 'monarc m', 'algio', 'apiret', 'cifarcaina', 'niazol',
+  'attapulgita', 'pectina', 'papaverina',
+  'multivitaminico', 'multivitaminas', 'minerales',
+  'lactobacillus lb inactivado y medio de cultivo fermentado',
+  'solucion de ringer lactato', 'solucion ringer lactato',
+  'monarc m', 'niazol',
 ];
+

@@ -1,0 +1,23 @@
+id,39771
+nombre_comercial,MATERNAVIT X 30 CAPSULAS BLANDAS
+descripcion,MATERNAVIT CAP BLD X30 MDF
+marca_id,null
+precio_usd,null
+foto_url,https://mav.farmaciasaas.com/api/images/articulos/DISTRIBUCION/13652.jpg
+activo,true
+created_at,Thu Sep 24 2026 23:01:43 GMT-0400 (hora de Venezuela)
+updated_at,Thu Sep 24 2026 23:01:43 GMT-0400 (hora de Venezuela)
+molecula,Maternavit
+linea,Linea Farmacia
+forma,CAPSULAS
+disponible,false
+requiere_cotizacion,false
+visible_catalogo,true
+es_cotizacion,false
+pais_id,null
+fuente_inhrr_ef,null
+laboratorio,"CASAS DE REPRESENTACION MEDIFARM, C.A."
+costo_usd,null
+sku,null
+presentacion,X 30 CAPSULAS
+unidades_por_presentacion,30
