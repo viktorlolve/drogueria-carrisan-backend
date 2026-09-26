@@ -1,0 +1,48 @@
+producto_id,nombre,molecula,metodo,nota,estado_candidata,detalle
+37510,ATAPEC 100 MG,Attapulgita,no_aprobada_espana,,PRODUCTO_YA_ENLAZADO,Quetiapina
+37510,ATAPEC 100 MG,Pectina,no_aprobada_espana,,PRODUCTO_YA_ENLAZADO,Quetiapina
+37527,ATROBEL 10 MG / ML,Papaverina,no_aprobada_espana,,CANDIDATA_NUEVA,
+37865,DECA LENTERMINA COMPLEX,Complejo B,no_aprobada_espana,,PRODUCTO_YA_ENLAZADO,Dexametasona
+37994,DUVADILAN 10 MG,Isoxsuprina,no_aprobada_espana,,CANDIDATA_NUEVA,
+38092,NIAZOL 1 MG / ML,Miconazol,no_aprobada_espana,,YA_EXISTE_EN_VADEMECUM,Miconazol (exacto)
+38105,FLEMIBAR 20 MG - 2500 MG / 5 ML,Cloruro de Amonio,no_aprobada_espana,,PRODUCTO_YA_ENLAZADO,Ambroxol
+38306,LACTBET 3000 U,Lactasa,no_aprobada_espana,,CANDIDATA_NUEVA,
+38307,LACTBET 3000 U,Lactasa,no_aprobada_espana,,CANDIDATA_NUEVA,
+38317,LENTOCILIN 6.3.3,Penicilina G Procaínica,sin_match_vademecum,,YA_EXISTE_EN_VADEMECUM,Bencilpenicilina Procaina (alias)
+38430,MATERNAVIT,Multivitamínico,no_aprobada_espana,,CANDIDATA_NUEVA,
+38430,MATERNAVIT,Minerales,no_aprobada_espana,,CANDIDATA_NUEVA,
+38492,MIOVIT COMPOSITUM CON LIDOCAINA,Complejo B,no_aprobada_espana,,PRODUCTO_YA_ENLAZADO,Cianocobalamina + Lidocaina + Piridoxina + Tiamina
+38493,MIOVIT COMPOSITUM CON LIDOCAINA,Complejo B,no_aprobada_espana,,PRODUCTO_YA_ENLAZADO,Cianocobalamina + Lidocaina + Piridoxina + Tiamina
+38494,MIOVIT COMPOSITUM CON LIDOCAINA,Complejo B,no_aprobada_espana,,PRODUCTO_YA_ENLAZADO,Cianocobalamina + Lidocaina + Piridoxina + Tiamina
+38495,MIOVIT X 10 COMPRIMIDOS,Complejo B,no_aprobada_espana,,CANDIDATA_NUEVA,
+38496,MIOVIT X 30 COMPRIMIDOS,Complejo B,no_aprobada_espana,,CANDIDATA_NUEVA,
+38524,MULTIVIRAL X 30 CAPSULAS,Multivitamínico,no_aprobada_espana,,CANDIDATA_NUEVA,
+38560,NITAX 500 MG,Nitazoxanida,no_aprobada_espana,,CANDIDATA_NUEVA,
+38580,NYTAXIN 500 MG,Nitazoxanida,no_aprobada_espana,,CANDIDATA_NUEVA,
+38652,PEPTO-BISMOL 525 MG / 30 ML,Subsalicilato de Bismuto,no_aprobada_espana,,CANDIDATA_NUEVA,
+39000,ZONTRICON 100 MG / 5 ML,Nitazoxanida,no_aprobada_espana,,CANDIDATA_NUEVA,
+39273,KLINCOSAL 262 MG - 100 MG,Subsalicilato de Bismuto,no_aprobada_espana,,PRODUCTO_YA_ENLAZADO,Metronidazol
+39274,KLINCOSAL 262 MG - 500 MG / 15 ML,Subsalicilato de Bismuto,no_aprobada_espana,,PRODUCTO_YA_ENLAZADO,Metronidazol
+39275,KLINCOSAL 262 MG - 500 MG / 15 ML,Subsalicilato de Bismuto,no_aprobada_espana,,PRODUCTO_YA_ENLAZADO,Metronidazol
+39352,REHIDROSOL 45 MEQ / L,Sales de Rehidratación Oral,no_aprobada_espana,,CANDIDATA_NUEVA,
+39354,REHIDROSOL 60 MEQ / L,Sales de Rehidratación Oral,no_aprobada_espana,,CANDIDATA_NUEVA,
+39421,ALILUB 1.4%,Alcohol Polivinílico,no_aprobada_espana,,CANDIDATA_NUEVA,
+39563,PEPSADEL 262 MG,Subsalicilato de Bismuto,no_aprobada_espana,,CANDIDATA_NUEVA,
+39649,ATAPEC 100 MG,Attapulgita,no_aprobada_espana,,PRODUCTO_YA_ENLAZADO,Quetiapina
+39649,ATAPEC 100 MG,Pectina,no_aprobada_espana,,PRODUCTO_YA_ENLAZADO,Quetiapina
+39697,PORTU 4 MG,Clemastina,no_aprobada_espana,,CANDIDATA_NUEVA,
+39771,MATERNAVIT,Multivitamínico,no_aprobada_espana,,CANDIDATA_NUEVA,
+39771,MATERNAVIT,Minerales,no_aprobada_espana,,CANDIDATA_NUEVA,
+38306,LACTBET 3000 U X 10 CAPSULAS,lactasa,no_aprobada_espana,,CANDIDATA_NUEVA,
+38307,LACTBET 3000 U X 20 CAPSULAS,lactasa,no_aprobada_espana,,CANDIDATA_NUEVA,
+38317,LENTOCILIN 6.3.3 X 1 AMPOLLA,bencilpenicilina procaínica,sin_match_vademecum,,PRODUCTO_YA_ENLAZADO,Bencilpenicilina Potasica + Bencilpenicilina Procaina + Bencilpenicilina-benzatina
+38356,LIOLACTIL X 20 SOBRES,Lactobacillus LB inactivado y medio de cultivo fermentado,no_aprobada_espana,,PRODUCTO_YA_ENLAZADO,Lactobacillus Rhamnosus
+,MIOVIT X 10 COMPRIMIDOS y X 30 COMPRIMIDOS,tiamina + piridoxina + cianocobalamina,sin_match_vademecum,NOMBRE DE PRODUCTO NO RESUELTO EN BD,YA_EXISTE_EN_VADEMECUM,Tiamina (exacto)
+38524,MULTIVIRAL X 30 CAPSULAS,multivitaminas,no_aprobada_espana,,CANDIDATA_NUEVA,
+38524,MULTIVIRAL X 30 CAPSULAS,minerales,no_aprobada_espana,,CANDIDATA_NUEVA,
+38580,NYTAXIN 500 MG X 6 CAPSULAS BLANDAS,nitazoxanida,no_aprobada_espana,,CANDIDATA_NUEVA,
+38652,PEPTO-BISMOL 525 MG / 30 ML SUSPENSION ORAL,subsalicilato de bismuto,no_aprobada_espana,,CANDIDATA_NUEVA,
+38860,TIDOR 2 % - 0.5 % SOLUCION OFTALMICA,miconazol,no_aprobada_espana,,YA_EXISTE_EN_VADEMECUM,Miconazol (exacto)
+39000,ZONTRICON 100 MG / 5 ML POLVO PARA SUSPENSION,nitazoxanida,no_aprobada_espana,,CANDIDATA_NUEVA,
+38183,GYNODERAIN 0.6 G,extracto acuoso de Triticum vulgare,sin_match_vademecum,candidata a ingreso nuevo en vademecum (ronda 2 - veredicto del dueno),CANDIDATA_NUEVA,
+38183,GYNODERAIN 0.6 G,fenoxietanol,sin_match_vademecum,candidata a ingreso nuevo en vademecum (ronda 2 - veredicto del dueno),CANDIDATA_NUEVA,

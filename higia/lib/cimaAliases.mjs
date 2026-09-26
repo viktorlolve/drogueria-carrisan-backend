@@ -36,6 +36,34 @@ export const ALIAS = {
   'senosidos': 'Senosidos A-b',
   'sulfadiazina de plata': 'Sulfadiazina Argentica',
   'hialuronato de sodio': 'Hialuronico Acido',
+  // --- alias agregados 2026-09-25 tras el veredicto del dueno en los CSV de conflictos/revision ---
+  'butilbromuro de hioscina': 'Butilescopolamina Bromuro',
+  'carboximetilcisteina': 'S-carboximetilcisteina',
+  'cloruro de cetilpiridinio': 'Cetilpiridinio Cloruro',
+  'fosfato de sodio monobasico': 'Fosfato Monosodio Dihidrato',
+  'fosfato monosodico': 'Fosfato Monosodio Dihidrato',
+  'hierro como sulfato ferroso': 'Hierro (ii) Sulfato',
+  'lactobacillus casei variedad rhamnosus': 'Lactobacillus Rhamnosus',
+  'macrogol': 'Macrogol 3350',
+  'polietilenglicol 3350': 'Macrogol 3350',
+  'penicilina g benzatinica': 'Bencilpenicilina-benzatina',
+  'penicilina g potasica': 'Bencilpenicilina Potasica',
+  'penicilina g procainica': 'Bencilpenicilina Procaina',
+  // --- alias verificados contra la BD 2026-09-25 (existen en moleculas_referencias) ---
+  'bromexina': 'Bromhexina',                      // typo del nombre comercial, no "fuera de CIMA"
+  'bromexina clorhidrato': 'Bromhexina',
+  'finasteride': 'Finasterida',
+  'nimodipina': 'Nimodipino',
+  'gluconato ferroso': 'Gluconato Hierro',
+  'diclofenac potasico': 'Diclofenaco',
+  'diclofenac dietilamino': 'Diclofenaco Dietilamina',
+  'diclofenaco dietilamino': 'Diclofenaco Dietilamina',
+  'pinaverium bromuro': 'Pinaverio Bromuro',
+  'hioscina n butilbromuro': 'Butilescopolamina Bromuro',
+  'butilbrom hioscina': 'Butilescopolamina Bromuro',
+  'cloruro sodico': 'Sodio Cloruro',
+  'gluconato de calcio': 'Gluconato Calcio Monohidrato',
+  'cloruro de calcio': 'Calcio Cloruro',
 };
 // Propuestas con equivalencia real pero mas de un candidato plausible: van a revision del dueno.
 export const REVISION = {
@@ -45,6 +73,9 @@ export const REVISION = {
   'macrogol': ['Macrogol 3350', 'Macrogol 4000'],
 };
 // NO estan en el vademecum CIMA (existen en la realidad / no aprobadas en Espana, o son mezclas).
+// OJO: solo entradas CONFIRMADAS por consulta a moleculas_referencias. Antes este listado
+// incluia falsos negativos (butilescopolamina, diclofenac potasico, gluconato ferroso,
+// bromexina) que SI existen en CIMA -> movidos a ALIAS el 2026-09-25.
 export const NO_CIMA = [
   'nitazoxanida', 'attapulgita', 'pectina', 'papaverina', 'isoxsuprina', 'clemastina',
   'cloruro de amonio', 'lactasa', 'multivitaminico', 'multivitaminas', 'minerales',
@@ -54,7 +85,6 @@ export const NO_CIMA = [
   'agua para preparaciones inyectables', 'pediococcus acidilactici', 'bacillus clausii',
   'polisulfato de mucopolisacarido', 'aminoacidos cristalinos', 'aminoacidos',
   'solucion de ringer lactato', 'solucion ringer lactato', 'factor de coagulacion viii',
-  'factor antihemofilico viii', 'bromexina clorhidrato', 'butilescopolamina bromuro',
-  'gluconato ferroso', 'gluconato hierro', 'magnesio glicinato', 'diclofenac potasico',
-  'n butil bromuro de hioscina bromuro', 'miconazol', 'sales de rehidratacion',
+  'factor antihemofilico viii', 'citrato de calcio', 'magnesio glicinato', 'piperazina',
+  'gluconato calcio', 'monarc m', 'algio', 'apiret', 'cifarcaina', 'niazol',
 ];

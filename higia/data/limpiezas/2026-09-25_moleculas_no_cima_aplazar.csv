@@ -44,3 +44,5 @@ producto_id,nombre,molecula,metodo,nota
 38652,PEPTO-BISMOL 525 MG / 30 ML SUSPENSION ORAL,subsalicilato de bismuto,no_aprobada_espana,
 38860,TIDOR 2 % - 0.5 % SOLUCION OFTALMICA,miconazol,no_aprobada_espana,
 39000,ZONTRICON 100 MG / 5 ML POLVO PARA SUSPENSION,nitazoxanida,no_aprobada_espana,
+38183,GYNODERAIN 0.6 G,extracto acuoso de Triticum vulgare,sin_match_vademecum,candidata a ingreso nuevo en vademecum (ronda 2 - veredicto del dueno)
+38183,GYNODERAIN 0.6 G,fenoxietanol,sin_match_vademecum,candidata a ingreso nuevo en vademecum (ronda 2 - veredicto del dueno)
