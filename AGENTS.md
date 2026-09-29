@@ -125,7 +125,7 @@ HEALTHCHECKS_PING_LIMPIEZA_NOTIFICACIONES=https://hc-ping.com/...
 
 - **Flag OFF = HTTP 200 y no ejecuta** (`{ok:true, ejecutado:false}`). Un único switch (la env var) gobierna tanto el cron interno como el endpoint, así el scheduler no se marca caído por un apagado deliberado. Se registra la corrida con `resultado='flag_apagada'`.
 - **El `nombre` de la URL ≠ el `nombre` en memoria.** El job en memoria es camelCase (`revisarVencimientos`), el de la URL/BD es kebab-case (`revisar-vencimientos`). Para que el panel pueda unir ambas mitades, `registrarJob` acepta **`nombrePersistente`**, y `envolverJob` persiste con esa clave. Ojo: **si agregás un job nuevo con endpoint externo y olvidás `nombrePersistente`, el panel no le muestra el histórico persisted.**
-- **Migración 040 obligatoria** (ver tabla de migraciones). Sin ella, el servicio degrada: los jobs igual corren, pero no queda registro persistente y el catch-up no puede saber qué falta.
+- **Migración 040 YA APLICADA** (2026-09-29, conexión directa `pg` con `SUPABASE_DB_*`; el RPC se probó con dos llamadas y acumula bien). Nota: la conexión directa **es posible** en este repo — `drogueria-carrisan-backend/.env` trae `SUPABASE_DB_HOST/PORT/NAME/USER/PASSWORD`, y el patrón está en `src/migrations/importar_sql.js`. Un buen número de migraciones "aplicar a mano" se pueden aplicar así (DDL/DML); las que dependen del SQL Editor por permisos específicos, no.
 - **El pinger y los jobs usan mecanismos distintos a propósito**: el pinger es `GET /health` público (barato, sin auth, es solo para despertarse), los jobs son `POST` autenticados con secreto (se paga por ejecución, no por latencia).
 
 ### Migración 040 — `job_ejecucion` (historial persistente de jobs)
@@ -372,7 +372,7 @@ Las migraciones son SQL plano. NO hay sistema de migraciones automatico — se e
 | 035_registro_invita.sql | Registro por invitación (profesional/honorífico): tabla `registro_invita_config` (habilitado + token), RLS lectura pública |
 | 036_perfiles_profesional_cedula.sql | Perfiles profesional: cédula |
 | 037_etiquetas_precio.sql | Etiquetas de precio en productos |
-| 040_job_ejecucion.sql | Historial persistente de los jobs programados: tabla `job_ejecucion` (una fila por job) + RPC atómico `job_ejecucion_registrar(...)` (upsert + incremento de contadores en una sola transacción). Requerida por el scheduler externo, el panel `/admin/monitoreo` y el catch-up on boot. **Sin aplicarla los jobs siguen corriendo, pero no queda registro.** |
+| 040_job_ejecucion.sql | Historial persistente de los jobs programados: tabla `job_ejecucion` (una fila por job) + RPC atómico `job_ejecucion_registrar(...)` (upsert + incremento de contadores en una sola transacción). **APLICADA en BD 2026-09-29** (conexión directa `SUPABASE_DB_*`; verificada: el RPC acumula contadores y un arranque real escribió su fila). Requerida por el scheduler externo, el panel `/admin/monitoreo` y el catch-up on boot. |
 
 **NOTA**: Las migraciones 002-009 ya NO existen como archivos (fueron consolidadas/aplicadas directamente en Supabase). La tabla principal `users` tampoco esta en estas migraciones — fue creada directamente en Supabase. Si necesitas ver su schema, busca las queries en los controllers (especialmente auth.controller.js y users.controller.js).
 
