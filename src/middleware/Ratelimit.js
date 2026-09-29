@@ -63,3 +63,15 @@ export const resetPasswordLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+// Especifico de /internal/jobs/*: lo llama el scheduler externo
+// (cron-job.org) un par de veces al dia, asi que un techo de 10/hora es
+// enorme para el uso legitimo pero frena que un bucle runaway del scheduler
+// dispare el mismo job cientos de veces.
+export const internalJobsLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hora
+  max: 10,
+  message: { error: 'Demasiadas ejecuciones de job. Revisa la configuracion del scheduler.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
