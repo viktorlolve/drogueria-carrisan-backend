@@ -52,6 +52,7 @@ Si necesitas entender la schema de la DB, mira los controllers (los nombres de c
 Todos los archivos de `routes/` estan importados y montados en `server.js` (montaje verificable en `server.js:88-139`):
 - **Públicas / cliente**: `/auth`, `/marcas`, `/products`, `/shorts`, `/prices`, `/orders`, `/users`, `/admin/codigos-invitacion`, `/descuentos`, `/facturas`, `/pagos`, `/reportes-pago`, `/clientes`, `/notifications`, `/lists`, `/direcciones`, `/perfil`, `/favoritos`, `/uploads`, `/moleculas`, `/catalogo`, `/registro-invita`, `/delivery-tarifas`, `/requerimientos`, `/cotizaciones`, `/documentos`, `/chat`, `/presupuestos`, `/subusuarios`, `/admin/analytics`, `/admin/monitoreo`, `/push`, `/promociones`, `/cupones`, `/noticias`, `/products` (valoraciones, junto al router de productos).
 - **Staff** (se montan ANTES del `/staff` base, cada uno con `verifyStaffJWT` + `checkRolStaff`): `/staff/almacen`, `/staff/contabilidad`, `/staff/cotizaciones`, `/staff/requerimientos`, `/staff/documentos`, `/staff/promociones`, `/staff/direcciones`, `/staff/precios`, `/staff/credito`, `/staff/tesoreria`, `/staff/reportes`, `/staff/logistica`, `/staff/chat`, `/staff/cupones`, `/staff` (base: login/registro/ordenes/despacho/bridge).
+- **Internos (scheduler externo)**: `/internal/jobs` — `POST /internal/jobs/:nombre`, `verifyInternalSecret` + `internalJobsLimiter`, montada DESPUÉS de `apiLimiter`. Sin JWT: la llama cron-job.org con header `X-Internal-Secret`. Ver "Keep-alive y jobs programados" abajo.
 - **Cron**: `cron.schedule('0 18 * * 1-5', actualizarTasa, ...)` (tasa de cambio, lun-vie 18:00 hora Venezuela) y `cron.schedule('0 6 * * *', sincronizarNoticias)` (noticias RSS) — sin gatear. Los **tres jobs de negocio van gateados por env var y OFF por defecto** (ver "Cron gateado" abajo).
 
 Si agregas un endpoint nuevo, recuerda importar y montar el archivo de rutas en `server.js`.
@@ -91,7 +92,47 @@ UPDATE ordenes
 
 Despues del backfill, correr el job **a mano** una vez (importandolo en una sesion node) o esperar al primer cron, y solo entonces considerar `CRON_AUTO_FREEZE_CREDITO=true`. Revisar el aging en `/staff/credito` antes de suspender creditos reales.
 
-**Render free duerme**: si el plan es free, el proceso se congela y los crons no disparan a la hora — disparan tarde al despertar. No rompe estos jobs (son idempotentes por flag) pero las 06:00/18:00 ya sufren igual.
+**Render free duerme**: si el plan es free, el proceso se congela y los crons no disparan a la hora — disparan tarde al despertar. No rompe estos jobs (son idempotentes por flag) pero las 06:00/18:00 ya sufren igual. **Ver "Keep-alive y jobs programados" abajo: la solución implementada mueve los jobs de negocio a un scheduler externo y los delega por HTTP.**
+
+### Keep-alive y jobs programados (2026-09-29)
+
+Problema: Render Free cobra **750 instance-hours por mes y por workspace**; un servicio despierto 24/7 las consume todas (~744 h en meses de 31 días) y al agotarlas se suspenden los web services. El pinger existente contra `/health` mantenía el proceso despierto todo el día "por si acaso". Medido: el servicio **no** sufría spin-down (respondía en 180 ms), solo lento (2 s en el primer request tras dormir). O sea: el pinger se pagaba entero para evitar una latencia de ~2 s, y los jobs de negocio igual fallaban, porque sus flags estaban OFF.
+
+Decisión del dueño: **el pinger pasa a horario comercial y los jobs de negocio pasan a un scheduler externo.** Diseño completo en `analisis/design-keep-alive-cron-render-free-2026-09-29.md` y `analisis/plan-keep-alive-cron-render-free-2026-09-29.md`.
+
+| Pieza | Qué hace |
+|-------|----------|
+| **Pinger `/health`** | Sigue siendo el keep-alive, pero limitado a horario comercial: cron `*/10 12-23 * * 1-5` UTC (08:00–19:50 Vzla, lun-vie). Ahorra ~457 h/mes. |
+| **`POST /internal/jobs/:nombre`** | Endpoint **sin JWT** que el scheduler externo (cron-job.org) golpea a la hora exacta. Es el que de verdad ejecuta los jobs de negocio. |
+| **`job_ejecucion` (tabla)** | Historial **persistente** de cada corrida. Sin esto, `/admin/monitoreo` mentiría tras cada spin-down/redeploy. |
+| **healthchecks.io** | Dead-man's switch: ping **solo si el job terminó bien**. Si el job falla o el scheduler no dispara, healthchecks avisa. |
+| **catch-up on boot** | Red de seguridad: al arrancar, si el job no corrió *hoy*, lo ejecuta. Cubre que cron-job.org o la red fallen. |
+
+Nombres de job en la URL (kebab-case, son las claves de `job_ejecucion`): `revisar-vencimientos`, `limpieza-notificaciones`.
+
+**Variables de entorno (backend):**
+
+```
+# Secreto del endpoint interno (fail-closed: si falta → 503 en cada llamada)
+INTERNAL_JOBS_SECRET=<largo aleatorio>
+
+# Pings de healthchecks.io, solo si el job terminó OK (una por job)
+HEALTHCHECKS_PING_REVISAR_VENCIMIENTOS=https://hc-ping.com/...
+HEALTHCHECKS_PING_LIMPIEZA_NOTIFICACIONES=https://hc-ping.com/...
+```
+
+**Puntos clave de la implementación:**
+
+- **Flag OFF = HTTP 200 y no ejecuta** (`{ok:true, ejecutado:false}`). Un único switch (la env var) gobierna tanto el cron interno como el endpoint, así el scheduler no se marca caído por un apagado deliberado. Se registra la corrida con `resultado='flag_apagada'`.
+- **El `nombre` de la URL ≠ el `nombre` en memoria.** El job en memoria es camelCase (`revisarVencimientos`), el de la URL/BD es kebab-case (`revisar-vencimientos`). Para que el panel pueda unir ambas mitades, `registrarJob` acepta **`nombrePersistente`**, y `envolverJob` persiste con esa clave. Ojo: **si agregás un job nuevo con endpoint externo y olvidás `nombrePersistente`, el panel no le muestra el histórico persisted.**
+- **Migración 040 obligatoria** (ver tabla de migraciones). Sin ella, el servicio degrada: los jobs igual corren, pero no queda registro persistente y el catch-up no puede saber qué falta.
+- **El pinger y los jobs usan mecanismos distintos a propósito**: el pinger es `GET /health` público (barato, sin auth, es solo para despertarse), los jobs son `POST` autenticados con secreto (se paga por ejecución, no por latencia).
+
+### Migración 040 — `job_ejecucion` (historial persistente de jobs)
+
+Tabla mínima con **una fila por job** (`nombre text primary key`) que acumula: `ultima_ejecucion`, `ultimo_resultado`, `ultimo_error`, `duracion_ms`, `origen` ('interno'/'externo'/'catchup'), y contadores `ejecuciones`/`fallos`. Sin políticas RLS (solo la service_key del backend la lee; nunca se expone al cliente).
+
+Detalle importante: el "upsert + increment" tiene que ser **un RPC atómico** (`job_ejecucion_registrar`), no dos queries sueltas — si no, dos llamadas simultáneas (p. ej. catch-up + endpoint) pueden dejar `ejecuciones` mal contado. La migración define la función `SECURITY DEFINER` que hace el `INSERT ... ON CONFLICT DO UPDATE` con el incremento dentro de la misma transacción.
 
 
 ### Autenticacion JWT
@@ -331,6 +372,7 @@ Las migraciones son SQL plano. NO hay sistema de migraciones automatico — se e
 | 035_registro_invita.sql | Registro por invitación (profesional/honorífico): tabla `registro_invita_config` (habilitado + token), RLS lectura pública |
 | 036_perfiles_profesional_cedula.sql | Perfiles profesional: cédula |
 | 037_etiquetas_precio.sql | Etiquetas de precio en productos |
+| 040_job_ejecucion.sql | Historial persistente de los jobs programados: tabla `job_ejecucion` (una fila por job) + RPC atómico `job_ejecucion_registrar(...)` (upsert + incremento de contadores en una sola transacción). Requerida por el scheduler externo, el panel `/admin/monitoreo` y el catch-up on boot. **Sin aplicarla los jobs siguen corriendo, pero no queda registro.** |
 
 **NOTA**: Las migraciones 002-009 ya NO existen como archivos (fueron consolidadas/aplicadas directamente en Supabase). La tabla principal `users` tampoco esta en estas migraciones — fue creada directamente en Supabase. Si necesitas ver su schema, busca las queries en los controllers (especialmente auth.controller.js y users.controller.js).
 
@@ -347,10 +389,16 @@ VAPID_SUBJECT=
 VAPID_PUBLIC_KEY=
 VAPID_PRIVATE_KEY=
 
-# Cron gateado (jobs de negocio) — ver "Cron gateado" arriba. OFF por defecto.
+# Cron gateado (jobs de negocio) — OFF por defecto
 CRON_REVISAR_VENCIMIENTOS=false
 CRON_AUTO_FREEZE_CREDITO=false
 CRON_LIMPIEZA_NOTIFICACIONES=false
+
+# Keep-alive y scheduler externo (2026-09-29) — ver "Keep-alive y jobs programados".
+# INTERNAL_JOBS_SECRET es OBLIGATORIO para que /internal/jobs responda (fail-closed 503).
+INTERNAL_JOBS_SECRET=
+HEALTHCHECKS_PING_REVISAR_VENCIMIENTOS=
+HEALTHCHECKS_PING_LIMPIEZA_NOTIFICACIONES=
 
 # Opcional: techo de memoria que espera el panel de monitoreo (default 512 = plan free de Render)
 MEMORIA_LIMITE_MB=512
@@ -378,13 +426,15 @@ Panel de salud para el dueño, implementado 2026-09-29. Detalle completo en el A
 
 - `services/monitoreo.service.js` — estado **en memoria**, sin dependencias nuevas:
   - `monitoreoMiddleware` — conteo por clase de status, p50/p95, rutas lentas/más usadas, últimos 20 errores 5xx (tope 200 rutas). **Nunca guarda body, query string, IP ni datos de usuarios**; la clave de ruta es el patrón (`req.route.path`), no la URL real. Se auto-excluye de `/health*` y `/admin/monitoreo`.
-  - `registrarJob(nombre, { cron, descripcion, programado, flagEnv })` y `envolverJob(nombre, fn)` — miden sin cambiar el comportamiento. **`programado` refleja si el cron quedó agendado de verdad**, y `flagEnv` es la env var que hay que poner en Render.
-  - `snapshotMonitoreo()`.
+  - `registrarJob(nombre, { cron, descripcion, programado, flagEnv, nombrePersistente })` y `envolverJob(nombre, fn)` — miden sin cambiar el comportamiento. **`programado` refleja si el cron quedó agendado de verdad**, y `flagEnv` es la env var que hay que poner en Render. **`nombrePersistente`** es la clave con la que se escribe en `job_ejecucion`: necesaria para los jobs con endpoint externo, porque el nombre en memoria (camelCase) y el de la URL/tabla (kebab-case) no coinciden.
+  - `snapshotMonitoreo()` (async) — además del estado en memoria devuelve **`jobsPersistidos`**, leído de la tabla `job_ejecucion` con lectura tolerante a fallos (si la migración 040 no está, es `[]` y el panel igual funciona). Es lo único que sobrevive a un spin-down o redeploy.
 - `controllers/monitoreo.controller.js` — `getEstadoMonitoreo` (cache 10 s) + `healthDeep` (ping público a la BD, `{ status, db_ms }` / 503). Solo devuelve si una env var está **definida o no**, nunca su valor.
 - `routes/monitoreo.routes.js` — `GET /` con `verifyJWT` + `verifyAdmin` (mismo gate que `/admin/analytics`).
 - `server.js`: el middleware va **antes de los limiters** (así también cuenta 429/404), `GET /health/deep` es público, y los 4 crons están envueltos con `envolverJob`.
 
 **Regla de los jobs apagados**: un job apagado por su env var **NO es una alerta**. Solo alerta un job que CORRIÓ y falló. Prender los jobs de negocio es decisión del dueño (y el backfill de BD es previo) — el panel informa, no pressiona.
+
+**El panel muestra doble fuente**: cada job muestra la última ejecución de memoria; si no hay (recién arrancó) pero sí hay fila en `job_ejecucion`, muestra esa y la marca `(registro en BD)`. El join es por `nombrePersistente || nombre` (`MonitoreoAdmin.jsx`, `unirConPersistencia`) — **no cambiarlo a `nombre` pelado o los jobs con endpoint externo pierden su histórico**.
 
 **OJO — `reportes_pago.estado` es `'pendiente_verificacion'`**, no `'pendiente'` (ver `reportesPago.controller.js:78`). Filtrar por `'pendiente'` devuelve 0 siempre.
 
