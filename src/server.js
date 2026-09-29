@@ -175,7 +175,7 @@ app.use('/products', valoracionesRoutes);
 // el limite general (300/15min) Y el suyo propio (10/hora, ver
 // internalJobsLimiter) — defensa en profundidad. La request tambien despierta
 // el service de Render, asi que sirve de keep-alive matutino.
-app.use('/internal', internalJobsRoutes);
+app.use('/internal/jobs', internalJobsRoutes);
 
 // ---------------------------------------------------------------
 // Tareas programadas — registro para el panel de Monitoreo.
