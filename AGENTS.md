@@ -96,17 +96,21 @@ Despues del backfill, correr el job **a mano** una vez (importandolo en una sesi
 
 ### Keep-alive y jobs programados (2026-09-29)
 
-Problema: Render Free cobra **750 instance-hours por mes y por workspace**; un servicio despierto 24/7 las consume todas (~744 h en meses de 31 días) y al agotarlas se suspenden los web services. El pinger existente contra `/health` mantenía el proceso despierto todo el día "por si acaso". Medido: el servicio **no** sufría spin-down (respondía en 180 ms), solo lento (2 s en el primer request tras dormir). O sea: el pinger se pagaba entero para evitar una latencia de ~2 s, y los jobs de negocio igual fallaban, porque sus flags estaban OFF.
+Problema: Render Free cobra **750 instance-hours por mes y por workspace**; un servicio despierto 24/7 las consume todas (~744 h en meses de 31 días) y al agotarlas se suspenden los web services.
 
-Decisión del dueño: **el pinger pasa a horario comercial y los jobs de negocio pasan a un scheduler externo.** Diseño completo en `analisis/design-keep-alive-cron-render-free-2026-09-29.md` y `analisis/plan-keep-alive-cron-render-free-2026-09-29.md`.
+**Medición real (2026-09-29): el pinger NO estaba funcionando.** El servicio estaba dormido — la primera petición tardó **43 s** (arranque en frío) y las siguientes 150–360 ms. Hoy se consumen pocas instance-hours, pero por accidente, no por diseño. **No conclusions "está despierto" de una segunda petición rápida**: esas son tus propias peticiones calentando el proceso, no evidencia de que algo externo lo mantenga vivo. Para comprobarlo hay que dejarlo 16 min quieto y medir la primera petición.
 
-| Pieza | Qué hace |
-|-------|----------|
-| **Pinger `/health`** | Sigue siendo el keep-alive, pero limitado a horario comercial: cron `*/10 12-23 * * 1-5` UTC (08:00–19:50 Vzla, lun-vie). Ahorra ~457 h/mes. |
-| **`POST /internal/jobs/:nombre`** | Endpoint **sin JWT** que el scheduler externo (cron-job.org) golpea a la hora exacta. Es el que de verdad ejecuta los jobs de negocio. |
-| **`job_ejecucion` (tabla)** | Historial **persistente** de cada corrida. Sin esto, `/admin/monitoreo` mentiría tras cada spin-down/redeploy. |
-| **healthchecks.io** | Dead-man's switch: ping **solo si el job terminó bien**. Si el job falla o el scheduler no dispara, healthchecks avisa. |
-| **catch-up on boot** | Red de seguridad: al arrancar, si el job no corrió *hoy*, lo ejecuta. Cubre que cron-job.org o la red fallen. |
+Esto **valida el scheduler externo**: un servicio dormido no puede ejecutar un `node-cron` de las 03:00, porque nada lo despierta a esa hora. Los jobs de negocio necesitan un disparador externo, sea cual sea la decisión sobre el pinger.
+
+Decisión del dueño (2026-09-29): **dejar los jobs de negocio apagados** hasta observar el comportamiento real de los clientes, y **no arreglar el pinger por ahora**. Diseño completo en `analisis/design-keep-alive-cron-render-free-2026-09-29.md`.
+
+| Pieza | Qué hace | Estado |
+|-------|----------|--------|
+| Pinger `/health` | Mantendría el servicio despierto, limitado a horario comercial: `*/10 12-23 * * 1-5` UTC (08:00–19:50 Vzla, lun-vie). Ahorra ~457 h/mes frente a 24/7. | **Roto** (no dispara) |
+| **`POST /internal/jobs/:nombre`** | Endpoint **sin JWT** que un scheduler externo golpea a la hora exacta. Wake-on-demand del job. | Código listo, sin configurar |
+| Tabla `job_ejecucion` | Historial **persistente** de cada corrida. | **Migración 040 aplicada** |
+| healthchecks.io | Dead-man's switch: ping **solo si el job terminó bien**. | Sin configurar (innecesario con los flags OFF) |
+| Catch-up on boot | Al arrancar, si el job no corrió hoy, lo ejecuta. | Listo, inactivo (flags OFF) |
 
 Nombres de job en la URL (kebab-case, son las claves de `job_ejecucion`): `revisar-vencimientos`, `limpieza-notificaciones`.
 
@@ -438,7 +442,9 @@ Panel de salud para el dueño, implementado 2026-09-29. Detalle completo en el A
 
 **OJO — `reportes_pago.estado` es `'pendiente_verificacion'`**, no `'pendiente'` (ver `reportesPago.controller.js:78`). Filtrar por `'pendiente'` devuelve 0 siempre.
 
-**Health check externo**: apuntar UptimeRobot a `GET /health/deep` cada 5 min. Es público a propósito (un monitor externo no puede mandar JWT) y no devuelve datos. `/health` es el ping trivial que no toca la BD.
+**Health check externo**: apuntar UptimeRobot a `GET /health/deep` para detectar caídas. Es público a propósito (un monitor externo no puede mandar JWT) y no devuelve datos, solo status + latencia. `/health` es el ping trivial que no toca la BD.
+
+**TRAMPA — un monitor cada 5 min es un pinger encubierto**: si UptimeRobot (o cualquier monitor externo) golpea `/health/deep` cada 5 minutos, el servicio **nunca duerme** y se vuelven a burningar las ~744 h/mes. Eso contradice el objetivo de las instance-hours. Si configurás un monitor externo, poné el intervalo **largo (30–60 min)** y aceptá que cada comprobación despierte el servicio, o no lo configures. Recordá que además despertarlo con `/health/deep` cuesta una query a la BD.
 
 ## Cosas a tener en cuenta
 
