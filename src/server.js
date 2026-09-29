@@ -61,6 +61,7 @@ import internalJobsRoutes from './routes/internalJobs.routes.js';
 import { healthDeep } from './controllers/monitoreo.controller.js';
 import { monitoreoMiddleware, registrarJob, envolverJob } from './services/monitoreo.service.js';
 import { flagActivado } from './services/flags.js';
+import { correrCatchup } from './services/catchup.js';
 import cron from 'node-cron';
 import { actualizarTasa } from './jobs/actualizarTasa.js';
 import { revisarVencimientos } from './jobs/revisarVencimientos.js';
@@ -270,6 +271,11 @@ if (limpiezaOn) {
 } else {
   console.warn('⚠️ CRON_LIMPIEZA_NOTIFICACIONES apagado — las notificaciones antiguas no se borran solas.');
 }
+
+// Red de seguridad para el dia en que el scheduler externo falle. Corre una
+// sola vez al arrancar y no deja ningun timer pendiente. Con los flags OFF no
+// hace nada porque el `continue` va antes de cualquier query.
+correrCatchup().catch((err) => console.error('[catchup] fallo general:', err));
 
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
