@@ -57,6 +57,7 @@ import shortsRoutes from './routes/shorts.routes.js';
 import vitrinaRoutes from './routes/vitrina.routes.js';
 import staffVitrinaRoutes from './routes/staff.vitrina.routes.js';
 import monitoreoRoutes from './routes/monitoreo.routes.js';
+import internalJobsRoutes from './routes/internalJobs.routes.js';
 import { healthDeep } from './controllers/monitoreo.controller.js';
 import { monitoreoMiddleware, registrarJob, envolverJob } from './services/monitoreo.service.js';
 import { flagActivado } from './services/flags.js';
@@ -168,6 +169,13 @@ app.use('/promociones', promocionesRoutes);
 app.use('/cupones', cuponesRoutes);
 app.use('/noticias', noticiasRoutes);
 app.use('/products', valoracionesRoutes);
+
+// Jobs de negocio disparados por el scheduler externo (cron-job.org) a la
+// hora exacta. Se monta DESPUES de apiLimiter a proposito: asi la ruta recibe
+// el limite general (300/15min) Y el suyo propio (10/hora, ver
+// internalJobsLimiter) — defensa en profundidad. La request tambien despierta
+// el service de Render, asi que sirve de keep-alive matutino.
+app.use('/internal', internalJobsRoutes);
 
 // ---------------------------------------------------------------
 // Tareas programadas — registro para el panel de Monitoreo.
