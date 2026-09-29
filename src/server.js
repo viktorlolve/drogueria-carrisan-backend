@@ -59,6 +59,7 @@ import staffVitrinaRoutes from './routes/staff.vitrina.routes.js';
 import monitoreoRoutes from './routes/monitoreo.routes.js';
 import { healthDeep } from './controllers/monitoreo.controller.js';
 import { monitoreoMiddleware, registrarJob, envolverJob } from './services/monitoreo.service.js';
+import { flagActivado } from './services/flags.js';
 import cron from 'node-cron';
 import { actualizarTasa } from './jobs/actualizarTasa.js';
 import { revisarVencimientos } from './jobs/revisarVencimientos.js';
@@ -223,7 +224,6 @@ cron.schedule('0 6 * * *', () => {
 // sin backfill, el primer run dispara un aviso a cada orden vencida de
 // golpe y suspende creditos en bloque.
 // ---------------------------------------------------------------
-const flagActivado = (nombre) => process.env[nombre] === 'true';
 
 const revisarVencimientosOn = flagActivado('CRON_REVISAR_VENCIMIENTOS');
 const autoFreezeOn = flagActivado('CRON_AUTO_FREEZE_CREDITO');
