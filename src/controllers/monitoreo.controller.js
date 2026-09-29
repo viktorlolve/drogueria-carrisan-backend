@@ -60,7 +60,7 @@ async function contar(tabla, aplicar) {
 async function construirEstado() {
   const ahoraISO = new Date().toISOString();
   const mem = process.memoryUsage();
-  const snap = snapshotMonitoreo();
+  const snap = await snapshotMonitoreo();
 
   // Todo en paralelo: son consultas head (count) livianas.
   const [

@@ -10,10 +10,29 @@
 //   No guarda body, query string, IP ni datos de usuarios.
 //
 // LIMITACIONES (documentadas también en la página y en AGENTS.md):
-//   - Todo vive en la memoria del proceso: se reinicia cuando Render
-//     reinicia/duerme el servicio. El panel muestra "desde" para que se vea.
-//   - Con más de una instancia, cada una tendría sus propias métricas.
+//   - El tráfico y las latencias viven en la memoria del proceso: se reinician
+//     cuando Render reinicia/duerme el servicio. El panel muestra "desde" para
+//     que se vea.
+//   - El estado de los JOBS ya NO tiene esa limitación: desde el 2026-09-29 se
+//     persiste en la tabla job_ejecucion (migración 040) y se lee en
+//     `jobsPersistidos`. Ver `leerEjecucionPersistida`.
+//   - Con más de una instancia, cada una tendría sus propias métricas de
+//     tráfico (la tabla de jobs es compartida, no).
 // ---------------------------------------------------------------
+
+import { registrarEjecucion, leerTodasEjecuciones } from './registrarEjecucion.js';
+
+// Lectura tolerante a fallos: si la BD no responde o la migración 040 todavía
+// no está aplicada, el panel sigue funcionando y simplemente muestra la tabla
+// vacía en vez de romper /admin/monitoreo entero.
+async function leerEjecucionPersistida() {
+  try {
+    return await leerTodasEjecuciones();
+  } catch (err) {
+    console.error('[monitoreo] no se pudieron leer las ejecuciones persistidas:', err?.message || err);
+    return [];
+  }
+}
 
 const MAX_ERRORES = 50;
 const MAX_RUTAS = 200;
@@ -129,12 +148,25 @@ export function envolverJob(nombre, fn) {
       j.ejecuciones += 1;
       j.ultimaEjecucion = new Date().toISOString();
       j.ultimaDuracionMs = Date.now() - t0;
+      // Persistir: el estado en memoria se pierde en cada spin-down de Render
+      // Free y en cada redeploy, y sin esto /admin/monitoreo miente ("nunca
+      // corrio") aunque el job haya corrido hace horas. registrarEjecucion
+      // nunca lanza, asi que un fallo de BD no tapa el error real del job.
+      await registrarEjecucion({
+        nombre,
+        resultado: j.ultimoError ? 'error' : 'ok',
+        duracionMs: j.ultimaDuracionMs,
+        origen: 'interno',
+        error: j.ultimoError,
+      });
     }
   };
 }
 
 // ---------------- Lectura para el controller ----------------
-export function snapshotMonitoreo() {
+// Es async desde 2026-09-29: ademas del estado en memoria lee la tabla
+// job_ejecucion, que es la unica fuente que sobrevive a un reinicio.
+export async function snapshotMonitoreo() {
   const rutasArr = [...rutas.entries()].map(([ruta, r]) => ({
     ruta,
     n: r.n,
@@ -158,5 +190,6 @@ export function snapshotMonitoreo() {
     rutasMasUsadas: [...rutasArr].sort((a, b) => b.n - a.n).slice(0, 8),
     erroresRecientes: [...errores].reverse().slice(0, 20),
     jobs: [...jobs.values()],
+    jobsPersistidos: await leerEjecucionPersistida(),
   };
 }
