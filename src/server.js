@@ -241,6 +241,11 @@ registrarJob('revisarVencimientos', {
   descripcion: 'Avisos de crédito por vencer / vencido (08:00 Vzla)',
   programado: revisarVencimientosOn,
   flagEnv: 'CRON_REVISAR_VENCIMIENTOS',
+  // Clave en job_ejecucion. Debe coincidir con la clave del endpoint
+  // externo (src/controllers/internalJobs.controller.js) para que el
+  // panel pueda unir ambas mitades: el nombre en memoria es camelCase
+  // y el de la URL es kebab-case.
+  nombrePersistente: 'revisar-vencimientos',
 });
 
 if (revisarVencimientosOn) {
@@ -261,6 +266,8 @@ registrarJob('limpiezaNotificaciones', {
   descripcion: 'Borra notificaciones antiguas (03:00 Vzla)',
   programado: limpiezaOn,
   flagEnv: 'CRON_LIMPIEZA_NOTIFICACIONES',
+  // Ver la nota en registrarJob('revisarVencimientos') arriba.
+  nombrePersistente: 'limpieza-notificaciones',
 });
 
 if (limpiezaOn) {

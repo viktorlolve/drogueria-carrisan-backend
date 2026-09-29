@@ -187,6 +187,11 @@ async function construirEstado() {
       },
     },
     jobs: snap.jobs,
+    // Estado que vive en la tabla job_ejecucion. Viaja aparte porque es la
+    // unica fuente que sobrevive a un spin-down de Render Free: el bloque
+    // `jobs` de arriba se reinicia en cada arranque. El frontend los une por
+    // `nombrePersistente || nombre` (ver MonitoreoAdmin.jsx).
+    jobsPersistidos: snap.jobsPersistidos,
     trafico: snap.trafico,
     rutasLentas: snap.rutasLentas,
     rutasMasUsadas: snap.rutasMasUsadas,

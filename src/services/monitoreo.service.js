@@ -118,9 +118,15 @@ export function monitoreoMiddleware(req, res, next) {
 // NO es un error: el panel lo muestra neutro, no como alerta. `flagEnv`
 // es la env var que hay que poner en Render para prenderla, y se muestra
 // junto al estado para que el dueño sepa qué hacer.
-export function registrarJob(nombre, { cron = null, descripcion = '', programado = true, flagEnv = null } = {}) {
+//
+// `nombrePersistente` es la clave con la que este job se guarda en la tabla
+// job_ejecucion. Hace FALTA porque el endpoint externo usa nombres de URL en
+// kebab-case ('revisar-vencimientos') mientras que el job en memoria se llama
+// en camelCase ('revisarVencimientos'). Sin este campo, el panel no logra
+// emparejar las dos mitades y mostraría "sin registro" para siempre.
+export function registrarJob(nombre, { cron = null, descripcion = '', programado = true, flagEnv = null, nombrePersistente = null } = {}) {
   jobs.set(nombre, {
-    nombre, cron, descripcion, programado, flagEnv,
+    nombre, cron, descripcion, programado, flagEnv, nombrePersistente,
     ejecuciones: 0, fallos: 0,
     ultimaEjecucion: null, ultimaDuracionMs: null,
     ultimoError: null, enCurso: false,
@@ -153,7 +159,7 @@ export function envolverJob(nombre, fn) {
       // corrio") aunque el job haya corrido hace horas. registrarEjecucion
       // nunca lanza, asi que un fallo de BD no tapa el error real del job.
       await registrarEjecucion({
-        nombre,
+        nombre: j.nombrePersistente || nombre,
         resultado: j.ultimoError ? 'error' : 'ok',
         duracionMs: j.ultimaDuracionMs,
         origen: 'interno',
