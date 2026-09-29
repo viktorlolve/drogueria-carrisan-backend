@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { supabase } from '../config/supabase.js';
-import { verificarTurnstile } from '../utils/turnstile.js';
+import { JWT_EXPIRES_STAFF, JWT_EXPIRES_BRIDGE } from '../config/jwt.js';
 import { validarTransicion, aplicarCambioEstado, construirOrden, ErrorOrden } from './ordenes.controller.js';
 import {
   construirPresupuesto,
@@ -47,7 +47,7 @@ export async function loginStaff(req, res) {
         token_version: staff.token_version ?? 0
       },
       process.env.JWT_SECRET,
-      { expiresIn: '3d' }
+      { expiresIn: JWT_EXPIRES_STAFF }
     );
 
     const { password_hash, ...staffSinHash } = staff;
@@ -58,12 +58,39 @@ export async function loginStaff(req, res) {
   }
 }
 
+// GET /staff/me — perfil fresco del personal autenticado. Sin checkRolStaff a
+// propósito: cualquier rol puede leer el suyo. La sesión del staff vive 7 días
+// y su JWT lleva el `rol` con el que se emitió, así que sin este endpoint un
+// ascenso (o una degradación) no se reflejaría en el sidebar ni en los guards
+// del frontend hasta el siguiente login. Devuelve la misma forma que
+// /staff/login (`staff` sin password_hash) para que el frontend pueda
+// sobrescribir `staff_user` sin cambiar de formato.
+export async function getMiPerfil(req, res) {
+  try {
+    const { data: staff, error } = await supabase
+      .from('staff')
+      .select('*')
+      .eq('id', req.staff.id)
+      .single();
+
+    if (error || !staff) {
+      return res.status(404).json({ error: 'Cuenta de staff no encontrada' });
+    }
+
+    const { password_hash, ...staffSinHash } = staff;
+    res.json({ staff: staffSinHash });
+  } catch (err) {
+    console.error('Error en getMiPerfil:', err);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+}
+
 // POST /staff/registro — registro de personal interno mediante código de
 // invitación de tipo 'staff' (generado en /admin/codigos-invitacion con su
 // rol incrustado). Inserta en la tabla `staff` (no users), consume el
 // código de forma atómica y devuelve token + staff (auto-login).
 export async function registrarStaff(req, res) {
-  const { email, password, nombre, codigo, turnstileToken } = req.body;
+  const { email, password, nombre, codigo } = req.body;
 
   if (!email || !password || !nombre || !codigo) {
     return res.status(400).json({ error: 'Faltan datos requeridos' });
@@ -76,11 +103,6 @@ export async function registrarStaff(req, res) {
     return res.status(400).json({
       error: 'La contraseña debe tener al menos 8 caracteres, incluyendo letras y números'
     });
-  }
-
-  const verificacionBot = await verificarTurnstile(turnstileToken, req.ip);
-  if (!verificacionBot.valido) {
-    return res.status(400).json({ error: verificacionBot.error });
   }
 
   try {
@@ -170,7 +192,7 @@ export async function registrarStaff(req, res) {
         token_version: nuevoStaff.token_version ?? 0
       },
       process.env.JWT_SECRET,
-      { expiresIn: '3d' }
+      { expiresIn: JWT_EXPIRES_STAFF }
     );
 
     const { password_hash: _ph, ...staffSinHash } = nuevoStaff;
@@ -538,7 +560,7 @@ export async function crearBridgeAdmin(req, res) {
     const token = jwt.sign(
       { id: user.id, email: user.email, es_admin: user.es_admin, nombre: user.nombre, token_version: user.token_version ?? 0 },
       process.env.JWT_SECRET,
-      { expiresIn: '3d' }
+      { expiresIn: JWT_EXPIRES_BRIDGE }
     );
 
     const { password_hash, ...userSinPassword } = user;

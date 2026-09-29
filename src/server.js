@@ -56,14 +56,29 @@ import noticiasRoutes from './routes/noticias.routes.js';
 import shortsRoutes from './routes/shorts.routes.js';
 import vitrinaRoutes from './routes/vitrina.routes.js';
 import staffVitrinaRoutes from './routes/staff.vitrina.routes.js';
+import monitoreoRoutes from './routes/monitoreo.routes.js';
+import { healthDeep } from './controllers/monitoreo.controller.js';
+import { monitoreoMiddleware, registrarJob, envolverJob } from './services/monitoreo.service.js';
 import cron from 'node-cron';
 import { actualizarTasa } from './jobs/actualizarTasa.js';
+import { revisarVencimientos } from './jobs/revisarVencimientos.js';
+import { limpiezaNotificaciones } from './jobs/limpiezaNotificaciones.js';
 import { sincronizarNoticias } from './controllers/noticias.controller.js';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Render mete un proxy (su edge) delante del proceso, asi que la IP del socket
+// es la del proxy y no la del cliente. Sin esto, express-rate-limit unclava
+// los 5 limiters por esa IP compartida -> los 10 intentos/15min de login y
+// los 300/15min de la API se consumen entre TODOS los clientes a la vez.
+//
+// El valor es 1 (un salto), NO `true`: `true` hace que express-rate-limit
+// tire ERR_ERL_PERMISSIVE_TRUST_PROXY, porque cualquiera podria mandar un
+// X-Forwarded-For falso y saltarse el limite.
+app.set('trust proxy', 1);
 
 const allowedOrigins = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(',').map(o => o.trim())
@@ -80,6 +95,11 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '2mb' }));
 
+// Monitoreo: mide tráfico/latencias/5xx de toda la API. Va antes de los
+// limiters y de las rutas para que también cuente los 429 y los 404.
+// Se auto-excluye de /health* y /admin/monitoreo (ver monitoreo.service.js).
+app.use(monitoreoMiddleware);
+
 // Rate limiting: estricto en auth, general en el resto de la API.
 app.use('/auth', authLimiter);
 app.use(apiLimiter);
@@ -87,6 +107,10 @@ app.use(apiLimiter);
 app.get('/health', (req, res) => {
   res.json({ status: 'OK' });
 });
+
+// Ping profundo: responde OK solo si la BD contesta. Para UptimeRobot
+// (o cualquier monitor externo) — público y sin datos, solo status + latencia.
+app.get('/health/deep', healthDeep);
 
 app.use('/auth', authRoutes);
 app.use('/marcas', marcasRoutes);
@@ -137,24 +161,107 @@ app.use('/chat', chatRoutes);
 app.use('/presupuestos', presupuestosRoutes);
 app.use('/subusuarios', subusuariosRoutes);
 app.use('/admin/analytics', analyticsRoutes);
+app.use('/admin/monitoreo', monitoreoRoutes);
 app.use('/push', pushRoutes);
 app.use('/promociones', promocionesRoutes);
 app.use('/cupones', cuponesRoutes);
 app.use('/noticias', noticiasRoutes);
 app.use('/products', valoracionesRoutes);
 
-// Cron: actualizar tasa de cambio a las 18:00 hora Venezuela (lunes a viernes)
+// ---------------------------------------------------------------
+// Tareas programadas — registro para el panel de Monitoreo.
+//
+// registrarJob + envolverJob NO cambian el comportamiento de nada:
+// solo miden (última ejecución, duración, último error) para que
+// /admin/monitoreo pueda mostrarlos. `programado` refleja si el cron
+// quedó realmente agendado — para los jobs gateados es el estado del
+// flag, y el panel lo muestra neutro (no es una alerta).
+// ---------------------------------------------------------------
+registrarJob('actualizarTasa', {
+  cron: '0 18 * * 1-5',
+  descripcion: 'Tasa de cambio (lun-vie 18:00 Vzla)',
+});
+const correrActualizarTasa = envolverJob('actualizarTasa', actualizarTasa);
 cron.schedule('0 18 * * 1-5', () => {
-  actualizarTasa();
+  correrActualizarTasa();
 }, { timezone: 'America/Caracas' });
 
 // Noticias RSS: sincronizar una vez al día (06:00 hora Venezuela).
-// Synnc inicial al arrancar para no servir un feed vacío tras un restart
+// Sync inicial al arrancar para no servir un feed vacío tras un restart
 // (el proceso puede reiniciarse al despertar del sleep en Render free).
-sincronizarNoticias();
+registrarJob('sincronizarNoticias', {
+  cron: '0 6 * * *',
+  descripcion: 'Feed RSS de noticias (diario 06:00 Vzla + al arrancar)',
+});
+const correrNoticias = envolverJob('sincronizarNoticias', sincronizarNoticias);
+correrNoticias();
 cron.schedule('0 6 * * *', () => {
-  sincronizarNoticias();
+  correrNoticias();
 }, { timezone: 'America/Caracas' });
+
+// ---------------------------------------------------------------
+// Jobs de negocio — GATEADOS por env var y APAGADOS por defecto.
+//
+// Estos tres jobs cambian el comportamiento con clientes reales
+// (miden avisos a usuarios, suspenden creditos, borran datos), asi
+// que prenderlos es una decision del_dueno y no un default del deploy.
+// Poner la env var en Render los activa; quitarla los apaga.
+//
+//   CRON_REVISAR_VENCIMIENTOS=true     avisos "por vencer" y "vencida"
+//                                      de ordenes a credito (08:00 Vzla)
+//   CRON_AUTO_FREEZE_CREDITO=true      ADEMAS suspende (credito_bloqueado)
+//                                      clientes con >20 dias de atraso.
+//                                      Flag aparte a proposito: permite
+//                                      mandar los avisos sin tocar creditos.
+//   CRON_LIMPIEZA_NOTIFICACIONES=true  borra notificaciones antiguas
+//                                      (ofertas 7d, leidas 30d, no leidas 60d)
+//
+// OJO antes del PRIMER arranque de CRON_REVISAR_VENCIMIENTOS: hay que
+// backfillear `notificado_proximo` / `notificado_vencido` a true en las
+// ordenes viejas (SQL en AGENTS.md). El job notifica una sola vez por orden
+// usando esos flags, y hoy estan en false para todo el atraso acumulado:
+// sin backfill, el primer run dispara un aviso a cada orden vencida de
+// golpe y suspende creditos en bloque.
+// ---------------------------------------------------------------
+const flagActivado = (nombre) => process.env[nombre] === 'true';
+
+const revisarVencimientosOn = flagActivado('CRON_REVISAR_VENCIMIENTOS');
+const autoFreezeOn = flagActivado('CRON_AUTO_FREEZE_CREDITO');
+registrarJob('revisarVencimientos', {
+  cron: '0 8 * * *',
+  descripcion: 'Avisos de crédito por vencer / vencido (08:00 Vzla)',
+  programado: revisarVencimientosOn,
+  flagEnv: 'CRON_REVISAR_VENCIMIENTOS',
+});
+
+if (revisarVencimientosOn) {
+  const correrVencimientos = envolverJob('revisarVencimientos', revisarVencimientos);
+  cron.schedule('0 8 * * *', () => {
+    correrVencimientos({ autoFreeze: autoFreezeOn });
+  }, { timezone: 'America/Caracas' });
+  if (!autoFreezeOn) {
+    console.warn('⚠️ CRON_AUTO_FREEZE_CREDITO apagado — se avisan vencimientos pero NO se suspende crédito.');
+  }
+} else {
+  console.warn('⚠️ CRON_REVISAR_VENCIMIENTOS apagado — no se enviarán avisos de crédito por vencer ni vencido.');
+}
+
+const limpiezaOn = flagActivado('CRON_LIMPIEZA_NOTIFICACIONES');
+registrarJob('limpiezaNotificaciones', {
+  cron: '0 3 * * *',
+  descripcion: 'Borra notificaciones antiguas (03:00 Vzla)',
+  programado: limpiezaOn,
+  flagEnv: 'CRON_LIMPIEZA_NOTIFICACIONES',
+});
+
+if (limpiezaOn) {
+  const correrLimpieza = envolverJob('limpiezaNotificaciones', limpiezaNotificaciones);
+  cron.schedule('0 3 * * *', () => {
+    correrLimpieza();
+  }, { timezone: 'America/Caracas' });
+} else {
+  console.warn('⚠️ CRON_LIMPIEZA_NOTIFICACIONES apagado — las notificaciones antiguas no se borran solas.');
+}
 
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);

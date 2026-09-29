@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { supabase } from '../config/supabase.js';
-import { verificarTurnstile } from '../utils/turnstile.js';
+import { JWT_EXPIRES_CLIENT } from '../config/jwt.js';
 
 export async function checkEmail(req, res) {
   const { email } = req.body;
@@ -57,9 +57,10 @@ export async function login(req, res) {
 
     // 3. Generar el token JWT (incluye token_version para poder revocar
     // esta sesión específica más adelante sin esperar a que expire).
-    // 3 días de duración: la sesión larga está bien porque la protección
+    // La duración sale de JWT_EXPIRES_CLIENT (config/jwt.js, 3 días por
+    // defecto): la sesión larga está bien porque la protección
     // real de las acciones sensibles (pagos, estado de cuenta) no depende
-    // de esto — esas rutas exigen una revalidación fresca contra el
+    // de esto - esas rutas exigen una revalidación fresca contra el
     // servidor en cada entrada (ver PrivateRouteSensible en el frontend
     // y GET /auth/verify más abajo), y además el checkout pide un PIN de
     // compra aparte. El JWT largo es solo "mantenerte logueado", no la
@@ -67,7 +68,7 @@ export async function login(req, res) {
     const token = jwt.sign(
       { id: user.id, email: user.email, es_admin: user.es_admin, nombre: user.nombre, token_version: user.token_version ?? 0 },
       process.env.JWT_SECRET,
-      { expiresIn: '3d' }
+      { expiresIn: JWT_EXPIRES_CLIENT }
     );
 
     // 4. Devolver token + datos del usuario (sin el password_hash)
@@ -165,7 +166,7 @@ export async function register(req, res) {
   // podría auto-registrarse como administrador llamando a este endpoint
   // directamente. Los admins solo se promueven desde el panel (users.controller,
   // ruta protegida con verifyAdmin).
-  const { email, password, tipo_usuario, estado, ciudad, telefono, perfil, turnstileToken } = req.body;
+  const { email, password, tipo_usuario, estado, ciudad, telefono, perfil } = req.body;
 
   if (!email || !password || !tipo_usuario || !perfil) {
     return res.status(400).json({ error: 'Faltan datos requeridos' });
@@ -181,11 +182,6 @@ export async function register(req, res) {
     return res.status(400).json({
       error: 'La contraseña debe tener al menos 8 caracteres, incluyendo letras y números'
     });
-  }
-
-  const verificacionBot = await verificarTurnstile(turnstileToken, req.ip);
-  if (!verificacionBot.valido) {
-    return res.status(400).json({ error: verificacionBot.error });
   }
 
   const TIPOS_VALIDOS = ['institucional', 'profesional', 'honorifico'];

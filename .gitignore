@@ -1,6 +1,15 @@
 node_modules/
 .env
 src/migrations/
+
+# Credenciales pastedadas a mano desde el panel de Render. NUNCA commitear:
+# el 2026-09-28 este archivo filtro VAPID_PRIVATE_KEY a un repo publico.
+# Las claves viven solo en Render (VAPID_*) y Vercel (VITE_VAPID_PUBLIC_KEY).
+render-keys.txt
+*-keys.txt
+*.pem
+.env.*
+!.env.example
 obtener-refresh-token.js
 scraper-inhrr.mjs
 poblar-vademecum.js

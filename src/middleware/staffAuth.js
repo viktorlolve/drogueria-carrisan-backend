@@ -22,7 +22,7 @@ export async function verifyStaffJWT(req, res, next) {
 
     const { data: staff, error } = await supabase
       .from('staff')
-      .select('token_version, activo')
+      .select('token_version, activo, rol, nombre, email')
       .eq('id', decoded.id)
       .single();
 
@@ -38,7 +38,13 @@ export async function verifyStaffJWT(req, res, next) {
       return res.status(401).json({ error: 'Sesión revocada, inicia sesión de nuevo' });
     }
 
-    req.staff = decoded;
+    // `decoded` viene del token, que puede tener hasta 7 días de vida: NO
+    // confíes en su `rol` para autorizar. Reutilizamos la query que ya hacíamos
+    // para `activo`/`token_version` y sobreescribimos los campos de identidad
+    // con los de la BD, de modo que un cambio de rol surte efecto en el
+    // request siguiente (degradar a alguien lo bloquea al instante, sin
+    // esperar a que caduque su token).
+    req.staff = { ...decoded, rol: staff.rol, nombre: staff.nombre, email: staff.email };
     next();
   } catch (error) {
     return res.status(401).json({ error: 'Token inválido o expirado' });

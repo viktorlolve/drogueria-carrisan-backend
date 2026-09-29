@@ -1,6 +1,0 @@
-VAPID_PUBLIC_KEY=BMc1z2DZTZIRvbR5PbVVTSX9FNQMdUcPQLJUMLneajlXb7mLZThPmj-ZJJFpZUkD_v-RbH8m0z91CYeZhWgbhHc
-VAPID_PRIVATE_KEY=NPRIgyc6wzujZKlP_Znwm3j7SRx6J8AWzLQmSKenc2c
-VAPID_SUBJECT=mailto:dcarrisan@gmail.com
-
--- Pegar en Supabase SQL Editor para limpiar suscripciones viejas:
-DELETE FROM push_subscriptions WHERE user_id = 2;

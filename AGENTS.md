@@ -12,11 +12,10 @@ npm run start    # Produccion (node src/server.js)
 - Express 5 (Node.js) con ES Modules
 - Supabase (PostgreSQL) via @supabase/supabase-js — NO hay ORM
 - JWT (jsonwebtoken) para autenticacion
-- Cloudflare Turnstile para proteccion anti-bot
 - web-push (VAPID) para notificaciones push
 - Multer + Sharp para subida y procesamiento de imagenes
 - Helmet para security headers
-- express-rate-limit (5 limiters distintos)
+- express-rate-limit (5 limiters distintos) — proteccion anti-bot del registro
 - node-cron para tareas programadas
 - bcrypt para hashing de contrasenas
 
@@ -29,10 +28,9 @@ src/
 ├── controllers/               # Logica de negocio (~50 archivos)
 ├── routes/                    # Definicion de endpoints (~52 archivos)
 ├── middleware/                 # auth.js, Ratelimit.js, soloAdmin.middleware.js, staffAuth.js (JWT staff interno)
-├── services/                  # push.service.js (web-push), proveedores/ (importarProveedor, parsers)
+├── services/                  # push.service.js (web-push), monitoreo.service.js, proveedores/ (importarProveedor, parsers)
 ├── jobs/                      # Tareas cron (actualizarTasa, limpiezaNotificaciones, revisarVencimientos)
 ├── migrations/                # SQL de migraciones (010-037) + scripts de import
-└── utils/                     # turnstile.js (verificacion anti-bot)
 ```
 
 ## Arquitectura
@@ -52,11 +50,49 @@ Si necesitas entender la schema de la DB, mira los controllers (los nombres de c
 ### Rutas registradas en server.js
 
 Todos los archivos de `routes/` estan importados y montados en `server.js` (montaje verificable en `server.js:88-139`):
-- **Públicas / cliente**: `/auth`, `/marcas`, `/products`, `/shorts`, `/prices`, `/orders`, `/users`, `/admin/codigos-invitacion`, `/descuentos`, `/facturas`, `/pagos`, `/reportes-pago`, `/clientes`, `/notifications`, `/lists`, `/direcciones`, `/perfil`, `/favoritos`, `/uploads`, `/moleculas`, `/catalogo`, `/registro-invita`, `/delivery-tarifas`, `/requerimientos`, `/cotizaciones`, `/documentos`, `/chat`, `/presupuestos`, `/subusuarios`, `/admin/analytics`, `/push`, `/promociones`, `/cupones`, `/noticias`, `/products` (valoraciones, junto al router de productos).
+- **Públicas / cliente**: `/auth`, `/marcas`, `/products`, `/shorts`, `/prices`, `/orders`, `/users`, `/admin/codigos-invitacion`, `/descuentos`, `/facturas`, `/pagos`, `/reportes-pago`, `/clientes`, `/notifications`, `/lists`, `/direcciones`, `/perfil`, `/favoritos`, `/uploads`, `/moleculas`, `/catalogo`, `/registro-invita`, `/delivery-tarifas`, `/requerimientos`, `/cotizaciones`, `/documentos`, `/chat`, `/presupuestos`, `/subusuarios`, `/admin/analytics`, `/admin/monitoreo`, `/push`, `/promociones`, `/cupones`, `/noticias`, `/products` (valoraciones, junto al router de productos).
 - **Staff** (se montan ANTES del `/staff` base, cada uno con `verifyStaffJWT` + `checkRolStaff`): `/staff/almacen`, `/staff/contabilidad`, `/staff/cotizaciones`, `/staff/requerimientos`, `/staff/documentos`, `/staff/promociones`, `/staff/direcciones`, `/staff/precios`, `/staff/credito`, `/staff/tesoreria`, `/staff/reportes`, `/staff/logistica`, `/staff/chat`, `/staff/cupones`, `/staff` (base: login/registro/ordenes/despacho/bridge).
-- **Cron**: `cron.schedule('0 18 * * 1-5', actualizarTasa, { timezone: 'America/Caracas' })` en `server.js:142-144` (tasa de cambio, lun-vie 18:00 hora Venezuela).
+- **Cron**: `cron.schedule('0 18 * * 1-5', actualizarTasa, ...)` (tasa de cambio, lun-vie 18:00 hora Venezuela) y `cron.schedule('0 6 * * *', sincronizarNoticias)` (noticias RSS) — sin gatear. Los **tres jobs de negocio van gateados por env var y OFF por defecto** (ver "Cron gateado" abajo).
 
 Si agregas un endpoint nuevo, recuerda importar y montar el archivo de rutas en `server.js`.
+
+### `app.set('trust proxy', 1)` — obligatorio detrás de Render
+
+`server.js` lo setea a `1` (un salto). **NO lo cambies a `true`**: express-rate-limit lanza `ERR_ERL_PERMISSIVE_TRUST_PROXY` con `true` porque cualquiera podria mandar un `X-Forwarded-For` falso y saltarse los limiters.
+
+Sin esto, `req.ip` es la IP del edge de Render (no la del cliente), los 5 limiters unclavan por esa IP compartida y los 10 intentos/15min de `authLimiter` se consumen entre TODOS los clientes a la vez. Ademas express-rate-limit v7 loguea `ERR_ERL_UNEXPECTED_X_FORWARDED_FOR` en cada request con XFF. Verificado con un harness: sin el fix las 3 peticiones con XFF distintas comparten contador (9→8→7); con el fix son cubos separados (9, 9, 8).
+
+Blast radius ~0: `req.ip|req.ips|req.hostname|req.protocol|res.cookie|req.secure` no aparecen en ningun archivo de `src/`.
+
+### Cron gateado (jobs de negocio) — OFF por defecto
+
+Los tres jobs de negocio cambian el comportamiento con clientes reales, asi que **prenderlos es una decision del_dueno**, no un default del deploy. Cada uno lee su env var en Render y loguea un `console.warn` cuando esta apagado:
+
+| Env var | Cron | Efecto |
+|---------|------|--------|
+| `CRON_REVISAR_VENCIMIENTOS` | `0 8 * * *` (08:00 Vzla) | Avisos "por vencer" y "vencida" de ordenes a credito |
+| `CRON_AUTO_FREEZE_CREDITO` | — (flag del anterior) | ADEMAS suspende (`credito_bloqueado`) clientes con >20 dias de atraso. Flag APARTE a proposito: permite mandar avisos sin suspender creditos |
+| `CRON_LIMPIEZA_NOTIFICACIONES` | `0 3 * * *` (03:00 Vzla) | Borra notificaciones antiguas (ofertas 7d, leidas 30d, no leidas 60d) |
+
+`revisarVencimientos({ autoFreeze })` recibe el flag; el bloque de freeze esta dentro de `if (autoFreeze)`.
+
+**BACKFILL OBLIGATORIO antes del primer arranque de `CRON_REVISAR_VENCIMIENTOS`** (Supabase SQL Editor). El job notifica una sola vez por orden usando los flags `ordenes.notificado_proximo` / `notificado_vencido`, y hoy estan en `false` para todo el atraso acumulado. Sin backfill, el primer run dispara un aviso a cada orden vencida **de golpe** y suspende creditos en bloque:
+
+```sql
+-- Marcar como ya notificadas las ordenes vencidas HOY (no se avisa de arrears viejos).
+UPDATE ordenes
+   SET notificado_proximo = true,
+       notificado_vencido = true
+ WHERE estado <> 'cancelado'
+   AND estado_pago IS DISTINCT FROM 'verificado'
+   AND fecha_vencimiento IS NOT NULL
+   AND fecha_vencimiento < now();
+```
+
+Despues del backfill, correr el job **a mano** una vez (importandolo en una sesion node) o esperar al primer cron, y solo entonces considerar `CRON_AUTO_FREEZE_CREDITO=true`. Revisar el aging en `/staff/credito` antes de suspender creditos reales.
+
+**Render free duerme**: si el plan es free, el proceso se congela y los crons no disparan a la hora — disparan tarde al despertar. No rompe estos jobs (son idempotentes por flag) pero las 06:00/18:00 ya sufren igual.
+
 
 ### Autenticacion JWT
 
@@ -192,6 +228,8 @@ Objetivo: crear un catálogo público de consulta (`productos_catalogo`) basado 
 
 ### Rate Limiting (5 limiters)
 
+Proteccion anti-bot del registro: `authLimiter` (10 req/15 min por IP) cubre TODAS las rutas `/auth` (via `app.use('/auth', authLimiter)` en `server.js`) y `/staff/login` + `/staff/registro`. **No hay Turnstile** (eliminado 2026-09-28, ver abajo), asi que estos limiters son la unica barrera contra registros automatizados.
+
 | Limiter | Ventana | Max requests | Donde se usa |
 |---------|---------|-------------|--------------|
 | authLimiter | 15 min | 10 | Todas las rutas /auth |
@@ -243,6 +281,7 @@ Objetivo: crear un catálogo público de consulta (`productos_catalogo`) basado 
 | noticias.controller.js | Noticias |
 | registroInvita.controller.js | Registro por invitación (status/config) |
 | reportesPago.controller.js | Reportes de pago admin (verificar/rechazar, solo confirma — no factura) |
+| monitoreo.controller.js | Estado del sistema para el panel `/admin/monitoreo` + `healthDeep` (para UptimeRobot) |
 | analytics.controller.js | Analytics de ventas admin |
 | presupuestos.controller.js | Presupuestos (cliente + staff) |
 | perfil.controller.js | Perfil/avatar |
@@ -304,15 +343,52 @@ SUPABASE_KEY=
 JWT_SECRET=
 NODE_ENV=production
 FRONTEND_URL=http://localhost:5173
-TURNSTILE_SECRET_KEY=
 VAPID_SUBJECT=
 VAPID_PUBLIC_KEY=
 VAPID_PRIVATE_KEY=
+
+# Cron gateado (jobs de negocio) — ver "Cron gateado" arriba. OFF por defecto.
+CRON_REVISAR_VENCIMIENTOS=false
+CRON_AUTO_FREEZE_CREDITO=false
+CRON_LIMPIEZA_NOTIFICACIONES=false
+
+# Opcional: techo de memoria que espera el panel de monitoreo (default 512 = plan free de Render)
+MEMORIA_LIMITE_MB=512
 ```
+
+### VAPID: NUNCA en el repo
+
+**Incidente 2026-09-28**: `render-keys.txt` se commiteo con `VAPID_PRIVATE_KEY` y `VAPID_SUBJECT` dentro, y el repo `viktorlolve/drogueria-carrisan-backend` es **publico**. La clave privada permite firmar push arbitrario a todos los dispositivos suscritos (phishing/spam con la marca). El archivo salio del indice y del disco y seIgnoro, pero **el blob sigue en la historia** → hay que rotar las claves y reescribir el historial.
+
+Reglas:
+- Las claves viven **solo** en Render (`VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`) y Vercel (`VITE_VAPID_PUBLIC_KEY`). Nunca en un archivo del repo, ni aunque `.gitignore` lo cubra.
+- Rotar el par toca **los dos** lados: Render (privada + subject) y Vercel (publica, que se hornea en el build → **requiere redeploy**). Rotar solo una deja el push fallando en silencio.
+- Orden correcto ante una filtracion: **rotar primero, purgar el historial despues**. Purgar sin rotar deja la clave viva y publica.
+- Generar un par: `node -e "console.log(require('web-push').generateVAPIDKeys())"`.
+- Al rotar, las suscripciones existentes quedan invalidas (estan atadas a la `applicationServerKey`). `usePush.js` (frontend) las detecta comparando `subscription.options.applicationServerKey` contra la clave actual y se re-suscribe solo, sin pedir permiso de nuevo. Las filas muertas en `push_subscriptions` se limpian solas: `push.service.js` borra la suscripcion al recibir 404/410.
+
 
 ## CORS
 
 Configurado via `FRONTEND_URL` (comma-separated para multiples origenes). En desarrollo defaultea a `http://localhost:5173`.
+
+### Monitoreo (`/admin/monitoreo` + `/health/deep`)
+
+Panel de salud para el dueño, implementado 2026-09-29. Detalle completo en el AGENTS raíz.
+
+- `services/monitoreo.service.js` — estado **en memoria**, sin dependencias nuevas:
+  - `monitoreoMiddleware` — conteo por clase de status, p50/p95, rutas lentas/más usadas, últimos 20 errores 5xx (tope 200 rutas). **Nunca guarda body, query string, IP ni datos de usuarios**; la clave de ruta es el patrón (`req.route.path`), no la URL real. Se auto-excluye de `/health*` y `/admin/monitoreo`.
+  - `registrarJob(nombre, { cron, descripcion, programado, flagEnv })` y `envolverJob(nombre, fn)` — miden sin cambiar el comportamiento. **`programado` refleja si el cron quedó agendado de verdad**, y `flagEnv` es la env var que hay que poner en Render.
+  - `snapshotMonitoreo()`.
+- `controllers/monitoreo.controller.js` — `getEstadoMonitoreo` (cache 10 s) + `healthDeep` (ping público a la BD, `{ status, db_ms }` / 503). Solo devuelve si una env var está **definida o no**, nunca su valor.
+- `routes/monitoreo.routes.js` — `GET /` con `verifyJWT` + `verifyAdmin` (mismo gate que `/admin/analytics`).
+- `server.js`: el middleware va **antes de los limiters** (así también cuenta 429/404), `GET /health/deep` es público, y los 4 crons están envueltos con `envolverJob`.
+
+**Regla de los jobs apagados**: un job apagado por su env var **NO es una alerta**. Solo alerta un job que CORRIÓ y falló. Prender los jobs de negocio es decisión del dueño (y el backfill de BD es previo) — el panel informa, no pressiona.
+
+**OJO — `reportes_pago.estado` es `'pendiente_verificacion'`**, no `'pendiente'` (ver `reportesPago.controller.js:78`). Filtrar por `'pendiente'` devuelve 0 siempre.
+
+**Health check externo**: apuntar UptimeRobot a `GET /health/deep` cada 5 min. Es público a propósito (un monitor externo no puede mandar JWT) y no devuelve datos. `/health` es el ping trivial que no toca la BD.
 
 ## Cosas a tener en cuenta
 

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   loginStaff,
   registrarStaff,
+  getMiPerfil,
   getColaDespacho,
   marcarEntregado,
   crearOrdenParaCliente,
@@ -33,6 +34,8 @@ const ROLES_ADMIN = ['administrador', 'director', 'admin'];
 
 router.post('/registro', registrarStaff);
 router.post('/login', loginStaff);
+// Perfil del propio staff: solo exige sesión (cualquier rol), sin checkRolStaff.
+router.get('/me', verifyStaffJWT, getMiPerfil);
 router.get('/despacho', verifyStaffJWT, checkRolStaff(ROLES_DESPACHO), getColaDespacho);
 router.patch('/despacho/:id/entregar', verifyStaffJWT, checkRolStaff(ROLES_DESPACHO), marcarEntregado);
 router.get('/clientes', verifyStaffJWT, checkRolStaff(ROLES_VENTAS), listarClientes);
