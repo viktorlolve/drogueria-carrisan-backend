@@ -19,12 +19,15 @@ router.get('/moleculas', getMoleculas);
 router.get('/moleculas/:id', getMoleculaById);
 
 router.get('/productos/:producto_id/moleculas', getMoleculasDeProducto);
-router.get('/productos/:producto_id/relacionados-por-molecula', getProductosRelacionadosPorMolecula);
+// Requiere sesión: devuelve la fila completa de `productos` (precio + costo) y
+// los relacionados por molécula. CERRARLO es parte del mismo gate del catálogo:
+// si queda público, el detalle se lee igual saltándose /products.
+router.get('/productos/:producto_id/relacionados-por-molecula', verifyJWT, getProductosRelacionadosPorMolecula);
 router.get('/productos/:producto_id/detalles', getDetallesProducto);
 
 // endpoint combinado para ProductoDetalle.jsx
 // queda como GET /moleculas/products/:id/completo (montado bajo el prefijo /moleculas en server.js)
-router.get('/products/:id/completo', getProductoCompleto);
+router.get('/products/:id/completo', verifyJWT, getProductoCompleto);
 
 // -------------------- Admin --------------------
 router.post('/atc-clasificaciones', verifyJWT, verifyAdmin, createAtcClasificacion);

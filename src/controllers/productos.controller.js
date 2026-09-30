@@ -81,6 +81,54 @@ async function enriquecerPrecioProducto(producto, etiqueta) {
   return resolverPrecioCliente(producto, pct, vigentes);
 }
 
+// Columnas del buscador público. Sin precio ni foto: con sesión (`req.user`)
+// se agregan más abajo, para que los buscadores del navbar/móvil/presupuesto
+// no cambien de aspecto.
+const COLUMNAS_BUSQUEDA = 'id, nombre_comercial, sku, laboratorio, linea';
+const COLUMNAS_BUSQUEDA_CON_SESION = `${COLUMNAS_BUSQUEDA}, foto_url, precio_usd`;
+
+// El término va interpolado en un filtro `.or()` de PostgREST, donde la coma
+// separa condiciones y `*` es el comodín del ilike. Se limpian ambos.
+export function normalizarTerminoBusqueda(q) {
+  const valor = String(q ?? '').trim().replace(/[,()*]/g, '').replace(/\s+/g, ' ').trim();
+  if (valor.length < 2) return { ok: false, valor: '' };
+  return { ok: true, valor };
+}
+
+export function limiteBusquedaLigera(limit) {
+  const n = parseInt(limit, 10);
+  if (!Number.isFinite(n)) return 8;
+  return Math.min(Math.max(n, 1), 20);
+}
+
+// GET /products/buscar?q=&limit= — PÚBLICO, solo para los buscadores del sitio.
+// Devuelve un array plano con el shape mínimo; con sesión válida agrega
+// foto_url y precio_usd. NO usar el price-descubierto: no trae nombres.
+export async function buscarProductos(req, res) {
+  const { ok, valor: termino } = normalizarTerminoBusqueda(req.query.q ?? req.query.search);
+  if (!ok) return res.json([]);
+
+  try {
+    const { data, error } = await supabase
+      .from('productos')
+      .select(req.user ? COLUMNAS_BUSQUEDA_CON_SESION : COLUMNAS_BUSQUEDA)
+      .eq('activo', true)
+      .or(
+        `nombre_comercial.ilike.*${termino}*,` +
+        `sku.ilike.*${termino}*,` +
+        `laboratorio.ilike.*${termino}*`
+      )
+      .order('nombre_comercial', { ascending: true })
+      .limit(limiteBusquedaLigera(req.query.limit));
+
+    if (error) throw error;
+    res.json(data || []);
+  } catch (err) {
+    console.error('Error al buscar productos:', err);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+}
+
 // GET /products?search=&marca_id=&sort=&molecula=&categoria=&linea=&laboratorio=&forma=&disponible=&sin_precio=&precio_min=&precio_max=&page=&limit=
 // `categoria` filtra por categoría de la tienda (categorias_tienda/producto_categorias).
 // Sin `page` retorna un ARRAY plano (usado por Home, carruseles, buscadores, etc.)

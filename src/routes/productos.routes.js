@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   getProductos,
+  buscarProductos,
   getProductosMetadata,
   getProductosStats,
   getProductoById,
@@ -13,12 +14,13 @@ import { verifyJWT, verifyAdmin, verifyJWTOptional } from '../middleware/auth.js
 
 const router = Router();
 
-// Rutas públicas pero personalizan el precio por la etiqueta del cliente
-// si la petición trae un JWT válido (verifyJWTOptional no bloquea).
-router.get('/', verifyJWTOptional, getProductos);
+// Catálogo comercial: requiere sesión (clientes B2B). El nombre del producto
+// sigue siendo público por `GET /products/buscar` y por /registro-inhrr.
+router.get('/', verifyJWT, getProductos);
+router.get('/buscar', verifyJWTOptional, buscarProductos);   // ANTES de /:id
 router.get('/metadata', getProductosMetadata);
 router.get('/stats', verifyJWT, verifyAdmin, getProductosStats);
-router.get('/:id', verifyJWTOptional, getProductoById);
+router.get('/:id', verifyJWT, getProductoById);
 router.post('/', verifyJWT, verifyAdmin, createProducto);
 router.post('/precios-bulk', verifyJWT, verifyAdmin, preciosBulkUpdate);
 router.patch('/:id', verifyJWT, verifyAdmin, updateProducto);
