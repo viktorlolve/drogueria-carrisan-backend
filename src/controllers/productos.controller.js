@@ -52,6 +52,17 @@ export async function enriquecerConValoraciones(productos) {
   });
 }
 
+// `productos.costo_usd` es el costo al PROVEEDOR. Los selects usan `*` por
+// comodidad, así que sin esto el costo de cada producto sale por la API a
+// cualquier cliente logueado (y a cualquiera, en los endpoints públicos de
+// moleculas). Se quita SIEMPRE de la respuesta; el precio de venta sí va.
+export function omitirCostos(valor) {
+  if (Array.isArray(valor)) return valor.map(omitirCostos);
+  if (!valor || typeof valor !== 'object') return valor;
+  const { costo_usd, ...resto } = valor;
+  return resto;
+}
+
 // Aplica etiqueta + promos a una lista de productos. Sin etiqueta (o con
 // etiqueta sin porcentaje) se queda en base + promos, como siempre.
 async function enriquecerPrecios(productos, etiqueta) {
@@ -206,11 +217,11 @@ export async function getProductos(req, res) {
       : await enriquecerConValoraciones(productosConDescuento);
 
     if (!usarPaginacion) {
-      return res.json(productosConRating);
+      return res.json(omitirCostos(productosConRating));
     }
 
     res.json({
-      productos: productosConDescuento,
+      productos: omitirCostos(productosConDescuento),
       total: count ?? productosConDescuento.length,
       hasMore: (count ?? 0) > to + 1,
       page: pageNum,
@@ -347,7 +358,7 @@ export async function getProductoById(req, res) {
     // Enriquecer con rating_promedio y rating_total
     const [productoConRating] = await enriquecerConValoraciones([productoConDescuento]);
 
-    res.json(productoConRating);
+    res.json(omitirCostos(productoConRating));
   } catch (err) {
     console.error('Error al obtener producto:', err);
     res.status(500).json({ error: 'Error del servidor' });

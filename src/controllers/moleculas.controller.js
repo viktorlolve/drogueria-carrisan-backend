@@ -1,6 +1,6 @@
 import { supabase } from '../config/supabase.js';
 import { aplicarDescuentoAProducto } from './descuentos.controller.js';
-import { enriquecerConValoraciones } from './productos.controller.js';
+import { enriquecerConValoraciones, omitirCostos } from './productos.controller.js';
 
 // =================================================================
 // ATC CLASIFICACIONES
@@ -564,7 +564,7 @@ export async function getProductosRelacionadosPorMolecula(req, res) {
       productos.push(p);
     }
 
-    res.json(productos);
+    res.json(omitirCostos(productos));
   } catch (err) {
     console.error('Error al obtener productos relacionados por molécula:', err);
     res.status(500).json({ error: 'Error del servidor' });
@@ -609,7 +609,7 @@ export async function getProductoCompleto(req, res) {
     if (errorMoleculas) throw errorMoleculas;
 
     res.json({
-      producto: productoFinal,
+      producto: omitirCostos(productoFinal),
       detalles: detalles || null,
       moleculas: moleculas || []
     });
