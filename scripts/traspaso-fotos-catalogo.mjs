@@ -38,8 +38,12 @@ const LOGO_VARIANTES = {
 // cuelgan de esa base (el plan ya las escribe con el prefijo `src/assets/`).
 const DIR_LOGOS = path.join('..', 'drogueria-carrisan-frontend');
 
-// Se fija DESPUÉS de que el dueño elija la variante mirando las muestras (Step 2 del plan).
-const VARIANTE_DEFAULT = 'color';
+// Variante elegida por el dueño el 2026-09-30 mirando las 6 muestras de
+// `higia/data/limpiezas/2026-09-30_muestras/`: **blanco con sombra**. Motivo medido:
+// sobre fondo blanco el halo blanco de `color`/`halo` no se ve (A y C quedan
+// indistinguibles) y sobre fondo oscuro el logo de color se apaga (desvío 5,5
+// contra 61-68 de `blanco`/`halo`). `blanco` es la única que se lee en los dos.
+const VARIANTE_DEFAULT = 'blanco';
 
 const VARIANTES = [
   { clave: 'color', prefijo: 'A_color', titulo: 'logo color tal cual' },
@@ -233,12 +237,15 @@ async function procesarProducto(db, storage, p, { variante, aplicar }) {
     }
 
     const ruta = `${PREFIJO}/${nombreArchivoFoto()}`;               // 7
-    const { error } = await storage.from(BUCKET).upload(ruta, jpeg, {
+    // OJO: `supabase.from()` es el cliente de PostgREST (no tiene `upload`).
+    // Para escribir en Storage hay que bajar a `supabase.storage.from(bucket)`.
+    const bucket = storage.storage.from(BUCKET);
+    const { error } = await bucket.upload(ruta, jpeg, {
       contentType: 'image/jpeg',
       upsert: false,
     });
     if (error) throw new Error('upload: ' + error.message);
-    const nueva = storage.from(BUCKET).getPublicUrl(ruta).data.publicUrl;  // 8
+    const nueva = bucket.getPublicUrl(ruta).data.publicUrl;           // 8
     if (!nueva) throw new Error('getPublicUrl devolvio vacio');
 
     // 9. Recién ahora, y solo con la URL nueva ya en Storage.
@@ -267,8 +274,15 @@ function agregarLedger(fila) {                                       // 10
 
 function clienteStorage() {
   const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_KEY;
-  if (!url || !key) throw new Error('Faltan SUPABASE_URL / SUPABASE_KEY en el .env');
+  // Se prefiere la service_role: la publishable key (`SUPABASE_KEY`) sirve para
+  // LEER, pero el traspaso necesita escribir. Verificada el 2026-09-30 que la
+  // service_role sube y que el bucket `crsnimages` es público (lectura sin
+  // token = 200). Se cae a `SUPABASE_KEY` para no romper si alguien corre el
+  // script en un entorno que solo tenga esa.
+  const key = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY;
+  if (!url || !key) {
+    throw new Error('Faltan SUPABASE_URL / SUPABASE_SERVICE_KEY (o SUPABASE_KEY) en el .env');
+  }
   return createClient(url, key, { auth: { persistSession: false } });
 }
 
