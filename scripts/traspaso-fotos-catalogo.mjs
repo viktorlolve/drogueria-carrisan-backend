@@ -5,6 +5,9 @@
 //    sin flags hace dry-run (solo lee, escribe el CSV de reporte),
 //    --muestras genera las 3 variantes sobre 2 fotos reales y sale (solo lee la BD),
 //    --apply hace el traspaso real,
+//    --variante ninguna traslada SIN marca de agua (solo re-encode),
+//    --rehacer-sin-marca re-sube limpias las fotos ya marcadas (lee el ledger; con
+//    --apply escribe, sin --apply es un chequeo HEAD de los originales; --limite N acota),
 //    --revertir restaura desde el ledger.
 //
 // El bucket y el prefijo son los de las constantes del plan. El `UPDATE` a
@@ -16,7 +19,7 @@ import path from 'node:path';
 import pg from 'pg';
 import sharp from 'sharp';
 import { createClient } from '@supabase/supabase-js';
-import { geometriaMarca, esImagenTransferible, nombreArchivoFoto } from './lib/fotosTraspaso.mjs';
+import { geometriaMarca, esImagenTransferible, nombreArchivoFoto, rutaObjetoDesdeUrl } from './lib/fotosTraspaso.mjs';
 
 // --- Constantes (decisiones del dueño, literales del plan) -------------------
 const BUCKET = 'crsnimages';
@@ -27,6 +30,8 @@ const CONCURRENCIA = 6;
 const TIMEOUT_MS = 20_000;
 const REINTENTOS = 2;
 const LEDGER = 'higia/data/limpiezas/2026-09-30_traspaso_fotos.csv';
+// Ledger del rehacer-sin-marca (independiente del original: nunca se pisa el historial).
+const LEDGER_REHACER = 'higia/data/limpiezas/2026-09-30_traspaso_sin_marca.csv';
 const LOGO_VARIANTES = {
   color: 'src/assets/minilogo color sin fondo.png',
   blanco: 'src/assets/minilogo blanco sin fondo.png',
@@ -50,6 +55,12 @@ const VARIANTES = [
   { clave: 'blanco', prefijo: 'B_blanco_sombra', titulo: 'logo blanco con sombra' },
   { clave: 'halo', prefijo: 'C_color_halo', titulo: 'logo color con halo' },
 ];
+
+// Variante SIN marca de agua: solo redimensión + re-encode. Decisión del dueño
+// (2026-09-30): la marca se veía siempre y no la quiere. El valor real del
+// traspaso era servir desde Storage propio (no depender de servidores ajenos),
+// no estampar un logo. Se usa para REHACER las fotos ya marcadas.
+const VARIANTE_SIN_MARCA = 'ninguna';
 
 // 2 fotos REALES para las muestras: el dueño tiene que ver el logo sobre fondo claro Y oscuro.
 // `idOscuro` es la foto real con la caja del logo más oscura de todo el catálogo.
@@ -151,6 +162,10 @@ async function capasMarca(variante, { left, top, width, height, opacity }) {
 }
 
 async function componerMarca(fotoBuf, variante) {
+  // Sin marca: solo re-encode. No toca los logos (ni depende de ellos).
+  if (variante === VARIANTE_SIN_MARCA) {
+    return sharp(fotoBuf).jpeg({ quality: CALIDAD_JPEG, mozjpeg: true }).toBuffer();
+  }
   const m = await sharp(fotoBuf).metadata();
   const L = await cargarLogos();
   const caja = geometriaMarca({
@@ -259,17 +274,36 @@ async function procesarProducto(db, storage, p, { variante, aplicar }) {
   return fila;
 }
 
-function agregarLedger(fila) {                                       // 10
-  if (!fs.existsSync(LEDGER)) {
-    fs.mkdirSync(path.dirname(LEDGER), { recursive: true });
-    fs.writeFileSync(LEDGER, CSV_HEADER + '\n');
+function agregarLedger(fila, destino = LEDGER) {                     // 10
+  if (!fs.existsSync(destino)) {
+    fs.mkdirSync(path.dirname(destino), { recursive: true });
+    fs.writeFileSync(destino, CSV_HEADER + '\n');
   }
   const linea = [
     fila.id, celda(fila.nombre), celda(fila.anterior), celda(fila.nueva),
     fila.bytes_origen, fila.bytes_destino, fila.variante, fila.estado, celda(fila.error),
   ].join(',');
-  fs.appendFileSync(LEDGER, linea + '\n');
+  fs.appendFileSync(destino, linea + '\n');
   return linea;
+}
+
+// Lee un ledger (CSV propio) a filas. Un solo parser para revertir y rehacer.
+function leerLedger(destino = LEDGER) {
+  if (!fs.existsSync(destino)) return [];
+  const lineas = fs.readFileSync(destino, 'utf8').trim().split(/\r?\n/);
+  const parsear = (l) => {
+    const out = []; let cur = '', qq = false;
+    for (const ch of l) {
+      if (ch === '"') qq = !qq;
+      else if (ch === ',' && !qq) { out.push(cur); cur = ''; }
+      else cur += ch;
+    }
+    out.push(cur);
+    return out;
+  };
+  return lineas.slice(1).map(parsear).map((c) => ({
+    id: c[0], nombre: c[1], anterior: c[2], nueva: c[3], variante: c[6], estado: c[7], error: c[8],
+  }));
 }
 
 function clienteStorage() {
@@ -372,7 +406,7 @@ async function productoSobreOscuro(fotoBuf) {
 }
 
 async function modoDryRun(variante) {
-  await cargarLogos();
+  if (variante !== VARIANTE_SIN_MARCA) await cargarLogos();
   const db = conectarBD();
   await db.connect();
   const { rows } = await db.query(
@@ -425,7 +459,7 @@ async function modoDryRun(variante) {
 }
 
 async function modoApply(variante) {
-  await cargarLogos();
+  if (variante !== VARIANTE_SIN_MARCA) await cargarLogos();
   log('\n=== APPLY: escribe en Storage y en productos.foto_url ===');
   log(`  bucket ${BUCKET}/${PREFIJO}/  ancho ${ANCHO_MAX}  q${CALIDAD_JPEG}  concurrencia ${CONCURRENCIA}  variante ${variante}`);
   const db = conectarBD();
@@ -452,22 +486,120 @@ async function modoApply(variante) {
   if (resumen.error) log(`  las filas con estado=error NO se actualizaron: la foto anterior sigue intacta.`);
 }
 
+// === rehacer-sin-marca =======================================================
+// Re-sube LIMPIAS (sin logo) las fotos que ya están marcadas. Descarga SIEMPRE
+// el original anotado en el ledger (`anterior`), no la versión marcada: por eso
+// funciona aunque la marcada ya esté en Storage. Nunca deja el producto roto:
+// si el original murió o algo falla, la foto actual queda intacta. Nunca escribe NULL.
+async function rehacerProducto(db, storage, fila, { aplicar }) {
+  const out = {
+    id: fila.id,
+    nombre: fila.nombre,
+    anterior: fila.anterior,
+    nueva: '',
+    bytes_origen: 0,
+    bytes_destino: 0,
+    variante: VARIANTE_SIN_MARCA,
+    estado: 'error',
+    error: '',
+  };
+  try {
+    if (!fila.anterior || !esImagenTransferible(fila.anterior)) {   // 3
+      out.estado = 'omitido';
+      out.error = 'sin url original http(s) en el ledger';
+      return out;
+    }
+    const buf = await descargar(fila.anterior);
+    out.bytes_origen = buf.length;
+    const base = await sharp(buf).rotate()
+      .resize({ width: ANCHO_MAX, withoutEnlargement: true }).png().toBuffer();
+    const jpeg = await componerMarca(base, VARIANTE_SIN_MARCA);
+    out.bytes_destino = jpeg.length;
+
+    if (!aplicar) { out.estado = 'simulado'; return out; }
+
+    const bucket = storage.storage.from(BUCKET);                    // 7
+    const ruta = `${PREFIJO}/${nombreArchivoFoto()}`;
+    const { error } = await bucket.upload(ruta, jpeg, { contentType: 'image/jpeg', upsert: false });
+    if (error) throw new Error('upload: ' + error.message);
+    const nueva = bucket.getPublicUrl(ruta).data.publicUrl;         // 8
+    if (!nueva) throw new Error('getPublicUrl devolvio vacio');
+
+    // 9. UPDATE guardado: solo si la foto actual sigue siendo la que subió el
+    //    traspaso con marca (`fila.nueva`). Si alguien la cambió, no se toca.
+    const r = await db.query(
+      'UPDATE productos SET foto_url = $1 WHERE id = $2 AND foto_url = $3',
+      [nueva, fila.id, fila.nueva],
+    );
+    if (!r.rowCount) {
+      await bucket.remove([ruta]);                                  // rollback: quedó huérfana
+      out.estado = 'error';
+      out.error = 'foto_url actual != ledger (no se tocó)';
+      return out;
+    }
+    out.nueva = nueva;
+
+    // 10. Borrar la foto marcada: ya nadie la referencia. Un fallo de borrado no
+    //     es fatal (deja un huérfano inocuo); el producto ya apunta a la limpia.
+    const rutaVieja = rutaObjetoDesdeUrl(fila.nueva, BUCKET);
+    if (rutaVieja) {
+      const { error: eDel } = await bucket.remove([rutaVieja]);
+      if (eDel) out.error = 'borrado de la marcada: ' + eDel.message;
+    }
+    out.estado = 'ok';
+  } catch (e) {
+    out.estado = 'error';
+    out.error = String(e?.message ?? e).replace(/[\r\n]+/g, ' ').slice(0, 300);
+  }
+  return out;
+}
+
+async function modoRehacerSinMarca({ aplicar, limite }) {
+  let filas = leerLedger(LEDGER).filter((f) => f.estado === 'ok' && f.nueva);
+  if (limite) filas = filas.slice(0, limite);
+
+  log(`\n=== REHACER SIN MARCA (${aplicar ? 'APLICA' : 'DRY-RUN'}) ===`);
+  log(`  filas ok en el ledger ......... ${filas.length}${limite ? ` (limite ${limite})` : ''}`);
+  log(`  variante destino .............. ${VARIANTE_SIN_MARCA} (solo re-encode, sin logo)`);
+  if (!filas.length) { log('  nada que hacer.'); return; }
+
+  if (!aplicar) {
+    // Dry-run: comprueba que el ORIGINAL sigue alcanzable (HEAD, sin descargar).
+    let vivos = 0, caidos = 0;
+    const caidosIds = [];
+    await enLotes(filas, 12, async (f) => {
+      const n = await tamanoRemoto(f.anterior);
+      if (n) vivos++; else { caidos++; caidosIds.push(f.id); }
+    });
+    log(`  originales alcanzables (HEAD) . ${vivos}`);
+    log(`  originales caidos/sin length .. ${caidos}${caidos ? ` -> ${caidosIds.slice(0, 10).join(', ')}${caidosIds.length > 10 ? '...' : ''}` : ''}`);
+    log('  (no se descargo ni se escribio nada. Los caidos quedarian con su foto actual.)');
+    return;
+  }
+
+  const db = conectarBD();
+  await db.connect();
+  const storage = clienteStorage();
+  const resumen = { ok: 0, error: 0, omitido: 0 };
+  let vistas = 0;
+  await enLotes(filas, CONCURRENCIA, async (f) => {
+    const out = await rehacerProducto(db, storage, f, { aplicar: true });
+    agregarLedger(out, LEDGER_REHACER);
+    if (out.estado === 'ok') { resumen.ok++; if (out.error) log(`  aviso ${out.id}: ${out.error}`); }
+    else if (out.estado === 'omitido') resumen.omitido++;
+    else { resumen.error++; log(`  ERROR ${out.id} ${out.nombre}: ${out.error}`); }
+    vistas++;
+    if (vistas % 50 === 0) log(`  ... ${vistas}/${filas.length}`);
+  });
+  await db.end();
+  log(`\n  ok: ${resumen.ok}   error: ${resumen.error}   omitido: ${resumen.omitido}`);
+  log(`  ledger: ${LEDGER_REHACER}`);
+  if (resumen.error) log(`  las filas con estado=error NO se tocaron: la foto anterior sigue intacta.`);
+}
+
 async function modoRevertir() {
   if (!fs.existsSync(LEDGER)) throw new Error(`No existe el ledger ${LEDGER}: no hay nada que revertir`);
-  const lineas = fs.readFileSync(LEDGER, 'utf8').trim().split(/\r?\n/);
-  const parsear = (l) => {
-    const out = []; let cur = '', qq = false;
-    for (const ch of l) {
-      if (ch === '"') qq = !qq;
-      else if (ch === ',' && !qq) { out.push(cur); cur = ''; }
-      else cur += ch;
-    }
-    out.push(cur);
-    return out;
-  };
-  const filas = lineas.slice(1).map(parsear).map((c) => ({
-    id: c[0], nombre: c[1], anterior: c[2], nueva: c[3], variante: c[6], estado: c[7],
-  })).filter((f) => f.estado === 'ok');
+  const filas = leerLedger(LEDGER).filter((f) => f.estado === 'ok');
 
   log('\n=== REVERTIR: restaura foto_url desde el ledger (al revés) ===');
   log(`  filas ok en el ledger: ${filas.length}`);
@@ -492,8 +624,17 @@ async function modoRevertir() {
 
 // --- main --------------------------------------------------------------------
 const flags = process.argv.slice(2);
+const argLimite = (() => {
+  const i = flags.indexOf('--limite');
+  if (i === -1) return null;
+  const n = +flags[i + 1];
+  if (!Number.isInteger(n) || n < 1) throw new Error(`--limite espera un entero >= 1 (recibi: ${flags[i + 1]})`);
+  return n;
+})();
 if (flags.includes('--muestras')) {
   await modoMuestras();
+} else if (flags.includes('--rehacer-sin-marca')) {
+  await modoRehacerSinMarca({ aplicar: flags.includes('--apply'), limite: argLimite });
 } else if (flags.includes('--apply')) {
   await modoApply(elegirVariante(flags));
 } else if (flags.includes('--revertir')) {
@@ -506,6 +647,7 @@ function elegirVariante(f) {
   const i = f.indexOf('--variante');
   if (i === -1) return VARIANTE_DEFAULT;
   const v = f[i + 1];
-  if (!VARIANTES.some((x) => x.clave === v)) throw new Error(`Variante desconocida: ${v} (usar ${VARIANTES.map((x) => x.clave).join('|')})`);
+  const validas = [...VARIANTES.map((x) => x.clave), VARIANTE_SIN_MARCA];
+  if (!validas.includes(v)) throw new Error(`Variante desconocida: ${v} (usar ${validas.join('|')})`);
   return v;
 }

@@ -1,0 +1,11 @@
+import 'dotenv/config';
+import pg from 'pg';
+const c = new pg.Client({ host: process.env.SUPABASE_DB_HOST, port:+(process.env.SUPABASE_DB_PORT||5432), database: process.env.SUPABASE_DB_NAME||'postgres', user: process.env.SUPABASE_DB_USER, password: process.env.SUPABASE_DB_PASSWORD, ssl:{rejectUnauthorized:false} });
+await c.connect();
+const q = async (s) => JSON.stringify((await c.query(s)).rows);
+console.log('clonixin*:  ' + await q("SELECT m.id, m.nombre, m.atc_id, a.codigo FROM moleculas_referencias m LEFT JOIN atc_clasificaciones a ON a.id=m.atc_id WHERE m.nombre ILIKE '%clonixin%'"));
+console.log('propinox*:  ' + await q("SELECT id, nombre, atc_id FROM moleculas_referencias WHERE nombre ILIKE '%propinox%'"));
+console.log('acebrofil:  ' + await q("SELECT id, nombre, atc_id FROM moleculas_referencias WHERE nombre ILIKE '%acebrofil%'"));
+console.log('bismuto*:   ' + await q("SELECT id, nombre, atc_id FROM moleculas_referencias WHERE nombre ILIKE '%bismuto%' OR nombre ILIKE '%bismut%'"));
+console.log('productos:  ' + await q("SELECT column_name FROM information_schema.columns WHERE table_name='productos' AND (column_name ILIKE '%nombre%' OR column_name = 'id' OR column_name = 'molecula')"));
+await c.end();

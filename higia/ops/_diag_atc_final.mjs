@@ -1,0 +1,13 @@
+import 'dotenv/config';
+import pg from 'pg';
+const c = new pg.Client({ host: process.env.SUPABASE_DB_HOST, port:+(process.env.SUPABASE_DB_PORT||5432), database: process.env.SUPABASE_DB_NAME||'postgres', user: process.env.SUPABASE_DB_USER, password: process.env.SUPABASE_DB_PASSWORD, ssl:{rejectUnauthorized:false} });
+await c.connect();
+const q = async (sql, p) => (await c.query(sql, p)).rows;
+console.log('ref Fenazona / antipirina: ' + JSON.stringify(await q("SELECT id, nombre, atc_id FROM moleculas_referencias WHERE nombre ILIKE '%fenazon%' OR nombre ILIKE '%antipirin%' OR nombre ILIKE '%isopropilantipirin%'")));
+console.log('ref Fumarato Hierro (1562): ' + JSON.stringify(await q('SELECT id, nombre, atc_id FROM moleculas_referencias WHERE id=1562')));
+console.log('nodos con codigo M* (extensiones nacionales): ' + JSON.stringify(await q("SELECT codigo, nombre, nivel FROM atc_clasificaciones WHERE codigo ~ 'M[0-9]$' LIMIT 10")));
+console.log('refs que apuntan a nodos de nivel < 5: ' + JSON.stringify(await q('SELECT a.nivel, count(*) FROM moleculas_referencias m JOIN atc_clasificaciones a ON a.id=m.atc_id GROUP BY a.nivel ORDER BY a.nivel')));
+console.log('refs sin atc_id: ' + (await q('SELECT count(*) n FROM moleculas_referencias WHERE atc_id IS NULL'))[0].n);
+console.log('nodo R03DA: ' + JSON.stringify(await q("SELECT id, codigo, nombre, nivel FROM atc_clasificaciones WHERE codigo='R03DA'")));
+console.log('nodo N02BG91: ' + JSON.stringify(await q("SELECT id, codigo, nombre, nivel FROM atc_clasificaciones WHERE codigo='N02BG91'")));
+await c.end();

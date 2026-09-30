@@ -23,3 +23,16 @@ export function esImagenTransferible(url) {
 export function nombreArchivoFoto() {
   return `${randomUUID()}.jpg`;
 }
+
+// Clave del objeto dentro del bucket, a partir de la URL pública de Supabase
+// Storage: `.../storage/v1/object/public/<bucket>/<clave>`. Se usa para BORRAR
+// una foto ya subida (subir/mover). Devuelve null si la URL no es de ese bucket
+// (así nunca se borra algo de otro origen por accidente). Ignora query/fragmento.
+export function rutaObjetoDesdeUrl(url, bucket) {
+  if (typeof url !== 'string' || typeof bucket !== 'string' || !url || !bucket) return null;
+  const marca = `/storage/v1/object/public/${bucket}/`;
+  const i = url.indexOf(marca);
+  if (i === -1) return null;
+  const clave = url.slice(i + marca.length).split(/[?#]/)[0];
+  return clave || null;
+}
