@@ -1,2 +1,2 @@
-fecha,total_sin_foto,altas,dudosos,sin_foto,errores,por_fuente
-2026-10-01,906,453,58,395,0,farmadon:182 farmatodo:230 farmago:41
+fecha,total_sin_foto,altas,dudosos,sin_foto,sin_query,errores,por_fuente
+2026-10-01,906,437,54,415,0,0,farmadon:192 farmatodo:201 farmago:44

@@ -46,13 +46,28 @@ function guardarCsv(nombreBase, columnas, filas) {
   return archivo;
 }
 
+// Escritura atómica: se escribe a un .tmp y se renombra. Un corte de luz a
+// mitad de un writeFileSync dejaba el caché truncado, y al releerlo el
+// JSON.parse reventaba (o, peor, se perdían todas las consultas ya pagadas).
 function guardarCache(cache) {
-  fs.writeFileSync(RUTA_CACHE, JSON.stringify(cache), 'utf-8');
+  const tmp = `${RUTA_CACHE}.tmp`;
+  fs.writeFileSync(tmp, JSON.stringify(cache), 'utf-8');
+  fs.renameSync(tmp, RUTA_CACHE);
+}
+
+function leerCache() {
+  if (!fs.existsSync(RUTA_CACHE)) return {};
+  try {
+    return JSON.parse(fs.readFileSync(RUTA_CACHE, 'utf8'));
+  } catch (e) {
+    console.warn(`Caché ilegible (${String(e?.message || e).slice(0, 120)}): se empieza de cero.`);
+    return {};
+  }
 }
 
 async function main() {
   fs.mkdirSync(DATA_LIMPIEZAS, { recursive: true });
-  const cache = fs.existsSync(RUTA_CACHE) ? JSON.parse(fs.readFileSync(RUTA_CACHE, 'utf8')) : {};
+  const cache = leerCache();
 
   const client = new pg.Client(DB_CONFIG);
   await client.connect();
@@ -79,9 +94,17 @@ async function main() {
         const key = `${f}|${q}`;
         let cands = cache[key];
         if (!cands) {
-          try { cands = await BUSCADORES[f](q); }
-          catch (e) { cands = []; errores.push({ id: p.id, sku: p.sku, nombre_comercial: p.nombre_comercial, fuente: f, query: q, error: String(e?.message || e).slice(0, 200) }); }
-          cache[key] = cands;
+          // Un fallo de red NO se cachea como "cero resultados": se volvería a
+          // creerme para siempre y el producto quedaría sin foto sin que quede
+          // rastro en el reporte. Se registra el error y se reintenta la fuente
+          // en la próxima corrida.
+          try {
+            cands = await BUSCADORES[f](q);
+            cache[key] = cands;
+          } catch (e) {
+            errores.push({ id: p.id, sku: p.sku, nombre_comercial: p.nombre_comercial, fuente: f, query: q, error: String(e?.message || e).slice(0, 200) });
+            cands = [];
+          }
         }
         const m = matchFarmacias(p, cands, f);
         if (m.estado === 'alta') { elegido = m; break; }
@@ -90,9 +113,9 @@ async function main() {
       if (elegido?.estado === 'alta') altas.push({ p, m: elegido });
       else if (elegido?.estado === 'dudoso') dudosos.push({ p, m: elegido });
       else sinFoto.push(p);
-      if (n % CACHE_CADA === 0) { guardarCache(cache); console.log(`  ${n}/${productos.length}...`); }
+      if (n % CACHE_CADA === 0) { try { guardarCache(cache); } catch (e) { console.warn(`No se pudo guardar el caché: ${e.message}`); } console.log(`  ${n}/${productos.length}...`); }
     }
-    guardarCache(cache);
+    try { guardarCache(cache); } catch (e) { console.warn(`No se pudo guardar el caché final: ${e.message}`); }
 
     const backup = altas.map(({ p }) => ({ id: p.id, sku: p.sku, nombre_comercial: p.nombre_comercial, foto_url: p.foto_url || '' }));
     const archivoBackup = guardarCsv('fotosfarmacias_backup', ['id', 'sku', 'nombre_comercial', 'foto_url'], backup);
@@ -119,12 +142,12 @@ async function main() {
     for (const { m } of altas) porFuente[m.fuente] = (porFuente[m.fuente] || 0) + 1;
     const reporte = [{
       fecha: FECHA, total_sin_foto: productos.length, altas: altas.length, dudosos: dudosos.length,
-      sin_foto: sinFoto.length, errores: errores.length,
+      sin_foto: sinFoto.length, sin_query: sinQuery, errores: errores.length,
       por_fuente: Object.entries(porFuente).map(([k, v]) => `${k}:${v}`).join(' '),
     }];
-    const archivoRep = guardarCsv('fotosfarmacias_reporte', ['fecha', 'total_sin_foto', 'altas', 'dudosos', 'sin_foto', 'errores', 'por_fuente'], reporte);
+    const archivoRep = guardarCsv('fotosfarmacias_reporte', ['fecha', 'total_sin_foto', 'altas', 'dudosos', 'sin_foto', 'sin_query', 'errores', 'por_fuente'], reporte);
 
-    console.log(`Altas: ${altas.length} | Dudosos: ${dudosos.length} | Sin foto: ${sinFoto.length} | Errores: ${errores.length} | Sin query: ${sinQuery}`);
+    console.log(`Altas: ${altas.length} | Dudosos: ${dudosos.length} | Sin foto: ${sinFoto.length} | Sin query: ${sinQuery} | Errores: ${errores.length}`);
     console.log(`Backup:    ${archivoBackup}`);
     console.log(`Cruce:     ${archivoCruce}`);
     console.log(`Dudosos:   ${archivoDud}`);
@@ -140,7 +163,9 @@ async function main() {
     // Task 3 agrega aquí el pipeline de imagen + UPDATE.
     console.log('\nNada aplicado todavía (Task 3 pendiente).');
   } finally {
-    guardarCache(cache);
+    // Sin try/catch, un fallo al guardar el caché se comía el error real de la
+    // corrida y añadía un reject espurio a un main() que ya estaba terminando.
+    try { guardarCache(cache); } catch (e) { console.warn(`No se pudo guardar el caché en el cierre: ${e.message}`); }
     await client.end();
   }
 }
