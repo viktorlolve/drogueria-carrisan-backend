@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js';
 import { enviarPushAlUsuario } from '../services/push.service.js';
+import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
 
 // GET /promotions/templates - Listar plantillas (admin)
 export async function getPlantillas(req, res) {
@@ -180,6 +181,13 @@ export async function enviarPromocion(req, res) {
         fallos: 0,
       });
 
+    await emitirNotificacionStaff({
+      tipo: 'promocion_enviada',
+      titulo: 'Promoción enviada',
+      mensaje: `Plantilla "${plantilla.titulo}": ${enviadas}/${usuarioIds.length} mensajes.`,
+      excluirStaffId: req.staff?.id ?? null,
+    });
+
     res.json({
       ok: true,
       usuarios_total: usuarioIds.length,
@@ -241,6 +249,13 @@ export async function enviarPromocionCustom(req, res) {
         enviadas,
         fallos: 0,
       });
+
+    await emitirNotificacionStaff({
+      tipo: 'promocion_enviada',
+      titulo: 'Promoción enviada',
+      mensaje: `"${titulo}": ${enviadas}/${usuarioIds.length} mensajes.`,
+      excluirStaffId: req.staff?.id ?? null,
+    });
 
     res.json({ ok: true, usuarios_total: usuarioIds.length, enviadas, fallos: 0 });
   } catch (err) {

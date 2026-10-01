@@ -1,4 +1,16 @@
 import { supabase } from '../config/supabase.js';
+import { calcularCodigo } from '../services/verificacion.service.js';
+
+// El QR es un extra: si falta el secreto o algo falla, el estado de cuenta
+// debe seguir funcionando (el PDF simplemente sale sin bloque de verificación).
+function codigoSeguro(tipo, registro) {
+  try {
+    return calcularCodigo(tipo, registro);
+  } catch (err) {
+    console.error('No se pudo calcular codigo_verificacion:', err.message);
+    return null;
+  }
+}
 
 // GET /:id/estado-cuenta (admin ve cualquiera, usuario se ve a sí mismo)
 export async function getEstadoCuenta(req, res) {
@@ -12,7 +24,7 @@ export async function getEstadoCuenta(req, res) {
   try {
     const { data: cliente, error: errorCliente } = await supabase
       .from('users')
-      .select('id, nombre, email, linea_credito, credito_bloqueado, credito_bloqueado_motivo')
+      .select('id, nombre, email, rif_cedula, direccion_fiscal, telefono, linea_credito, credito_bloqueado, credito_bloqueado_motivo')
       .eq('id', usuario_id)
       .single();
 
@@ -70,7 +82,14 @@ export async function getEstadoCuenta(req, res) {
       .sort((a, b) => new Date(a.fecha_vencimiento) - new Date(b.fecha_vencimiento))[0] || null;
 
     res.json({
-      cliente: { id: cliente.id, nombre: cliente.nombre, email: cliente.email },
+      cliente: {
+        id: cliente.id,
+        nombre: cliente.nombre,
+        email: cliente.email,
+        rif_cedula: cliente.rif_cedula || null,
+        direccion_fiscal: cliente.direccion_fiscal || null,
+        telefono: cliente.telefono || null,
+      },
       resumen: {
         linea_credito: Number(cliente.linea_credito || 0),
         deuda_actual,
@@ -84,8 +103,9 @@ export async function getEstadoCuenta(req, res) {
           : null,
       },
       ordenes_pendientes: ordenesDeuda,
-      facturas,
-      pagos,
+      // codigo_verificacion alimenta el QR de los PDFs (ver verificacion.service.js)
+      facturas: facturas.map((f) => ({ ...f, codigo_verificacion: codigoSeguro('factura', f) })),
+      pagos: pagos.map((p) => ({ ...p, codigo_verificacion: codigoSeguro('pago', p) })),
     });
   } catch (err) {
     console.error('Error al obtener estado de cuenta:', err);

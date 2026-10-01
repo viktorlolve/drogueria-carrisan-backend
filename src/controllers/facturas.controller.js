@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js';
 import { crearNotificacion } from './notificaciones.controller.js';
+import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
 
 // GET /facturas?usuario_id= (admin)
 export async function getFacturas(req, res) {
@@ -79,6 +80,13 @@ export async function createFactura(req, res) {
       `Se emitió la factura #${numero_factura} por $${monto_facturado}`,
       null
     );
+
+    await emitirNotificacionStaff({
+      tipo: 'factura_emitida',
+      titulo: 'Factura emitida',
+      mensaje: `Factura #${numero_factura} por $${monto_facturado}.`,
+      excluirStaffId: req.staff?.id ?? null,
+    });
 
     res.status(201).json(factura);
   } catch (err) {

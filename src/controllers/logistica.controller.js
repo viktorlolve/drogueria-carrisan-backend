@@ -1,8 +1,9 @@
 import { supabase } from '../config/supabase.js';
 import { validarTransicion, aplicarCambioEstado } from './ordenes.controller.js';
 import { crearNotificacion } from './notificaciones.controller.js';
+import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
 
-const SELECT_ORDEN = '*, users(id, nombre, email, telefono), direcciones_envio(direccion, ciudad, estado), ordenes_items(*, productos(nombre_comercial))';
+const SELECT_ORDEN = '*, users(id, nombre, email, telefono), direcciones_envio(direccion, ciudad, estado), ordenes_items(*, productos(nombre_comercial)), agencias_envio(nombre)';
 
 function normalizar(data) {
   return (data || []).map(o => ({
@@ -41,6 +42,19 @@ export async function marcarRetirado(req, res) {
       return res.status(400).json({ error: 'Solo se marca retirada una orden de retiro lista para recoger' });
     }
     const data = await aplicarCambioEstado(orden, 'retirado');
+
+    // Tipo `orden_entregada` (delivery y retiro son el mismo "cerrado"
+    // desde la vista del negocio), pero el deep-link va a la cola de
+    // retiros, no a Envíos.
+    await emitirNotificacionStaff({
+      tipo: 'orden_entregada',
+      titulo: 'Pedido retirado',
+      mensaje: `El cliente retiró la orden #${orden.id} en mostrador.`,
+      orden_id: orden.id,
+      url: '/staff/pedidos/retiros',
+      excluirStaffId: req.staff?.id ?? null,
+    });
+
     res.json(data);
   } catch (err) {
     console.error('Error al marcar orden como retirada:', err);
@@ -97,6 +111,13 @@ export async function marcarIncidencia(req, res) {
       `No pudimos entregar tu pedido #${id}. Te contactaremos para coordinar.`,
       orden.id
     );
+    await emitirNotificacionStaff({
+      tipo: 'orden_incidencia',
+      titulo: 'Incidencia de entrega',
+      mensaje: `No se pudo entregar la orden #${id}: ${motivo.trim()}`,
+      orden_id: orden.id,
+      excluirStaffId: req.staff?.id ?? null,
+    });
     res.json({ message: 'Incidencia registrada' });
   } catch (err) {
     console.error('Error al registrar incidencia:', err);
@@ -126,6 +147,13 @@ export async function reintentarEnvio(req, res) {
       .update({ incidencia_motivo: null, incidencia_fecha: null })
       .eq('id', id);
     if (errorUpdate) throw errorUpdate;
+    await emitirNotificacionStaff({
+      tipo: 'reintento_envio',
+      titulo: 'Envío reintentado',
+      mensaje: `La orden #${id} vuelve a la cola de envíos (incidencia resuelta).`,
+      orden_id: orden.id,
+      excluirStaffId: req.staff?.id ?? null,
+    });
     res.json({ message: 'Envío reintentado' });
   } catch (err) {
     console.error('Error al reintentar envío:', err);
@@ -152,6 +180,13 @@ export async function verificarPaquete(req, res) {
       .update({ paquete_verificado: true })
       .eq('id', id);
     if (errorUpdate) throw errorUpdate;
+    await emitirNotificacionStaff({
+      tipo: 'paquete_verificado',
+      titulo: 'Paquete verificado',
+      mensaje: `La orden #${id} está lista para despachar.`,
+      orden_id: orden.id,
+      excluirStaffId: req.staff?.id ?? null,
+    });
     res.json({ message: 'Paquete verificado' });
   } catch (err) {
     console.error('Error al verificar paquete:', err);

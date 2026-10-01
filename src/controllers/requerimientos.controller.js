@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js';
 import { crearNotificacion } from './notificaciones.controller.js';
+import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
 
 // ---------------------------------------------------------------
 // POST /requerimientos (cliente)
@@ -45,6 +46,13 @@ export async function crearRequerimiento(req, res) {
     }
 
     res.status(201).json({ ...requerimiento, items: itemsCreados });
+
+    // El cliente pidió precios: entra en la bandeja de Comercial (vendedor).
+    await emitirNotificacionStaff({
+      tipo: 'requerimiento_nuevo',
+      titulo: 'Nuevo requerimiento',
+      mensaje: `Cliente #${usuario_id} pidió precio de ${filas.length} producto(s).`,
+    });
   } catch (err) {
     console.error('Error al crear requerimiento:', err);
     res.status(500).json({ error: 'Error del servidor' });

@@ -3,6 +3,7 @@ import { aplicarDescuentosAProductos } from './descuentos.controller.js';
 import { notificarDisponibles } from './alertasDisponibilidad.controller.js';
 import importarProveedor from '../services/proveedores/importarProveedor.js';
 import PROVEEDORES from '../config/proveedores.js';
+import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
 
 // POST /staff/precios/importar-proveedor
 // Multipart: fields `proveedor` y `archivo`. Procesa un Excel/CSV de un proveedor
@@ -149,6 +150,12 @@ export async function actualizarPrecioStaff(req, res) {
         notificarDisponibles(data).catch((err) =>
           console.error('Error al notificar disponibilidad:', err)
         );
+        await emitirNotificacionStaff({
+          tipo: 'producto_con_precio',
+          titulo: 'Producto con precio',
+          mensaje: `${data.nombre_comercial} a $${Number(data.precio_usd).toFixed(2)}.`,
+          excluirStaffId: req.staff?.id ?? null,
+        });
       }
     }
 
@@ -239,6 +246,16 @@ export async function actualizarPreciosLoteStaff(req, res) {
           }
         }
       }
+    }
+
+    // Un solo aviso por lote (no uno por producto: son hasta 1000).
+    if (publicados > 0) {
+      await emitirNotificacionStaff({
+        tipo: 'producto_con_precio',
+        titulo: 'Precios publicados en lote',
+        mensaje: `${publicados} producto(s) pasaron a tener precio (${actualizados} actualizados).`,
+        excluirStaffId: req.staff?.id ?? null,
+      });
     }
 
     res.json({ actualizados, publicados });

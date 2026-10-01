@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js';
 import { crearNotificacion } from './notificaciones.controller.js';
+import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
 
 // =====================================================================
 // Fase 3 — Crédito y Cobranza (staff)
@@ -288,15 +289,24 @@ export async function setLineaCredito(req, res) {
           : `Tu línea de crédito fue ajustada de $${linea_anterior.toFixed(2)} a $${monto.toFixed(2)}.`,
         null
       );
-    } else {
+} else {
       await crearNotificacion(
         usuario_id,
         'credito_bloqueado',
-        'Línea de crédito suspendida',
-        'Tu línea de crédito fue ajustada a $0. Contacta a la empresa ante cualquier duda.',
+        'L��nea de crǸdito suspendida',
+        'Tu l��nea de crǸdito fue ajustada a $0. Contacta a la empresa ante cualquier duda.',
         null
       );
     }
+
+    // Traza en la bandeja de Finanzas: el resto del equipo y los directivos
+    // ven el ajuste de línea sin tener que abrir el módulo.
+    await emitirNotificacionStaff({
+      tipo: monto > 0 ? 'credito_desbloqueado' : 'credito_bloqueado',
+      titulo: monto > 0 ? 'Línea de crédito ampliada' : 'Línea de crédito suspendida',
+      mensaje: `Cliente #${usuario_id}: $${linea_anterior.toFixed(2)} → $${Number(monto).toFixed(2)}.`,
+      excluirStaffId: req.staff?.id ?? null,
+    });
 
     res.json({
       id: actualizado.id,
@@ -395,6 +405,14 @@ export async function sendRecordatorio(req, res) {
       null
     );
 
+    // El resto de Finanzas ve a quién se le cobró (el actor queda excluido).
+    await emitirNotificacionStaff({
+      tipo: 'recordatorio_cobro',
+      titulo: 'Recordatorio de cobro enviado',
+      mensaje: `Cliente #${usuario_id}: ${mensaje}`,
+      excluirStaffId: req.staff?.id ?? null,
+    });
+
     res.json({ ok: true, mensaje: 'Recordatorio enviado' });
   } catch (err) {
     console.error('Error al enviar recordatorio:', err);
@@ -434,13 +452,20 @@ export async function toggleBloqueoCredito(req, res) {
       ? `Tu línea de crédito ha sido suspendida${motivo ? `. Motivo: ${motivo}` : ''}. Contacta a la empresa para regularizar tu cuenta.`
       : 'Tu línea de crédito ha sido reactivada. Ya puedes realizar compras a crédito.';
 
-    await crearNotificacion(
+await crearNotificacion(
       usuario_id,
       bloqueado ? 'credito_bloqueado' : 'credito_desbloqueado',
-      bloqueado ? 'Crédito suspendido' : 'Crédito reactivado',
+      bloqueado ? 'CrǸdito suspendido' : 'CrǸdito reactivado',
       mensaje,
       null
     );
+
+    await emitirNotificacionStaff({
+      tipo: bloqueado ? 'credito_bloqueado' : 'credito_desbloqueado',
+      titulo: bloqueado ? 'Crédito suspendido' : 'Crédito reactivado',
+      mensaje: `Cliente #${usuario_id}${motivo ? `: ${motivo}` : ''}.`,
+      excluirStaffId: req.staff?.id ?? null,
+    });
 
     res.json(data);
   } catch (err) {

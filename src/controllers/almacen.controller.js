@@ -1,6 +1,7 @@
 import { supabase } from '../config/supabase.js';
 import { validarTransicion, aplicarCambioEstado } from './ordenes.controller.js';
 import { crearNotificacion } from './notificaciones.controller.js';
+import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
 
 const SELECT_ORDEN = '*, users(id, nombre, email, telefono), direcciones_envio(direccion, ciudad, estado), ordenes_items(*, productos(nombre_comercial))';
 
@@ -164,6 +165,19 @@ export async function aprobarOrden(req, res) {
       );
     }
 
+    // El personal (almacén/vendedor) que tiene que reponer lo que se
+    // agotó o revisar el nuevo total. Sin `if`: la aprobación limpia no
+    // genera fila (no hay nada que reponer).
+    if (totalCambio || agotadosIds.length > 0) {
+      await emitirNotificacionStaff({
+        tipo: 'orden_aprobada',
+        titulo: 'Aprobación con ajustes',
+        mensaje: `Orden #${orden.id}: nuevo total $${nuevoTotal.toFixed(2)}${agotadosIds.length ? `, ${agotadosIds.length} producto(s) agotado(s)` : ''}.`,
+        orden_id: orden.id,
+        excluirStaffId: req.staff?.id ?? null,
+      });
+    }
+
     const { data: final, error: errorFinal } = await supabase
       .from('ordenes')
       .select(SELECT_ORDEN)
@@ -201,6 +215,15 @@ export async function cancelarOrden(req, res) {
     }
 
     const data = await aplicarCambioEstado(orden, 'cancelado');
+
+    await emitirNotificacionStaff({
+      tipo: 'orden_cancelada',
+      titulo: 'Orden cancelada',
+      mensaje: `La orden #${orden.id} fue cancelada.`,
+      orden_id: orden.id,
+      excluirStaffId: req.staff?.id ?? null,
+    });
+
     res.json(data);
   } catch (err) {
     console.error('Error al cancelar orden (almacén):', err);
@@ -237,6 +260,15 @@ export async function marcarEnviado(req, res) {
     }
 
     const data = await aplicarCambioEstado(orden, 'enviado');
+
+    await emitirNotificacionStaff({
+      tipo: 'orden_enviada',
+      titulo: 'Orden enviada',
+      mensaje: `La orden #${orden.id} salió hacia ${orden.tipo_envio === 'envio_nacional' ? 'la agencia' : 'delivery'}.`,
+      orden_id: orden.id,
+      excluirStaffId: req.staff?.id ?? null,
+    });
+
     res.json(data);
   } catch (err) {
     console.error('Error al marcar orden como enviada:', err);
@@ -268,6 +300,15 @@ export async function marcarListoParaRetiro(req, res) {
     }
 
     const data = await aplicarCambioEstado(orden, 'listo_para_retiro');
+
+    await emitirNotificacionStaff({
+      tipo: 'orden_lista_retiro',
+      titulo: 'Lista para retirar',
+      mensaje: `La orden #${orden.id} ya está lista para que el cliente la retire en mostrador.`,
+      orden_id: orden.id,
+      excluirStaffId: req.staff?.id ?? null,
+    });
+
     res.json(data);
   } catch (err) {
     console.error('Error al marcar orden como lista para retiro:', err);

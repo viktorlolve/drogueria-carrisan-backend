@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js';
 import { crearNotificacion } from './notificaciones.controller.js';
+import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
 
 const HORAS_VIGENCIA = 48;
 
@@ -47,6 +48,13 @@ export async function crearSolicitud(req, res) {
     if (error) throw error;
 
     res.status(201).json(data);
+
+    // El cliente pidió cotización: entra en la bandeja de Comercial.
+    await emitirNotificacionStaff({
+      tipo: 'cotizacion_nueva',
+      titulo: 'Nueva solicitud de cotización',
+      mensaje: `Cliente #${usuario_id} pidió cotización de ${data.productos?.nombre_comercial || `producto ${producto_id}`}.`,
+    });
   } catch (err) {
     console.error('Error al crear solicitud de cotización:', err);
     res.status(500).json({ error: 'Error del servidor' });

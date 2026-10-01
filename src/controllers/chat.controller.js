@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js';
 import { crearNotificacion } from './notificaciones.controller.js';
+import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
 
 // ---------------------------------------------------------
 // Centro de Comunicaciones: conversaciones tipo 'orden' (una
@@ -215,7 +216,7 @@ export async function crearMensaje(req, res) {
       await supabase.from('conversaciones').update({ estado: 'abierta' }).eq('id', id);
     }
 
-    // Si el admin responde, notificamos al cliente (reusa el sistema
+// Si el admin responde, notificamos al cliente (reusa el sistema
     // de notificaciones existente — mismo patrón que estado_cambiado).
     if (remitente_tipo === 'admin') {
       const titulo = conversacion.tipo === 'orden'
@@ -228,6 +229,17 @@ export async function crearMensaje(req, res) {
         contenido.trim().slice(0, 140),
         conversacion.orden_id || null
       );
+    } else {
+      // El cliente escribió y NADIE lo avisaba: entra en la bandeja del
+      // Comercial (vendedor) para que le contesten.
+      await emitirNotificacionStaff({
+        tipo: 'chat_mensaje',
+        titulo: conversacion.tipo === 'orden'
+          ? `Mensaje sobre la orden #${conversacion.orden_id}`
+          : 'Nuevo mensaje de un cliente',
+        mensaje: contenido.trim().slice(0, 140),
+        orden_id: conversacion.orden_id || null,
+      });
     }
 
     res.status(201).json(mensaje);

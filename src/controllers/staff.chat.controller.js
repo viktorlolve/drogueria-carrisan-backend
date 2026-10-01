@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js';
 import { crearNotificacion } from './notificaciones.controller.js';
+import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
 
 // ---------------------------------------------------------
 // Centro de Comunicaciones para personal interno (staff).
@@ -131,6 +132,16 @@ export async function crearMensajeStaff(req, res) {
       contenido.trim().slice(0, 140),
       conversacion.orden_id || null
     );
+
+    // El resto del Comercial ve la respuesta (bandeja compartida): el
+    // actor queda excluido.
+    await emitirNotificacionStaff({
+      tipo: 'chat_mensaje',
+      titulo: 'Respuesta enviada a un cliente',
+      mensaje: contenido.trim().slice(0, 140),
+      orden_id: conversacion.orden_id || null,
+      excluirStaffId: req.staff?.id ?? null,
+    });
 
     res.status(201).json(mensaje);
   } catch (err) {

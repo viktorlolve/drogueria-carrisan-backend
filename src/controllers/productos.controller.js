@@ -8,6 +8,7 @@ import {
   resolverPrecioCliente,
 } from './descuentos.controller.js';
 import { notificarDisponibles } from './alertasDisponibilidad.controller.js';
+import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
 
 // Slugs cortos → valor real de `productos.linea` en la BD (la columna guarda
 // 'Linea Farmacia', 'Linea Hospitalaria', 'Material Medico' — ver
@@ -487,6 +488,12 @@ let precioAnterior = null;
       notificarDisponibles(data).catch((err) =>
         console.error('Error al notificar disponibilidad:', err)
       );
+      await emitirNotificacionStaff({
+        tipo: 'producto_con_precio',
+        titulo: 'Producto con precio',
+        mensaje: `${data.nombre_comercial} a $${Number(data.precio_usd).toFixed(2)}.`,
+        excluirStaffId: req.staff?.id ?? null,
+      });
     }
 
     res.json(data);
@@ -572,6 +579,16 @@ export async function preciosBulkUpdate(req, res) {
         }
         }
       }
+    }
+
+    // Un solo aviso por carga masiva (son hasta 1000 productos).
+    if (publicados > 0) {
+      await emitirNotificacionStaff({
+        tipo: 'producto_con_precio',
+        titulo: 'Precios publicados por carga masiva',
+        mensaje: `${publicados} producto(s) pasaron a tener precio (${aplicados} actualizados).`,
+        excluirStaffId: req.staff?.id ?? null,
+      });
     }
 
     res.json({

@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { supabase } from '../config/supabase.js';
+import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
 
 // -----------------------------------------------------------------
 // Helpers compartidos (también usados por construirOrden)
@@ -130,6 +131,13 @@ export async function generarCupones(req, res) {
     if (error.code === '23505') return res.status(409).json({ error: 'Uno de los códigos ya existe' });
     return res.status(500).json({ error: 'Error al generar cupones' });
   }
+
+  await emitirNotificacionStaff({
+    tipo: 'cupon_generado',
+    titulo: 'Cupones generados',
+    mensaje: `${cupones.length} código(s) de descuento creados.`,
+    excluirStaffId: req.staff?.id ?? null,
+  });
 
   res.status(201).json({ cupones });
 }

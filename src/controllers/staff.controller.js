@@ -8,6 +8,7 @@ import {
   resolverDetallePresupuesto,
   recotizarPresupuestoPorId,
 } from './presupuestos.controller.js';
+import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
 
 // POST /staff/login
 export async function loginStaff(req, res) {
@@ -212,6 +213,10 @@ export async function getColaDespacho(req, res) {
       .from('ordenes')
       .select('*, users(id, nombre, email, telefono), direcciones_envio(direccion, ciudad, estado), ordenes_items(*, productos(nombre_comercial))')
       .eq('estado', 'enviado')
+      // Una orden con incidencia abierta ya la atendio el motorizado: si
+      // apareciera aqui otra vez podria reportarla dos veces. Envios = lo que
+      // falta entregar; Incidencias = lo que fallo. Las dos colas son disjuntas.
+      .is('incidencia_motivo', null)
       .order('created_at', { ascending: true });
 
     if (error) throw error;
@@ -595,6 +600,15 @@ export async function marcarEntregado(req, res) {
     }
 
     const data = await aplicarCambioEstado(orden, 'entregado');
+
+    await emitirNotificacionStaff({
+      tipo: 'orden_entregada',
+      titulo: 'Orden entregada',
+      mensaje: `La orden #${orden.id} fue entregada.`,
+      orden_id: orden.id,
+      excluirStaffId: req.staff?.id ?? null,
+    });
+
     res.json(data);
   } catch (err) {
     console.error('Error al marcar orden como entregada:', err);

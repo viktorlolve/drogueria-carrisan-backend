@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js';
 import { crearNotificacion } from '../controllers/notificaciones.controller.js';
+import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
 
 // ---------------------------------------------------------------
 // Revisa órdenes a crédito y dispara dos avisos independientes:
@@ -56,6 +57,13 @@ export async function revisarVencimientos({ autoFreeze = true } = {}) {
         `Tu orden #${orden.id} por $${orden.total_usd} vence en ${diasRestantes} ${diasRestantes === 1 ? 'día' : 'días'}.`,
         orden.id
       );
+      // También entra en la bandeja de Finanzas (crédito y cobranza).
+      await emitirNotificacionStaff({
+        tipo: 'orden_por_vencer',
+        titulo: 'Orden por vencer',
+        mensaje: `Orden #${orden.id} (cliente #${orden.usuario_id}) por $${orden.total_usd}: vence en ${diasRestantes} ${diasRestantes === 1 ? 'día' : 'días'}.`,
+        orden_id: orden.id,
+      });
       await supabase.from('ordenes').update({ notificado_proximo: true }).eq('id', orden.id);
     }
 
@@ -120,6 +128,14 @@ export async function revisarVencimientos({ autoFreeze = true } = {}) {
           );
 
           console.log(`🔒 Crédito auto-bloqueado: usuario ${usuario_id} (${motivo})`);
+
+          // El freeze automático es de los directos: que quede en la bandeja
+          // con el motivo (nadie de Finanzas lo ejecutó a mano).
+          await emitirNotificacionStaff({
+            tipo: 'credito_bloqueado',
+            titulo: 'Crédito suspendido (automático)',
+            mensaje: `Cliente #${usuario_id}: ${motivo}.`,
+          });
         }
       }
     }
@@ -149,6 +165,13 @@ export async function revisarVencimientos({ autoFreeze = true } = {}) {
         `Tu orden #${orden.id} por $${orden.total_usd} venció. Regulariza tu cuenta reportando el pago para seguir comprando a crédito.`,
         orden.id
       );
+
+      await emitirNotificacionStaff({
+        tipo: 'orden_vencida',
+        titulo: 'Orden vencida',
+        mensaje: `Orden #${orden.id} (cliente #${orden.usuario_id}) por $${orden.total_usd}.`,
+        orden_id: orden.id,
+      });
 
       const { error: errorUpdate } = await supabase
         .from('ordenes')

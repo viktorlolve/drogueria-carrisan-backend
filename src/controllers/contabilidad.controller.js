@@ -1,6 +1,7 @@
 import { supabase } from '../config/supabase.js';
 import { crearNotificacion } from './notificaciones.controller.js';
 import { validarTransicion, aplicarCambioEstado } from './ordenes.controller.js';
+import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
 
 // =====================================================================
 // Módulo de contabilidad (staff). Duplica la lógica contable que
@@ -523,14 +524,22 @@ export async function createFactura(req, res) {
       }
     }
 
-    const nombreDoc = labelTipo(tipo);
+const nombreDoc = labelTipo(tipo);
     await crearNotificacion(
       Number(usuario_id),
       'factura_emitida',
       `${nombreDoc} emitida`,
-      `Se emitió la ${nombreDoc.toLowerCase()} #${numero_factura} por $${montoUSD.toFixed(2)}`,
+      `Se emiti�� la ${nombreDoc.toLowerCase()} #${numero_factura} por $${montoUSD.toFixed(2)}`,
       null
     );
+
+    // La venta ya está documentada: el resto de Finanzas y los directivos lo ven.
+    await emitirNotificacionStaff({
+      tipo: 'factura_emitida',
+      titulo: `${nombreDoc} emitida`,
+      mensaje: `${nombreDoc} #${numero_factura} por $${montoUSD.toFixed(2)}.`,
+      excluirStaffId: req.staff?.id ?? null,
+    });
 
     res.status(201).json(factura);
   } catch (err) {
@@ -845,13 +854,20 @@ export async function verificarReportePago(req, res) {
       if (errorHistorial) throw errorHistorial;
     }
 
-    await crearNotificacion(
+await crearNotificacion(
       reporte.usuario_id,
       'pago_verificado',
       'Pago verificado',
-      `Tu pago fue verificado. ${orden_ids.length === 1 ? `Tu orden #${orden_ids[0]}` : `Tus órdenes ${orden_ids.map(o => `#${o}`).join(', ')}`} continúa su preparación.`,
+      `Tu pago fue verificado. ${orden_ids.length === 1 ? `Tu orden #${orden_ids[0]}` : `Tus ��rdenes ${orden_ids.map(o => `#${o}`).join(', ')}`} continǧa su preparaci��n.`,
       null
     );
+
+    await emitirNotificacionStaff({
+      tipo: 'pago_verificado',
+      titulo: 'Pago verificado',
+      mensaje: `Verificado el reporte #${id} (${orden_ids.length} orden(es)).`,
+      excluirStaffId: req.staff?.id ?? null,
+    });
 
     res.json({
       reporte: reporteActualizado,
@@ -920,6 +936,13 @@ export async function rechazarReportePago(req, res) {
       `Tu reporte de pago fue rechazado${nota_rechazo ? `: ${nota_rechazo}` : ''}. Puedes volver a reportarlo.`,
       null
     );
+
+    await emitirNotificacionStaff({
+      tipo: 'pago_rechazado',
+      titulo: 'Pago rechazado',
+      mensaje: `Rechazado el reporte #${id}.`,
+      excluirStaffId: req.staff?.id ?? null,
+    });
 
     res.json(reporteActualizado);
   } catch (err) {
@@ -1018,13 +1041,21 @@ export async function confirmarPagoOrden(req, res) {
       if (errorHistorial) throw errorHistorial;
     }
 
-    await crearNotificacion(
+await crearNotificacion(
       orden.usuario_id,
       'pago_verificado',
       'Pago verificado',
-      `Tu pago fue verificado. Tu orden #${orden.id} continúa su preparación.`,
+      `Tu pago fue verificado. Tu orden #${orden.id} continǧa su preparaci��n.`,
       null
     );
+
+    await emitirNotificacionStaff({
+      tipo: 'pago_verificado',
+      titulo: 'Pago verificado',
+      mensaje: `Verificado el pago de la orden #${orden.id}.`,
+      orden_id: orden.id,
+      excluirStaffId: req.staff?.id ?? null,
+    });
 
     res.json({ pago, orden_id: Number(id) });
   } catch (err) {

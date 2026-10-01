@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js';
 import { crearNotificacion } from './notificaciones.controller.js';
+import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
 
 const HORAS_VIGENCIA_AUTOMATICA = 72;
 const HORAS_ENFRIAMIENTO_AUTOMATICA = 72;
@@ -86,14 +87,21 @@ export async function crearSolicitudDocumento(req, res) {
 
     if (error) throw error;
 
-    if (tipo.automatica) {
+if (tipo.automatica) {
       await crearNotificacion(
         usuario_id,
         'documento_listo',
-        `Tu ${tipo.label} está listo`,
+        `Tu ${tipo.label} estǭ listo`,
         `Tienes ${HORAS_VIGENCIA_AUTOMATICA} horas para descargarlo desde Mis Solicitudes.`,
         null
       );
+    } else {
+      // Documento manual: alguien tiene que revisarlo y aprobarlo.
+      await emitirNotificacionStaff({
+        tipo: 'documento_nuevo',
+        titulo: `Solicitud de ${tipo.label}`,
+        mensaje: `Cliente #${usuario_id} subió una solicitud de ${tipo.label}.`,
+      });
     }
 
     res.status(201).json(data);
@@ -197,6 +205,13 @@ export async function aprobarSolicitudDocumento(req, res) {
       null
     );
 
+    await emitirNotificacionStaff({
+      tipo: 'documento_aprobado',
+      titulo: 'Documento aprobado',
+      mensaje: `Solicitud #${id} de cliente #${solicitud.usuario_id} aprobada.`,
+      excluirStaffId: req.staff?.id ?? null,
+    });
+
     res.json(data);
   } catch (err) {
     console.error('Error al aprobar solicitud de documento:', err);
@@ -237,13 +252,20 @@ export async function rechazarSolicitudDocumento(req, res) {
 
     if (error) throw error;
 
-    await crearNotificacion(
+await crearNotificacion(
       solicitud.usuario_id,
       'documento_rechazado',
       'Tu solicitud de documento fue rechazada',
-      nota_admin || 'Contáctanos para más información.',
+      nota_admin || 'Contǭctanos para mǭs informaci��n.',
       null
     );
+
+    await emitirNotificacionStaff({
+      tipo: 'documento_rechazado',
+      titulo: 'Documento rechazado',
+      mensaje: `Solicitud #${id} de cliente #${solicitud.usuario_id} rechazada.`,
+      excluirStaffId: req.staff?.id ?? null,
+    });
 
     res.json(data);
   } catch (err) {

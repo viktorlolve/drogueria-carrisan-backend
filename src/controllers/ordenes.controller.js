@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js';
 import { crearNotificacion } from './notificaciones.controller.js';
+import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
 import { buscarCuponValido, calcularDescuento, consumirCupon, liberarCupon } from './cupones.controller.js';
 import { getDescuentosVigentes, getPorcentajeEtiqueta, resolverPrecioCliente } from './descuentos.controller.js';
 
@@ -364,6 +365,18 @@ export async function construirOrden(usuario_id, datos, opciones = {}) {
     mensajeCreacion,
     orden.id
   );
+
+  // Aviso al personal: entra al almacén (y a contabilidad solo si es de
+  // contado). Si la orden la creó un vendedor desde /staff/ordenes, no se
+  // auto-avisa (creado_por_staff_id es el actor).
+  await emitirNotificacionStaff({
+    tipo: 'orden_creada',
+    titulo: 'Nueva orden recibida',
+    mensaje: `Orden #${orden.id} por $${Number(totalFinal).toFixed(2)} (${forma_pago_final}).`,
+    orden_id: orden.id,
+    forma_pago: forma_pago_final,
+    excluirStaffId: creado_por_staff_id ?? null,
+  });
 
   return {
     ...orden,
