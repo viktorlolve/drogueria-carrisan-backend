@@ -131,3 +131,90 @@ export function matchFarmacias(producto, candidatos, fuente) {
   }
   return mejor || { candidato: null, estado: 'no', score: 0, motivo: 'sin_candidato', fuente };
 }
+
+// --- adaptadores de red -----------------------------------------------------
+const UA = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+  'Accept-Language': 'es-VE,es;q=0.9',
+};
+export const TIMEOUT_MS = 20_000;
+
+// Pausa courteous entre peticiones. La corrida completa son hasta ~900 productos
+// × 3 fuentes (~2.700 requests secuenciales): sin esta espera es fácil que una
+// farmacia nos bloquee la IP a mitad de camino.
+export const ESPERA_MS = 300;
+
+// Cada fuente tiene SU propio tamaño de página (valores sondeados en el spec §3).
+// No unificar en una sola constante: Farmatodo (Algolia) y Farmadon (Woo) no
+// comparten límite.
+export const HITS_FARMATODO = 20;
+export const PER_PAGE_FARMADON = 100;
+
+const ALGOLIA_APP = 'VCOJEYD2PO';
+const ALGOLIA_KEY = '869a91e98550dd668b8b1dc04bca9011'; // search key pública (índice products)
+
+const dormir = (ms) => new Promise((res) => setTimeout(res, ms));
+
+// Algunas APIs devuelven la AUSENCIA de imagen como el string "None"/"null"
+// (Farmatodo lo hace). Si pasa de largo, matchFarmacias lo acepta como
+// candidato (solo descarta strings vacíos) y el cruce termina con una
+// url_origen indescargable. Normalizamos a '' para que el gate lo descarte.
+const SIN_IMAGEN = new Set(['', 'none', 'null', 'undefined', 'n/a', 'false']);
+function urlDeImagen(v) {
+  const s = typeof v === 'string' ? v.trim() : '';
+  return SIN_IMAGEN.has(s.toLowerCase()) ? '' : s;
+}
+
+// Normalizadores PUROS (testeados aparte a propósito): un nombre de campo mal
+// escrito devuelve imagen '' y matchFarmacias lo descarta en silencio, o sea
+// la corrida entera reporta 0 hits sin ningún error visible.
+export function normalizaHitFarmatodo(hit) {
+  return {
+    nombre: hit?.description || '',
+    marca: hit?.marca || '',
+    imagen: urlDeImagen(hit?.mediaImageUrl),
+    fuente: 'farmatodo',
+  };
+}
+
+export function normalizaProductoFarmadon(p) {
+  const b0 = Array.isArray(p?.brands) ? p.brands[0] : null;
+  return {
+    nombre: p?.name || '',
+    marca: (b0 && (b0.name || b0)) || '',
+    imagen: urlDeImagen(Array.isArray(p?.images) && p.images[0] && p.images[0].src),
+    fuente: 'farmadon',
+  };
+}
+
+export async function buscarFarmatodo(q) {
+  await dormir(ESPERA_MS);
+  const r = await fetch(`https://${ALGOLIA_APP.toLowerCase()}-dsn.algolia.net/1/indexes/products/query`, {
+    method: 'POST',
+    headers: { ...UA, 'X-Algolia-Application-Id': ALGOLIA_APP, 'X-Algolia-API-Key': ALGOLIA_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query: q, hitsPerPage: HITS_FARMATODO }),
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+  if (!r.ok) throw new Error('farmatodo HTTP ' + r.status);
+  const j = await r.json();
+  return (Array.isArray(j.hits) ? j.hits : []).map((h) => normalizaHitFarmatodo(h));
+}
+
+export async function buscarFarmadon(q) {
+  await dormir(ESPERA_MS);
+  const r = await fetch(`https://www.farmadon.com.ve/wp-json/wc/store/products?search=${encodeURIComponent(q)}&per_page=${PER_PAGE_FARMADON}`, {
+    headers: UA, signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+  if (!r.ok) throw new Error('farmadon HTTP ' + r.status);
+  const j = await r.json();
+  return (Array.isArray(j) ? j : []).map((p) => normalizaProductoFarmadon(p));
+}
+
+export async function buscarFarmago(q) {
+  await dormir(ESPERA_MS);
+  const r = await fetch(`https://www.farmago.com.ve/shop?search=${encodeURIComponent(q)}`, {
+    headers: UA, signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+  if (!r.ok) throw new Error('farmago HTTP ' + r.status);
+  return parseFarmagoHtml(await r.text());
+}

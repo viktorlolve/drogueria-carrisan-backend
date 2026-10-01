@@ -1,0 +1,148 @@
+// higia/ops/cruzar-fotos-farmacias.mjs
+// Cruce de fotos contra farmacias online (Farmatodo / Farmadon / Farmago).
+// dry-run por defecto; --apply escribe (Task 3).
+//   node higia/ops/cruzar-fotos-farmacias.mjs            (dry-run)
+//   node higia/ops/cruzar-fotos-farmacias.mjs --apply [--limite N]
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { config as dotenvConfig } from 'dotenv';
+import pg from 'pg';
+
+import { csvDeFilas, nombreConFecha } from '../lib/csv.js';
+import {
+  FUENTES, queryDe, matchFarmacias,
+  buscarFarmatodo, buscarFarmadon, buscarFarmago,
+} from '../lib/fuentesFarmacias.js';
+
+dotenvConfig();
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const DATA_LIMPIEZAS = path.join(__dirname, '..', 'data', 'limpiezas');
+const APLICAR = process.argv.includes('--apply');
+const idxLimite = process.argv.indexOf('--limite');
+const LIMITE = idxLimite >= 0 ? Number(process.argv[idxLimite + 1]) || 0 : 0;
+const FECHA = new Date().toISOString().slice(0, 10);
+const RUTA_CACHE = path.join(DATA_LIMPIEZAS, `${FECHA}_fotosfarmacias_cache.json`);
+
+// Cada cuánto se vacía el caché a disco. La corrida son miles de requests: si
+// se cae a mitad, sin esto se pierde TODO el trabajo de red y hay que repetirlo.
+const CACHE_CADA = 50;
+
+const DB_CONFIG = {
+  host: process.env.SUPABASE_DB_HOST,
+  port: process.env.SUPABASE_DB_PORT || 5432,
+  database: process.env.SUPABASE_DB_NAME || 'postgres',
+  user: process.env.SUPABASE_DB_USER,
+  password: process.env.SUPABASE_DB_PASSWORD,
+  ssl: { rejectUnauthorized: false },
+};
+
+const BUSCADORES = { farmatodo: buscarFarmatodo, farmadon: buscarFarmadon, farmago: buscarFarmago };
+
+function guardarCsv(nombreBase, columnas, filas) {
+  const archivo = path.join(DATA_LIMPIEZAS, nombreConFecha(nombreBase));
+  fs.writeFileSync(archivo, csvDeFilas(columnas, filas), 'utf-8');
+  return archivo;
+}
+
+function guardarCache(cache) {
+  fs.writeFileSync(RUTA_CACHE, JSON.stringify(cache), 'utf-8');
+}
+
+async function main() {
+  fs.mkdirSync(DATA_LIMPIEZAS, { recursive: true });
+  const cache = fs.existsSync(RUTA_CACHE) ? JSON.parse(fs.readFileSync(RUTA_CACHE, 'utf8')) : {};
+
+  const client = new pg.Client(DB_CONFIG);
+  await client.connect();
+  try {
+    const { rows: productos } = await client.query(
+      `SELECT id, sku, nombre_comercial, molecula, forma, laboratorio, foto_url
+         FROM public.productos
+        WHERE activo = true AND (foto_url IS NULL OR foto_url = '')
+        ORDER BY id`
+    );
+    console.log(`Productos sin foto: ${productos.length}`);
+
+    const altas = [], dudosos = [], sinFoto = [], errores = [];
+    let n = 0;
+    let sinQuery = 0;
+    for (const p of productos) {
+      n++;
+      const q = queryDe(p);
+      // queryDe puede devolver '' (producto sin núcleo de marca ni molécula
+      // utilizables): buscar la cadena vacía en las 3 fuentes es inútil, se salta.
+      if (!q) { sinQuery++; sinFoto.push(p); continue; }
+      let elegido = null;
+      for (const f of FUENTES) {
+        const key = `${f}|${q}`;
+        let cands = cache[key];
+        if (!cands) {
+          try { cands = await BUSCADORES[f](q); }
+          catch (e) { cands = []; errores.push({ id: p.id, sku: p.sku, nombre_comercial: p.nombre_comercial, fuente: f, query: q, error: String(e?.message || e).slice(0, 200) }); }
+          cache[key] = cands;
+        }
+        const m = matchFarmacias(p, cands, f);
+        if (m.estado === 'alta') { elegido = m; break; }
+        if (m.estado === 'dudoso' && (!elegido || elegido.score < m.score)) elegido = m;
+      }
+      if (elegido?.estado === 'alta') altas.push({ p, m: elegido });
+      else if (elegido?.estado === 'dudoso') dudosos.push({ p, m: elegido });
+      else sinFoto.push(p);
+      if (n % CACHE_CADA === 0) { guardarCache(cache); console.log(`  ${n}/${productos.length}...`); }
+    }
+    guardarCache(cache);
+
+    const backup = altas.map(({ p }) => ({ id: p.id, sku: p.sku, nombre_comercial: p.nombre_comercial, foto_url: p.foto_url || '' }));
+    const archivoBackup = guardarCsv('fotosfarmacias_backup', ['id', 'sku', 'nombre_comercial', 'foto_url'], backup);
+
+    const cruce = altas.map(({ p, m }) => ({
+      producto_id: p.id, sku: p.sku, nombre_comercial: p.nombre_comercial,
+      fuente: m.fuente, score: m.score, url_origen: m.candidato.imagen, nombre_candidato: m.candidato.nombre,
+    }));
+    const archivoCruce = guardarCsv('fotosfarmacias_cruce', ['producto_id', 'sku', 'nombre_comercial', 'fuente', 'score', 'url_origen', 'nombre_candidato'], cruce);
+
+    const dud = dudosos.map(({ p, m }) => ({
+      producto_id: p.id, sku: p.sku, nombre_comercial: p.nombre_comercial, molecula: p.molecula, forma: p.forma,
+      fuente: m.fuente, score: m.score, motivo: m.motivo, url_origen: m.candidato.imagen, nombre_candidato: m.candidato.nombre,
+    }));
+    const archivoDud = guardarCsv('fotosfarmacias_dudosos', ['producto_id', 'sku', 'nombre_comercial', 'molecula', 'forma', 'fuente', 'score', 'motivo', 'url_origen', 'nombre_candidato'], dud);
+
+    const sf = sinFoto.map((p) => ({ producto_id: p.id, sku: p.sku, nombre_comercial: p.nombre_comercial, molecula: p.molecula, forma: p.forma, laboratorio: p.laboratorio }));
+    const archivoSf = guardarCsv('fotosfarmacias_sin_foto', ['producto_id', 'sku', 'nombre_comercial', 'molecula', 'forma', 'laboratorio'], sf);
+
+    const err = errores.map((e) => ({ producto_id: e.id, sku: e.sku, nombre_comercial: e.nombre_comercial, fuente: e.fuente, query: e.query, error: e.error }));
+    const archivoErr = guardarCsv('fotosfarmacias_errores', ['producto_id', 'sku', 'nombre_comercial', 'fuente', 'query', 'error'], err);
+
+    const porFuente = {};
+    for (const { m } of altas) porFuente[m.fuente] = (porFuente[m.fuente] || 0) + 1;
+    const reporte = [{
+      fecha: FECHA, total_sin_foto: productos.length, altas: altas.length, dudosos: dudosos.length,
+      sin_foto: sinFoto.length, errores: errores.length,
+      por_fuente: Object.entries(porFuente).map(([k, v]) => `${k}:${v}`).join(' '),
+    }];
+    const archivoRep = guardarCsv('fotosfarmacias_reporte', ['fecha', 'total_sin_foto', 'altas', 'dudosos', 'sin_foto', 'errores', 'por_fuente'], reporte);
+
+    console.log(`Altas: ${altas.length} | Dudosos: ${dudosos.length} | Sin foto: ${sinFoto.length} | Errores: ${errores.length} | Sin query: ${sinQuery}`);
+    console.log(`Backup:    ${archivoBackup}`);
+    console.log(`Cruce:     ${archivoCruce}`);
+    console.log(`Dudosos:   ${archivoDud}`);
+    console.log(`Sin foto:  ${archivoSf}`);
+    console.log(`Errores:   ${archivoErr}`);
+    console.log(`Reporte:   ${archivoRep}`);
+
+    if (!APLICAR) {
+      console.log('\nDRY-RUN: no se tocó la BD ni Storage. Para aplicar: --apply');
+      return;
+    }
+
+    // Task 3 agrega aquí el pipeline de imagen + UPDATE.
+    console.log('\nNada aplicado todavía (Task 3 pendiente).');
+  } finally {
+    guardarCache(cache);
+    await client.end();
+  }
+}
+
+main().catch((e) => { console.error(e); process.exit(1); });
