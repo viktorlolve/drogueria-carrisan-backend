@@ -16,7 +16,16 @@ import { nucleoMarca, esGenerico } from './fotos.js';
 
 export const FUENTES = ['farmatodo', 'farmadon', 'farmago'];
 
-const RANGO = { alta: 2, dudoso: 1, no: 0 };
+// Orden de preferencia entre candidatos: gana "alta" sobre "dudoso" sobre "no".
+export const RANGO = { alta: 2, dudoso: 1, no: 0 };
+
+// Umbral de anclaje de cada componente de la molécula contra el nombre del
+// candidato (mismo valor que usa farmanselmoParser en su gate).
+export const UMBRAL_ANCLA = 0.72;
+
+// Pesos del score del candidato. Solo ordenan candidatos del mismo estado,
+// así que la suma no necesita dar 1.
+export const PESOS = { base: 0.4, forma: 0.2, dosis: 0.3, componentes: 0.1 };
 
 // Dosis declaradas sobre TEXTO CRUDO (antes de normalizar): normalizar elimina
 // el "%" y la DOSIS_RE de farmanselmo usa \b que falla tras "%", así que
@@ -82,7 +91,7 @@ export function matchFarmacias(producto, candidatos, fuente) {
     if (nucleoTokens.length && !nucleoTokens.every((t) => nomTokens.has(t))) continue;
     // Todos los componentes de la molécula deben aparecer (evita casar un combo
     // con la foto de uno de sus componentes sueltos).
-    if (componentes.length && !componentes.every((comp) => anclaMolecula([comp], c.nombre, 0.72))) continue;
+    if (componentes.length && !componentes.every((comp) => anclaMolecula([comp], c.nombre, UMBRAL_ANCLA))) continue;
 
     const packC = extraerPackDesc(c.nombre);
     if (packC != null && packDb != null && packC !== packDb) continue;
@@ -106,10 +115,10 @@ export function matchFarmacias(producto, candidatos, fuente) {
       dudoso = true;
     }
 
-    let score = 0.4;
-    if (formaC && producto?.forma) score += 0.2;
-    if (dosisDb.size && dosisC.size) score += 0.3;
-    if (componentes.length) score += 0.1;
+    let score = PESOS.base;
+    if (formaC && producto?.forma) score += PESOS.forma;
+    if (dosisDb.size && dosisC.size) score += PESOS.dosis;
+    if (componentes.length) score += PESOS.componentes;
 
     const estado = dudoso ? 'dudoso' : 'alta';
     if (!mejor || RANGO[estado] > RANGO[mejor.estado] ||
