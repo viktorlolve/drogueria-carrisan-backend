@@ -580,16 +580,30 @@ async function modoRehacerSinMarca({ aplicar, limite }) {
   const db = conectarBD();
   await db.connect();
   const storage = clienteStorage();
+
+  // Idempotencia: solo rehacer los que HOY siguen apuntando a la foto marcada
+  // del ledger. Los ya rehechos (o cambiados a mano) se saltan sin descargar.
+  const ids = filas.map((f) => f.id);
+  const { rows: actuales } = await db.query(
+    'SELECT id, foto_url FROM productos WHERE id = ANY($1::int[])', [ids],
+  );
+  const actual = new Map(actuales.map((r) => [String(r.id), r.foto_url]));
+  const pendientes = filas.filter((f) => actual.get(String(f.id)) === f.nueva);
+  const yaHechos = filas.length - pendientes.length;
+
+  log(`  pendientes (aun con marca) .... ${pendientes.length}${yaHechos ? `   ya sin marca (saltados): ${yaHechos}` : ''}`);
+  if (!pendientes.length) { await db.end(); log('  nada que hacer.'); return; }
+
   const resumen = { ok: 0, error: 0, omitido: 0 };
   let vistas = 0;
-  await enLotes(filas, CONCURRENCIA, async (f) => {
+  await enLotes(pendientes, CONCURRENCIA, async (f) => {
     const out = await rehacerProducto(db, storage, f, { aplicar: true });
     agregarLedger(out, LEDGER_REHACER);
     if (out.estado === 'ok') { resumen.ok++; if (out.error) log(`  aviso ${out.id}: ${out.error}`); }
     else if (out.estado === 'omitido') resumen.omitido++;
     else { resumen.error++; log(`  ERROR ${out.id} ${out.nombre}: ${out.error}`); }
     vistas++;
-    if (vistas % 50 === 0) log(`  ... ${vistas}/${filas.length}`);
+    if (vistas % 50 === 0) log(`  ... ${vistas}/${pendientes.length}`);
   });
   await db.end();
   log(`\n  ok: ${resumen.ok}   error: ${resumen.error}   omitido: ${resumen.omitido}`);
