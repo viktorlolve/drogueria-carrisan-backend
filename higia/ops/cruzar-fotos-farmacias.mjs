@@ -1,6 +1,7 @@
 // higia/ops/cruzar-fotos-farmacias.mjs
 // Cruce de fotos contra farmacias online (Farmatodo / Farmadon / Farmago).
-// dry-run por defecto; --apply escribe (Task 3).
+// dry-run por defecto; --apply descarga, re-codifica SIN marca, sube a Storage
+// y guarda el UPDATE en productos (solo filas con estado de match 'alta').
 //   node higia/ops/cruzar-fotos-farmacias.mjs            (dry-run)
 //   node higia/ops/cruzar-fotos-farmacias.mjs --apply [--limite N]
 import fs from 'fs';
@@ -8,12 +9,18 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { config as dotenvConfig } from 'dotenv';
 import pg from 'pg';
+import { createClient } from '@supabase/supabase-js';
 
 import { csvDeFilas, nombreConFecha } from '../lib/csv.js';
 import {
   FUENTES, queryDe, matchFarmacias,
   buscarFarmatodo, buscarFarmadon, buscarFarmago,
 } from '../lib/fuentesFarmacias.js';
+import {
+  BUCKET, PREFIJO, COLUMNAS_LEDGER,
+  RESULTADO_APLICADA, RESULTADO_FALLIDA, RESULTADO_OMITIDA,
+  soloAplicables, aplicarFotos,
+} from '../lib/fotosFarmacias.js';
 
 dotenvConfig();
 
@@ -39,6 +46,23 @@ const DB_CONFIG = {
 };
 
 const BUSCADORES = { farmatodo: buscarFarmatodo, farmadon: buscarFarmadon, farmago: buscarFarmago };
+
+// Cada cuántas filas aplicadas se imprime el avance (para no inundar la consola
+// en la corrida completa de ~430 fotos).
+const PROGRESO_CADA = 25;
+
+// Handle del bucket de Storage. OJO con la API: es `storage.from(...)`, NUNCA
+// `client.from(...)` — `from()` es PostgREST y no tiene `.upload` (bug que
+// costó una corrida entera en el traspaso del 2026-09-30). La service_key es
+// la que puede escribir; SUPABASE_KEY es publishable (solo lectura).
+function crearBucket() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY;
+  if (!url || !key) {
+    throw new Error('Faltan SUPABASE_URL y SUPABASE_SERVICE_KEY/SUPABASE_KEY para escribir en Storage');
+  }
+  return createClient(url, key, { auth: { persistSession: false } }).storage.from(BUCKET);
+}
 
 function guardarCsv(nombreBase, columnas, filas) {
   const archivo = path.join(DATA_LIMPIEZAS, nombreConFecha(nombreBase));
@@ -160,8 +184,53 @@ async function main() {
       return;
     }
 
-    // Task 3 agrega aquí el pipeline de imagen + UPDATE.
-    console.log('\nNada aplicado todavía (Task 3 pendiente).');
+    // ---------------------------------------------------------------
+    // APPLY: descargar -> sharp (sin marca) -> Storage -> UPDATE guardado
+    // ---------------------------------------------------------------
+    // REGLA: solo entran las filas con estado 'alta'. Los 'dudoso' son del
+    // dueño (van al CSV de revisión) y no se aplican nunca.
+    const aptos = soloAplicables(altas);
+    console.log(`\nAPTAS (solo estado 'alta'): ${aptos.length} de ${altas.length} altas` +
+      `${dudosos.length ? ` | ${dudosos.length} dudoso NO se aplican` : ''}`);
+    if (LIMITE > 0) console.log(`Lote recortado con --limite ${LIMITE}`);
+
+    let vistas = 0;
+    const total = LIMITE > 0 ? Math.min(aptos.length, LIMITE) : aptos.length;
+    const { ledger, aplicadas, fallidas, omitidas } = await aplicarFotos(altas, {
+      storage: crearBucket(),
+      prefijo: PREFIJO,
+      limitar: LIMITE,
+      query: (sql, params) => client.query(sql, params),
+      onProgreso: (f) => {
+        vistas++;
+        if (f.resultado === RESULTADO_APLICADA) {
+          console.log(`ok   ${f.id}  ${f.fuente.padEnd(10)} ${f.nombre_comercial}`);
+        } else if (f.resultado === RESULTADO_OMITIDA) {
+          console.log(`OMIT ${f.id}  ${f.error}`);
+        } else {
+          console.log(`ERR  ${f.id}  ${f.error}`);
+        }
+        if (vistas % PROGRESO_CADA === 0) console.log(`  ...${vistas}/${total}`);
+      },
+    });
+
+    const archivoLedger = guardarCsv('fotosfarmacias_ledger', COLUMNAS_LEDGER, ledger);
+    const archivoAplic = guardarCsv('fotosfarmacias_aplicadas', COLUMNAS_LEDGER, ledger.filter((f) => f.resultado === RESULTADO_APLICADA));
+    const archivoFall = guardarCsv('fotosfarmacias_fallidas', COLUMNAS_LEDGER, ledger.filter((f) => f.resultado !== RESULTADO_APLICADA));
+
+    console.log(`\nAplicadas: ${aplicadas} | Fallidas: ${fallidas} | Omitidas: ${omitidas}`);
+    console.log(`Ledger:    ${archivoLedger}`);
+    console.log(`Aplicadas: ${archivoAplic}`);
+    console.log(`Fallidas:  ${archivoFall}`);
+
+    // Verificación con la MISMA conexión, pero de lo que se ve ahora en la BD.
+    const { rows: verif } = await client.query(
+      `SELECT COUNT(*) FILTER (WHERE activo AND foto_url IS NOT NULL AND foto_url <> '') AS con_foto,
+              COUNT(*) FILTER (WHERE activo AND (foto_url IS NULL OR foto_url = '')) AS sin_foto,
+              COUNT(*) FILTER (WHERE activo) AS activos
+         FROM public.productos`
+    );
+    console.log(`Verificación BD: ${JSON.stringify(verif[0])}`);
   } finally {
     // Sin try/catch, un fallo al guardar el caché se comía el error real de la
     // corrida y añadía un reject espurio a un main() que ya estaba terminando.
