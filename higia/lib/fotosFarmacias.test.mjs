@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import sharp from 'sharp';
 import {
-  BUCKET, PREFIJO, RESULTADO_APLICADA, RESULTADO_FALLIDA, RESULTADO_OMITIDA,
+  BUCKET, PREFIJO, ESTADO_APLICABLE,
+  RESULTADO_APLICADA, RESULTADO_FALLIDA, RESULTADO_OMITIDA,
   COLUMNAS_LEDGER, SQL_UPDATE_FOTO, ROWS_ESPERADAS,
   soloAplicables, esUrlDeStorageValida, filaDeLedger, resumirLedger,
   rutaDeObjeto, descargar, reencodearSinMarca, subirAStorage, aplicarFotos,
@@ -21,14 +22,21 @@ function alta(id = PRODUCTO.id) {
   return {
     p: { ...PRODUCTO, id },
     m: {
-      estado: 'alta', fuente: 'farmadon', score: 1,
+      estado: ESTADO_APLICABLE, fuente: 'farmadon', score: 1,
       candidato: { nombre: 'Acido Folico 5Mg X 10 Tabletas', imagen: `https://farmadon/${id}.png`, fuente: 'farmadon' },
     },
   };
 }
 
+// El estado de "a revisión del dueño". NO es una constante de producción (el
+// pipeline nunca la nombra: solo rechaza todo lo que no sea ESTADO_APLICABLE),
+// pero se declara acá para que el fixture sea explícito y el test de guarda de
+// abajo detecte si algún día alguien renombra ESTADO_APLICABLE a 'dudoso' — en
+// ese caso los tests de "nunca se auto-aplica" pasarían por el motivo equivocado.
+const ESTADO_DUDOSO = 'dudoso';
+
 function dudoso(id = 40000) {
-  return { ...alta(id), m: { ...alta(id).m, estado: 'dudoso', motivo: 'gate_blando' } };
+  return { ...alta(id), m: { ...alta(id).m, estado: ESTADO_DUDOSO, motivo: 'gate_blando' } };
 }
 
 // Storage falso: registra lo que se le sube y devuelve una URL pública con la
@@ -406,4 +414,110 @@ test('aplicarFotos usa randomUUID por defecto cuando no se inyecta uno', async (
 
 test('aplicarFotos exige query disponible', async () => {
   await assert.rejects(() => aplicarFotos([alta(1)], { fetch: fetchFalso() }), /query no disponible/);
+});
+
+// --- LA GARANTIA: solo las 'alta' llegan al UPDATE, probada A TRAVES de aplicarFotos
+//
+// Los tests de arriba fijan `soloAplicables` aislado. Estos de abajo fijan la
+// propiedad por la que el diseño entero existe: aunque un llamador pase el
+// array COMPLETO (altas y dudosos mezclados), a la BD solo llegan las altas.
+//
+// La aserción fuerte es sobre LOS IDS que llegaron al UPDATE: prueba que no se
+// intentó ninguna escritura, no que un flag quedara en false. Un refactor que
+// pase el array completo a `aplicarFotos`, o que ensanche `soloAplicables`,
+// tiene que romper estos tests.
+
+test('el fixture dudoso sigue siendo un estado NO aplicable', () => {
+  // Guarda del fixture: si ESTADO_APLICABLE se renombrara a ESTADO_DUDOSO, los
+  // tests de abajo pasarían probando lo contrario de lo que dicen.
+  assert.notEqual(ESTADO_DUDOSO, ESTADO_APLICABLE);
+  assert.equal(alta().m.estado, ESTADO_APLICABLE);
+  assert.equal(dudoso().m.estado, ESTADO_DUDOSO);
+  assert.deepEqual(soloAplicables([dudoso()]), []);
+});
+
+test('aplicarFotos: con el array completo el UPDATE solo recibe ids de alta', async () => {
+  const storage = storageFalso();
+  const f = fetchFalso();
+  const consultas = [];
+  const IDS_ALTA = [102, 104];
+  const IDS_DUDOSO = [101, 103, 105];
+
+  const r = await aplicarFotos(
+    [dudoso(101), alta(102), dudoso(103), alta(104), dudoso(105)],
+    depsFalsas({
+      storage, fetch: f,
+      query: async (sql, params) => { consultas.push({ sql, params }); return { rowCount: 1 }; },
+    }),
+  );
+
+  // 1) Lo que realmente se escribiría en la BD: los $2 de cada UPDATE.
+  const idsEscritos = consultas.map((c) => c.params[1]);
+  assert.equal(consultas.length, IDS_ALTA.length);
+  assert.deepEqual(idsEscritos, IDS_ALTA);
+  for (const id of IDS_DUDOSO) {
+    assert.ok(!idsEscritos.includes(id), `el dudoso ${id} no debe llegar al UPDATE`);
+  }
+  for (const c of consultas) assert.equal(c.sql, SQL_UPDATE_FOTO);
+  for (const c of consultas) assert.ok(esUrlDeStorageValida(c.params[0]), 'el $1 es una URL de nuestro bucket');
+
+  // 2) Ningún dudoso llegó a tocarse en ningún sentido: ni descarga, ni bucket.
+  assert.deepEqual(
+    f.llamadas.map((x) => x.url),
+    IDS_ALTA.map((id) => `https://farmadon/${id}.png`),
+  );
+  assert.deepEqual(storage.subidas.map((s) => s.ruta), [`${PREFIJO}/uuid-1.jpg`, `${PREFIJO}/uuid-2.jpg`]);
+
+  // 3) El ledger tampoco los menciona: quedan solo las altas aplicadas.
+  assert.deepEqual(r.ledger.map((x) => x.id), IDS_ALTA);
+  for (const x of r.ledger) assert.equal(x.resultado, RESULTADO_APLICADA);
+  assert.equal(r.aplicadas, IDS_ALTA.length);
+  assert.equal(r.fallidas, 0);
+  assert.equal(r.omitidas, 0);
+});
+
+test('aplicarFotos: un array solo de dudoso no escribe nada', async () => {
+  const storage = storageFalso();
+  const f = fetchFalso();
+  const consultas = [];
+
+  const r = await aplicarFotos([dudoso(101), dudoso(102)], depsFalsas({
+    storage, fetch: f,
+    query: async (sql, params) => { consultas.push(params); return { rowCount: 1 }; },
+  }));
+
+  assert.deepEqual(r, { ledger: [], aplicadas: 0, fallidas: 0, omitidas: 0 });
+  assert.equal(consultas.length, 0, 'cero escrituras');
+  assert.equal(f.llamadas.length, 0, 'ni siquiera se intenta descargar');
+  assert.equal(storage.subidas.length, 0, 'ni un objeto en el bucket');
+});
+
+test('aplicarFotos: si falla la descarga o la subida de un alta, no hay UPDATE y la fila queda como estaba', async () => {
+  // "Como estaba" = sin foto. Se cubren las dos formas en que eso se guarda
+  // (NULL y '') porque el WHERE del UPDATE las acepta a las dos.
+  const casos = [
+    ['descarga', { fetch: fetchFalso({ status: 500 }) }, null],
+    ['subida', { storage: storageFalso(false) }, ''],
+  ];
+
+  for (const [nombre, frontera, previa] of casos) {
+    const consultas = [];
+    const producto = { ...PRODUCTO, id: 7, foto_url: previa };
+    const r = await aplicarFotos([{ p: producto, m: alta(7).m }], depsFalsas({
+      ...frontera,
+      query: async (sql, params) => { consultas.push({ sql, params }); return { rowCount: 1 }; },
+    }));
+
+    assert.equal(consultas.length, 0, `${nombre}: no debe ejecutarse ningun UPDATE`);
+    assert.equal(r.aplicadas, 0, nombre);
+    assert.equal(r.fallidas, 1, nombre);
+    assert.equal(r.omitidas, 0, nombre);
+
+    const fila = r.ledger[0];
+    assert.equal(fila.resultado, RESULTADO_FALLIDA, nombre);
+    // Nada se subió, así que no hay nada que deshacer en el bucket.
+    assert.equal(fila.url_nueva, '', `${nombre}: no debe quedar url huerfana`);
+    // El ledger deja constancia del valor previo: la fila no se tocó.
+    assert.equal(fila.foto_url_previa, '', `${nombre}: la fila sigue sin foto`);
+  }
 });
