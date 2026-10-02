@@ -1,4 +1,4 @@
-import supabase from '../config/supabase.js';
+import { supabase } from '../config/supabase.js';
 import { FILTROS_BADGES, CLAVES_BADGES } from '../services/staffBadges.js';
 
 // Traduce un filtro de FILTROS_BADGES a un query builder de PostgREST.
