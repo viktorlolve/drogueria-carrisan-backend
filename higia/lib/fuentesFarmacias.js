@@ -159,11 +159,54 @@ function segmentosDeCombinacion(nombre) {
   return segs.length >= 2 ? segs : null;
 }
 
+// R-17 — "algo que el producto no declara" en los combos que NO llevan "+".
+// A3 solo detecta combinaciones con separador explícito, así que se le
+// escapan dos formas muy comunes en las farmacias:
+//   "Valsartán Amlodipina 160mg/10mg"   (moléculas pegadas por un espacio)
+//   "Vitamina C+Zinc 500mg/7.5mg"       (la 2ª dosis no tiene nombre de molécula)
+//
+// La señal que las delata es la DOSIS, no el nombre: una combinación declara una
+// dosis por principio activo. Si el producto declara N dosis en mg y el
+// candidato declara más dosis en mg de las que se explican por su propio
+// packaging, hay al menos un principio activo más.
+//
+// Por qué esto NO es un conteo de tokens (que reprobó el spec): en
+// "Zerodol Aceclofenaco 100 mg" hay 2 tokens pero el segundo es la MARCA, no
+// otra sustancia. Lo que separa ambos casos es precisamente que el token de
+// marca no trae dosis propia. Por eso la regla mira solo las dosis en la
+// MISMA dimensión que ya declara el producto, y descarta:
+//
+//   a) el volumen del envase ("10mg/ml 15ml", "x 90ml"): es packaging, y para
+//      eso está packDe() y las palabras de forma, no la dosis;
+//   b) las unidades que el producto no declara: si el producto es 10 MG/ML y
+//      el candidato trae "1|ml", ese 1 es la concentración del solvente, no
+//      un segundo principio activo.
+//
+// El resultado es dudoso, no no: estos van a revisión manual del dueño y nunca
+// se aplican solos. Una foto equivocada es peor que una foto ausente.
+// Unidades de volumen: un segundo "ml" NUNCA es otro principio activo, es el
+// envase. "150Mg/5Ml X 90Ml" es el mismo jarabe en un frasco de 90 ml, y
+// "500mg/7.5mg" (que sí es una combinación) está en mg. Sin esta exclusión la
+// regla tumbaba ~20 jarabes y soluciones de alta a dudoso: el producto declara
+// "150 MG / 5 ML", o sea 5|ml es el solvente, y el 90|ml del frasco se leía
+// como una segunda dosis.
+const UNIDADES_VOLUMEN = new Set(['ml']);
+
+function dosisSobrantes(candidatas, declaradas) {
+  if (!declaradas.size || !candidatas.size) return [];
+  const unidades = new Set([...declaradas].map((d) => d.split('|')[1]));
+  return [...candidatas].filter((d) => {
+    const unidad = d.split('|')[1];
+    return unidades.has(unidad) && !UNIDADES_VOLUMEN.has(unidad) && !declaradas.has(d);
+  });
+}
+
 // Decide si un candidato es de alta confianza, dudoso o no.
 // Gates duros: marca/núcleo presente, todos los componentes de la molécula
 // anclados, el candidato NO declara componentes que el producto no declare,
 // dosis del producto ⊆ dosis del candidato (con unidad), pack no contradictorio,
-// forma compatible. Gate blando (→ dudoso): forma ausente en un lado.
+// forma compatible. Gates blandos (→ dudoso): forma ausente en un lado, o el
+// candidato declara más dosis de las que el producto cubre (combo sin "+").
 export function matchFarmacias(producto, candidatos, fuente) {
   const nucleoTokens = normalizar(nucleoMarca(producto?.nombre_comercial || ''))
     .split(/\s+/).filter((t) => t.length > 1 && t !== 'x');
@@ -214,6 +257,10 @@ export function matchFarmacias(producto, candidatos, fuente) {
     } else if (dosisDb.size && !dosisC.size) {
       dudoso = true;
     }
+    // R-17 — segunda dosis en una dimensión que el producto ya declara. No es
+    // un "no": el candidato puede ser el producto correcto con una dosis
+    // institucional distinta, así que baja a revisión manual.
+    if (dosisSobrantes(dosisC, dosisDb).length) dudoso = true;
 
     const formaC = detectarFormaNombre(c.nombre);
     if (formaC && producto?.forma) {

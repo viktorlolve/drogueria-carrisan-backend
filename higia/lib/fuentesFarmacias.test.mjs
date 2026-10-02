@@ -261,6 +261,71 @@ test('A3: un token extra sin ancla no veta si el componente declarado sí ancla'
   assert.equal(matchFarmacias(p, cand, 'farmadon').estado, 'alta');
 });
 
+// R-17 — combos unidos por espacio o por una segunda dosis ("Valsartan
+// Amlodipina", "Vitamina C+Zinc 500mg/7.5mg"). A3 solo ve el "+" con espacios,
+// así que estos pasaban como alta. El downgrade correcto es a dudoso, no a no.
+
+// 37425: el producto declara una sola molécula; el candidato dice "Valsartán
+// Amlodipina 160mg/10mg" — dos moléculas y DOS dosis en mg.
+test('R-17: baja a dudoso un combo unido por espacio (37425)', () => {
+  const p = { nombre_comercial: 'AMLODIPINA 10 MG X 10 COMPRIMIDOS', molecula: 'Amlodipino', forma: 'COMPRIMIDOS' };
+  const cand = [{ nombre: 'Valsartán Amlodipina 160mg/10mg x 10 Tabletas &#8211; La Santé', imagen: 'x', fuente: 'farmadon' }];
+  assert.notEqual(matchFarmacias(p, cand, 'farmadon').estado, 'alta');
+});
+
+// 38964: el candidato trae 500mg/7.5mg — la segunda dosis es otro principio
+// activo (zinc) sin nombre de molécula al cual colgarlo.
+test('R-17: baja a dudoso una segunda dosis en la misma dimensión (38964)', () => {
+  const p = { nombre_comercial: 'VITAMINA C 500 MG X 30 TABLETAS', molecula: 'Vitamina C', forma: 'TABLETAS' };
+  const cand = [{ nombre: 'Cevax Zinc Vitamina C+Zinc 500mg/7.5mg x 30 Cápsulas Blandas Vivax', imagen: 'x', fuente: 'farmadon' }];
+  assert.notEqual(matchFarmacias(p, cand, 'farmadon').estado, 'alta');
+});
+
+// --- anti-regresión: marca + molécula NO es un combo -----------------------
+// El token de más es la MARCA, no otra sustancia, y no trae dosis propia.
+
+test('R-17: marca + molécula sigue siendo alta (Zerodol Aceclofenaco)', () => {
+  const p = { nombre_comercial: 'ACECLOFENACO 100 MG X 10', molecula: 'Aceclofenaco', forma: 'COMPRIMIDOS' };
+  const cand = [{ nombre: 'Zerodol Aceclofenaco 100 mg Tabletas', imagen: 'x', fuente: 'farmadon' }];
+  assert.equal(matchFarmacias(p, cand, 'farmadon').estado, 'alta');
+});
+
+test('R-17: marca + molécula con volumen sigue siendo alta (Ondatrin 2Mg/Ml)', () => {
+  const p = { nombre_comercial: 'ONDATRIN 2 MG / ML X 5 AMPOLLAS', molecula: 'Ondansetron', forma: 'INYECTABLE' };
+  const cand = [{ nombre: 'Ondatrin Ondansetrón Ampolla 2Mg/Ml I.V Behrens', imagen: 'x', fuente: 'farmadon' }];
+  assert.equal(matchFarmacias(p, cand, 'farmadon').estado, 'alta');
+});
+
+test('R-17: marca + molécula sigue siendo alta (Biofolic Ácido Fólico)', () => {
+  const p = { nombre_comercial: 'ACIDO FOLICO 10 MG / ML X 10 AMPOLLAS', molecula: 'Folico Acido', forma: 'INYECTABLE' };
+  const cand = [{ nombre: 'Biofolic Ácido Fólico Ampolla 10Mg/1Ml I.M/I.V Bioglass', imagen: 'x', fuente: 'farmadon' }];
+  assert.equal(matchFarmacias(p, cand, 'farmadon').estado, 'alta');
+});
+
+// El volumen del envase (15ml, 90ml) NO es una segunda dosis: es packaging.
+test('R-17: el volumen del envase no dispara la regla (solución 15ml)', () => {
+  const p = { nombre_comercial: 'ACIDO FOLICO 10 MG / ML SOLUCION ORAL', molecula: 'Folico Acido', forma: 'SOLUCION ORAL' };
+  const cand = [{ nombre: 'Ácido Fólico En Gotas Pediátrico 10mg/ml 15ml Klinos', imagen: 'x', fuente: 'farmadon' }];
+  assert.equal(matchFarmacias(p, cand, 'farmadon').estado, 'alta');
+});
+
+// Este caso rompió la regla cuando se implementó: ACETAMINOFEN 150 MG/5 ML
+// declara "5|ml" (el solvente), así que el 90ml del frasco caía como dosis
+// sobrante y tumbaba ~20 jarabes y soluciones de alta a dudoso.
+test('R-17: el volumen del envase no dispara la regla (jarabe X 90ML)', () => {
+  const p = { nombre_comercial: 'ACETAMINOFEN 150 MG / 5 ML JARABE', molecula: 'Acetaminofen', forma: 'JARABE' };
+  const cand = [{ nombre: 'Acetaminofén Jarabe Pediátrico Cereza 150Mg/5Ml X 90Ml Laproff', imagen: 'x', fuente: 'farmadon' }];
+  assert.equal(matchFarmacias(p, cand, 'farmadon').estado, 'alta');
+});
+
+// Una segunda dosis en mg (no volumen) sí es otro principio activo: el
+// BioCor HCT es olmesartán + hidroclorotiazida y el producto es olmesartán solo.
+test('R-17: segunda dosis en mg de una combinación real baja a dudoso', () => {
+  const p = { nombre_comercial: 'OLMESARTAN MEDOXOMILO 20 MG X 10 TABLETAS RECUBIERTAS', molecula: 'Olmesartan Medoxomilo', forma: 'TABLETAS' };
+  const cand = [{ nombre: '[7591519317664] BIOCOR HCT (OLMESARTAN MEDOXOMILO - HIDROCLORORIAZIDA) 20MG-12.5MG X 10 TABLETAS (CALOX)', imagen: 'x', fuente: 'farmago' }];
+  assert.notEqual(matchFarmacias(p, cand, 'farmago').estado, 'alta');
+});
+
 // C — un brands[0] objeto sin name devolvía el objeto entero como marca.
 
 test('normalizaProductoFarmadon tolera brands[0] objeto sin name', () => {
