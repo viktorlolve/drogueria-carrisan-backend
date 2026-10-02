@@ -198,7 +198,7 @@ export async function subirAStorage(ruta, buffer, deps = {}) {
 export async function aplicarFotos(altas, deps = {}) {
   const query = deps.query;
   if (typeof query !== 'function') throw new Error('query no disponible');
-  const nuevoUuid = deps.nuevoUuid ?? randomUuid;
+  const nuevoUuid = deps.nuevoUuid ?? randomUUID;
   const prefijo = deps.prefijo ?? PREFIJO;
   const limitar = deps.limitar ?? 0;
 

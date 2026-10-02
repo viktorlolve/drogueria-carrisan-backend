@@ -394,6 +394,16 @@ test('aplicarFotos sin altas no hace nada', async () => {
   assert.equal(toco, false);
 });
 
+test('aplicarFotos usa randomUUID por defecto cuando no se inyecta uno', async () => {
+  // Sin deps.nuevoUuid tiene que usar el uuid del runtime (no una variable
+  // mal escrita que solo las pruebas con doble inyectado dejaban pasar).
+  const d = depsFalsas();
+  delete d.nuevoUuid;
+  const r = await aplicarFotos([alta(1)], d);
+  assert.equal(r.aplicadas, 1);
+  assert.match(r.ledger[0].url_nueva, new RegExp(`/${BUCKET}/${PREFIJO}/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.jpg$`));
+});
+
 test('aplicarFotos exige query disponible', async () => {
   await assert.rejects(() => aplicarFotos([alta(1)], { fetch: fetchFalso() }), /query no disponible/);
 });
