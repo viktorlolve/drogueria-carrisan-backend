@@ -64,6 +64,20 @@ export const resetPasswordLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Especifico de la subida de fotos de catálogo (POST /staff/inventario/:id/foto).
+// A diferencia de /uploads/registro, este SÍ exige JWT de staff, así que el
+// riesgo no es el bot sino que un almacenista pueda subir en bucle: cada request
+// recodifica con sharp y golpea Supabase Storage (una subida + un objeto nuevo,
+// porque el nombre es un uuid). 15 cada 15 min da margen de sobra para una tanda
+// de fotos y frena el bucle.
+export const uploadsCatalogoLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
+  message: { error: 'Demasiadas subidas de imagen. Intenta de nuevo en unos minutos.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Especifico de /internal/jobs/*: lo llama el scheduler externo
 // (cron-job.org) un par de veces al dia, asi que un techo de 10/hora es
 // enorme para el uso legitimo pero frena que un bucle runaway del scheduler

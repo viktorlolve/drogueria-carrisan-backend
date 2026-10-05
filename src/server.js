@@ -52,6 +52,7 @@ import staffReportesRoutes from './routes/staff.reportes.routes.js';
 import staffLogisticaRoutes from './routes/staff.logistica.routes.js';
 import staffChatRoutes from './routes/staff.chat.routes.js';
 import staffCuponesRoutes from './routes/staff.cupones.routes.js';
+import staffInventarioRoutes from './routes/staff.inventario.routes.js';
 import cuponesRoutes from './routes/cupones.routes.js';
 import noticiasRoutes from './routes/noticias.routes.js';
 import verificarRoutes from './routes/verificar.routes.js';
@@ -161,6 +162,9 @@ app.use('/staff/chat', staffChatRoutes);
 app.use('/staff/cupones', staffCuponesRoutes);
 app.use('/staff/vitrina', staffVitrinaRoutes);
 app.use('/staff/badges', staffBadgesRoutes);
+// `/staff/inventario` tiene un `GET /:id`, así que TIENE que ir antes del `/staff`
+// base de abajo: si no, el router base se come `/inventario` y sus subrutas.
+app.use('/staff/inventario', staffInventarioRoutes);
 app.use('/staff', staffNotificacionesRoutes);
 app.use('/staff', staffRoutes);
 app.use('/delivery-tarifas', tarifasDeliveryRoutes);

@@ -200,3 +200,36 @@ export function armarCambiosPrecio(body) {
 export function esEstadoManual(estado) {
   return estado === 'manual';
 }
+
+// --- Roles (una sola fuente) ---
+//
+// Las usan el controller (para `puede_editar_precio`) y las rutas (para
+// `checkRolStaff`). Viven acá y no en el archivo de rutas para que no puedan
+// desincronizarse: si el controller dijera "puede" y la ruta negara, la persona
+// vería el botón y recibiría un 403.
+//
+// ROLES_INVENTARIO_VER es Logística completo. ROLES_INVENTARIO_PRECIO es la
+// intersección con los roles de Comercial (que ya son solo
+// administrador/director/admin): regla del dueño "si tiene acceso a Comercial,
+// que vaya a Comercial". Como `vendedor` no tiene `almacenista` ni `despachador`,
+// en la práctica el precio lo edita la gerencia.
+export const ROLES_INVENTARIO_VER = [
+  'almacenista',
+  'despachador',
+  'administrador',
+  'director',
+  'admin',
+];
+export const ROLES_INVENTARIO_PRECIO = ['administrador', 'director', 'admin'];
+
+export const puedeEditarPrecio = (rol) => ROLES_INVENTARIO_PRECIO.includes(rol);
+
+// Tope de ids que se mandan a PostgREST en el filtro de molécula. El `or=(...)`
+// viaja en la URL, y 800 ids ≈ 4.8 KB: más que eso se pasa del límite de header
+// de nginx/Render y la request muere con un error poco descriptivo. Al recortar
+// se cae a la parte tolerante (`productos.molecula ilike`), así que siempre hay
+// resultados; el recorte queda en el log.
+export const MAX_IDS_MOLECULA = 800;
+
+// Cuántas moléculas distintas devuelve `/opciones` para el datalist.
+export const MAX_MOLECULAS_OPCIONES = 300;
