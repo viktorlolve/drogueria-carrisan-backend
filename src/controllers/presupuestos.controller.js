@@ -184,18 +184,34 @@ export async function resolverDetallePresupuesto(id) {
 // ---------------------------------------------------------------
 // GET /presupuestos/mios
 // Historial de presupuestos del usuario (listado recurrente).
+// Incluye `cantidad_items` (lineas del presupuesto) y `unidades`
+// (suma de cantidades) para que el listado pueda mostrarlos sin
+// pedir el detalle de cada uno. OJO: el `estado` de la tabla se
+// queda siempre en 'vigente' (nadie lo actualiza al expirar), asi
+// que el vencimiento se deriva de `fecha_expiracion` en el cliente.
 // ---------------------------------------------------------------
 export async function getMisPresupuestos(req, res) {
   try {
     const { data, error } = await supabase
       .from('presupuestos')
-      .select('id, numero, estado, fecha_creacion, fecha_expiracion, total_usd')
+      .select('id, numero, estado, fecha_creacion, fecha_expiracion, total_usd, presupuesto_items(cantidad)')
       .eq('usuario_id', req.user.id)
       .order('fecha_creacion', { ascending: false });
 
     if (error) throw error;
 
-    res.json(data);
+    const lista = (data || []).map((p) => ({
+      id: p.id,
+      numero: p.numero,
+      estado: p.estado,
+      fecha_creacion: p.fecha_creacion,
+      fecha_expiracion: p.fecha_expiracion,
+      total_usd: p.total_usd,
+      cantidad_items: p.presupuesto_items?.length ?? 0,
+      unidades: (p.presupuesto_items || []).reduce((acc, i) => acc + (i.cantidad || 0), 0),
+    }));
+
+    res.json(lista);
   } catch (err) {
     console.error('Error al obtener presupuestos:', err);
     res.status(500).json({ error: 'Error del servidor' });
