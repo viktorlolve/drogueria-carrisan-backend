@@ -263,7 +263,7 @@ async function main() {
     const nombres = chunk.map((v) => v.nombre);
     const { rowCount } = await client2.query(
       `UPDATE public.productos AS p
-          SET foto_url = v.url, nombre_comercial = v.nombre, updated_at = now()
+          SET foto_url = v.url, foto_estado = 'ok', nombre_comercial = v.nombre, updated_at = now()
          FROM unnest($1::int[], $2::text[], $3::text[]) AS v(id, url, nombre)
         WHERE p.id = v.id
           AND (p.foto_url IS NULL OR p.foto_url = '')`,

@@ -66,7 +66,10 @@ async function main() {
   }
 
   const { rowCount } = await client.query(
-    `UPDATE public.productos SET foto_url = NULL
+    // 'sin_foto' va pegado al NULL: sin esto el estado queda mintiendo
+    // ('ok'/'manual' con foto_url vacía) y la cola de /staff/inventario cuenta
+    // mal. Coherencia: foto_url nula => foto_estado 'sin_foto'.
+    `UPDATE public.productos SET foto_url = NULL, foto_estado = 'sin_foto'
       WHERE foto_url IS NOT NULL AND foto_url <> ''`
   );
   console.log(`\nAPLICADO: ${rowCount} productos sin foto_url.`);

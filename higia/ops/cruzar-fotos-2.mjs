@@ -324,7 +324,7 @@ async function main() {
   for (let i = 0; i < ids.length; i += CHUNK) {
     const { rowCount } = await client.query(
       `UPDATE public.productos AS p
-          SET foto_url = v.url, updated_at = now()
+          SET foto_url = v.url, foto_estado = 'ok', updated_at = now()
          FROM unnest($1::int[], $2::text[]) AS v(id, url)
         WHERE p.id = v.id
           AND (p.foto_url IS NULL OR p.foto_url = '')`,

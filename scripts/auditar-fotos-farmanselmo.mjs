@@ -121,7 +121,11 @@ async function main() {
 
   if (APLICAR && lista.length > 0) {
     const ids = lista.map((r) => r.id);
-    const { rowCount } = await client.query(`UPDATE public.productos SET foto_url = NULL WHERE id = ANY($1)`, [ids]);
+    const { rowCount } = await client.query(
+      // Ver la coherencia foto_url nula => foto_estado 'sin_foto'.
+      `UPDATE public.productos SET foto_url = NULL, foto_estado = 'sin_foto' WHERE id = ANY($1)`,
+      [ids],
+    );
     console.log(`Fotos revertidas a NULL: ${rowCount}`);
   } else if (APLICAR) {
     console.log('Nada que revertir.');

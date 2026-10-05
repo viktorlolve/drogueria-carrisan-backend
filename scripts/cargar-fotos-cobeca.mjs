@@ -61,7 +61,11 @@ async function main() {
   // anteriores (a veces con matching viejo/incorrecto) se limpian; solo quedan
   // las que este run asigne.
   const { rowCount: limpiados } = await client.query(
-    `UPDATE public.productos SET foto_url = NULL WHERE activo = true AND foto_url IS NOT NULL`
+    // 'sin_foto' pegado al NULL: la coherencia foto_url nula => foto_estado
+    // 'sin_foto' es la que hace que la cola de /staff/inventario no cuente como
+    // "sin foto" un producto que ya no la tiene.
+    `UPDATE public.productos SET foto_url = NULL, foto_estado = 'sin_foto'
+      WHERE activo = true AND foto_url IS NOT NULL`
   );
   console.log(`Fotos previas limpiadas: ${limpiados}`);
 
@@ -145,7 +149,7 @@ async function main() {
     }
     const sql = `
       UPDATE public.productos AS p
-      SET foto_url = v.url
+      SET foto_url = v.url, foto_estado = 'ok'
       FROM (SELECT unnest($1::int[]) AS id, unnest($2::text[]) AS url) AS v
       WHERE p.id = v.id
     `;

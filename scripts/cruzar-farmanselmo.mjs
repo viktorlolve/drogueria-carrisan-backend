@@ -139,7 +139,7 @@ async function main() {
   if (APLICAR) {
     const sql = `
       UPDATE public.productos AS p
-      SET foto_url = v.url
+      SET foto_url = v.url, foto_estado = 'ok'
       FROM (SELECT unnest($1::int[]) AS id, unnest($2::text[]) AS url) AS v
       WHERE p.id = v.id
     `;

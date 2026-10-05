@@ -40,8 +40,15 @@ export const RESULTADO_OMITIDA = 'omitida';
 //   1. es estructuralmente imposible escribir foto_url = NULL (el SET nunca lo
 //      hace, y el WHERE además exige que hoy esté vacía);
 //   2. nunca pisa una foto que otro puso entre la lectura y este UPDATE.
+//
+// También marca `foto_estado = 'ok'`: la foto que este cruce sube quedó
+// revisada y es la del bucket propio, así que no es una 'dudosa' que haya que
+// mirar. Sin esto, la fila queda con foto puesta y estado 'sin_foto', y la cola
+// de la consola de inventario (/staff/inventario) cuenta un producto que en
+// realidad tiene foto. Ojo: 'ok' NO aplica a las dudosas del dueño — ésas se
+// exportan a CSV y nunca entran por acá (ver ESTADO_APLICABLE).
 export const SQL_UPDATE_FOTO = `UPDATE public.productos
-     SET foto_url = $1, updated_at = now()
+     SET foto_url = $1, foto_estado = 'ok', updated_at = now()
    WHERE id = $2 AND (foto_url IS NULL OR foto_url = '')`;
 
 // Filas afectadas que esperamos por un UPDATE: exactamente 1 (el id es único).

@@ -90,7 +90,7 @@ for (const f of FUENTES) {
       if (error) throw new Error('upload: ' + error.message);
       const nueva = storage.getPublicUrl(ruta).data.publicUrl;
       if (!nueva) throw new Error('getPublicUrl vacio');
-      await db.query('UPDATE productos SET foto_url = $1 WHERE id = $2', [nueva, f.id]);
+      await db.query("UPDATE productos SET foto_url = $1, foto_estado = 'ok' WHERE id = $2", [nueva, f.id]);
       out.url_nueva = nueva;
       out.estado = 'ok';
     } else {

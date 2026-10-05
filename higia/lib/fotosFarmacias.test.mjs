@@ -162,6 +162,16 @@ test('el UPDATE nunca puede escribir foto_url NULL ni vacio', () => {
   assert.equal(ROWS_ESPERADAS, 1);
 });
 
+test('el UPDATE marca la foto como ok (no queda sin_foto con foto puesta)', () => {
+  // Sin esto la consola de inventario cuenta como "sin foto" un producto que ya
+  // tiene foto en el bucket propio.
+  assert.match(SQL_UPDATE_FOTO, /foto_estado = 'ok'/);
+  // Y 'ok' tiene que ser coherente con foto_url presente: el WHERE exige que la
+  // fila hoy esté vacía, así que nunca se pisa una foto existente.
+  const set = SQL_UPDATE_FOTO.slice(SQL_UPDATE_FOTO.indexOf('SET'), SQL_UPDATE_FOTO.indexOf('WHERE'));
+  assert.match(set, /SET foto_url = \$1, foto_estado = 'ok'/);
+});
+
 // --- filaDeLedger / ledger ---------------------------------------------------
 
 test('filaDeLedger trae id, sku, url de origen, url nueva, previa y resultado', () => {

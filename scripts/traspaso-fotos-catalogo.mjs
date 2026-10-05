@@ -264,7 +264,9 @@ async function procesarProducto(db, storage, p, { variante, aplicar }) {
     if (!nueva) throw new Error('getPublicUrl devolvio vacio');
 
     // 9. Recién ahora, y solo con la URL nueva ya en Storage.
-    await db.query('UPDATE productos SET foto_url = $1 WHERE id = $2', [nueva, p.id]);
+    //    foto_estado='ok' pegado a la URL: sin esto la fila queda con foto puesta
+    //    y estado 'sin_foto', y /staff/inventario la cuenta como "sin foto".
+    await db.query("UPDATE productos SET foto_url = $1, foto_estado = 'ok' WHERE id = $2", [nueva, p.id]);
     fila.nueva = nueva;
     fila.estado = 'ok';
   } catch (e) {
@@ -528,7 +530,7 @@ async function rehacerProducto(db, storage, fila, { aplicar }) {
     // 9. UPDATE guardado: solo si la foto actual sigue siendo la que subió el
     //    traspaso con marca (`fila.nueva`). Si alguien la cambió, no se toca.
     const r = await db.query(
-      'UPDATE productos SET foto_url = $1 WHERE id = $2 AND foto_url = $3',
+      "UPDATE productos SET foto_url = $1, foto_estado = 'ok' WHERE id = $2 AND foto_url = $3",
       [nueva, fila.id, fila.nueva],
     );
     if (!r.rowCount) {
@@ -625,7 +627,7 @@ async function modoRevertir() {
     if (!f.anterior) { salt++; continue; }
     // Solo restaura si el valor actual sigue siendo el que puso este script.
     const r = await db.query(
-      'UPDATE productos SET foto_url = $1 WHERE id = $2 AND foto_url = $3',
+      "UPDATE productos SET foto_url = $1, foto_estado = 'ok' WHERE id = $2 AND foto_url = $3",
       [f.anterior, f.id, f.nueva],
     );
     if (r.rowCount) { rest++; agregarLedger({ ...f, bytes_origen: 0, bytes_destino: 0, estado: 'revertido', error: '' }); }

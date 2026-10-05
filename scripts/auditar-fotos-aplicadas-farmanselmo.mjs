@@ -146,12 +146,12 @@ async function main() {
     console.log(`${r.id} | ${r.sku} | ${(r.nombre||'').slice(0, 40)} | score=${r.score} | ${(r.foto_url ? (r.foto_url||'').slice(0, 48) : r.foto)}...`);
   }
 
-  console.log(`\nReporte: data/farmanselmo_revertir_candidatas.csv (${rechazadas.length} filas)`ipse);
+  console.log(`\nReporte: data/farmanselmo_revertir_candidatas.csv (${rechazadas.length} filas)`);
 
   if (APLICAR && rechazadas.length > 0) {
     const ids = rechazadas.map((r) => r.id);
     const { rowCount } = await client.query(
-      `UPDATE public.productos SET foto_url = NULL WHERE id = ANY($1)`,
+      `UPDATE public.productos SET foto_url = NULL, foto_estado = 'sin_foto' WHERE id = ANY($1)`,
       [ids]
     );
     console.log(`Fotos revertidas a NULL: ${rowCount}`);

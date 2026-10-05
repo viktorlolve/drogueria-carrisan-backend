@@ -342,7 +342,7 @@ async function main() {
     const ids = asigna.map((a) => a.id);
     const urls = asigna.map((a) => a.foto_url);
     const r = await client.query(
-      `UPDATE public.productos AS p SET foto_url = v.url, updated_at = now()
+      `UPDATE public.productos AS p SET foto_url = v.url, foto_estado = 'ok', updated_at = now()
          FROM unnest($1::int[], $2::text[]) AS v(id, url)
         WHERE p.id = v.id AND (p.foto_url IS NULL OR p.foto_url = '' OR p.foto_url = v.url)`,
       [ids, urls]
