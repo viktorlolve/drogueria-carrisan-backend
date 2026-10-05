@@ -4,6 +4,7 @@ import { notificarDisponibles } from './alertasDisponibilidad.controller.js';
 import importarProveedor from '../services/proveedores/importarProveedor.js';
 import PROVEEDORES from '../config/proveedores.js';
 import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
+import { armarCambiosPrecio, sanearPrecio } from '../services/inventario/inventarioReglas.js';
 
 // POST /staff/precios/importar-proveedor
 // Multipart: fields `proveedor` y `archivo`. Procesa un Excel/CSV de un proveedor
@@ -98,18 +99,30 @@ export async function getPreciosStaff(req, res) {
   }
 }
 
-function precioValido(precio) {
-  return Number.isFinite(precio) && precio >= 0;
-}
-
+// `precio > 0` publica el producto; `0` lo despublica. La definición de
+// "precio válido" NO vive acá: es `sanearPrecio` en inventarioReglas.js, para
+// que el PATCH unitario, el PATCH por lote y la consola de inventario apliquen
+// exactamente la misma regla.
 function publicarDisponible(precio) {
   return precio > 0;
 }
 
 // PATCH /staff/precios/:id
+//
+// El objeto de cambios lo arma `armarCambiosPrecio`, que hace WHITELIST de
+// `precio_usd`. Antes esta función hacía `const { precio_usd, ...otros } =
+// req.body` y luego `.update({ ...otros })`: eso escribía en `productos` lo que
+// fuera que viniera en el body, así que un `vendedor` podía mandar
+// `{ activo: false, costo_usd: 0.01 }` y se aplicaba. Un body sin `precio_usd`
+// ahora es un 400 en vez de un update no-op que devolvía 200.
 export async function actualizarPrecioStaff(req, res) {
   const { id } = req.params;
-  const { precio_usd, ...otros } = req.body;
+
+  const armado = armarCambiosPrecio(req.body);
+  if (armado.error) {
+    return res.status(400).json({ error: armado.error });
+  }
+  const { cambios } = armado;
 
   try {
     let precioAnterior = null;
@@ -119,18 +132,7 @@ export async function actualizarPrecioStaff(req, res) {
       .eq('id', id)
       .single();
 
-    const tienePrecioEnBody = precio_usd !== undefined;
-    if (tienePrecioEnBody && !precioValido(Number(precio_usd))) {
-      return res.status(400).json({ error: 'precio_usd inválido' });
-    }
     if (actual) precioAnterior = actual.precio_usd;
-
-    const cambios = { ...otros, updated_at: new Date() };
-    if (tienePrecioEnBody) {
-      const p = Number(precio_usd);
-      cambios.precio_usd = p > 0 ? p : null;
-      cambios.disponible = publicarDisponible(p);
-    }
 
     const { data, error } = await supabase
       .from('productos')
@@ -143,20 +145,17 @@ export async function actualizarPrecioStaff(req, res) {
       return res.status(404).json({ error: 'Producto no encontrado' });
     }
 
-    if (tienePrecioEnBody) {
-      const teniaPrecio = Number(precioAnterior) > 0;
-      const tieneAhora = data.precio_usd != null && Number(data.precio_usd) > 0;
-      if (tieneAhora && !teniaPrecio) {
-        notificarDisponibles(data).catch((err) =>
-          console.error('Error al notificar disponibilidad:', err)
-        );
-        await emitirNotificacionStaff({
-          tipo: 'producto_con_precio',
-          titulo: 'Producto con precio',
-          mensaje: `${data.nombre_comercial} a $${Number(data.precio_usd).toFixed(2)}.`,
-          excluirStaffId: req.staff?.id ?? null,
-        });
-      }
+    const tieneAhora = data.precio_usd != null && Number(data.precio_usd) > 0;
+    if (tieneAhora && !(Number(precioAnterior) > 0)) {
+      notificarDisponibles(data).catch((err) =>
+        console.error('Error al notificar disponibilidad:', err)
+      );
+      await emitirNotificacionStaff({
+        tipo: 'producto_con_precio',
+        titulo: 'Producto con precio',
+        mensaje: `${data.nombre_comercial} a $${Number(data.precio_usd).toFixed(2)}.`,
+        excluirStaffId: req.staff?.id ?? null,
+      });
     }
 
     res.json(data);
@@ -180,7 +179,7 @@ export async function actualizarPreciosLoteStaff(req, res) {
     return res.status(400).json({ error: 'Máximo 1000 items por lote' });
   }
   for (const it of items) {
-    if (it.id == null || !precioValido(Number(it.precio_usd))) {
+    if (it.id == null || sanearPrecio(Number(it.precio_usd)) === null) {
       return res.status(400).json({ error: `Item inválido: ${JSON.stringify(it)}` });
     }
   }
