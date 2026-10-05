@@ -33,6 +33,28 @@ const upload = multer({
   limits: { fileSize: MAX_FOTO_MB * 1024 * 1024, files: 1 },
 });
 
+// multer aborta por `limit` con `next(err)` y NO hay error handler global en
+// server.js, así que el handler por defecto de Express responde 500 con cuerpo
+// HTML. El frontend lee `err.response?.data?.error`, que en un HTML no existe: el
+// almacenista veía el genérico "No se pudo subir la imagen" en vez de "pesa más de
+// 8 MB", y `/admin/monitoreo` sumaba un 5xx que no era una caída. Se traduce solo
+// en ESTA ruta, que es la que introduce el límite.
+const subirImagen = (req, res, next) =>
+  upload.single('imagen')(req, res, (err) => {
+    if (!err) return next();
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res
+        .status(413)
+        .json({ error: `La imagen supera el máximo de ${MAX_FOTO_MB} MB` });
+    }
+    if (err.code === 'LIMIT_UNEXPECTED_FILE' || err.code === 'LIMIT_FILE_COUNT') {
+      return res
+        .status(400)
+        .json({ error: 'Se esperaba un solo archivo en el campo `imagen`' });
+    }
+    return next(err);
+  });
+
 // `/opciones` va antes de `/:id`: si no, el `:id` se lo come.
 router.get(
   '/opciones',
@@ -52,7 +74,7 @@ router.post(
   verifyStaffJWT,
   checkRolStaff(ROLES_INVENTARIO_VER),
   uploadsCatalogoLimiter,
-  upload.single('imagen'),
+  subirImagen,
   subirFotoProducto,
 );
 router.patch(

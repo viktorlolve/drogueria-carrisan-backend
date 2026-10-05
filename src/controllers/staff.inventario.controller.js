@@ -47,7 +47,11 @@ const FOTO_CACHO_SEG = 31536000; // 1 año: el nombre es un uuid, así que nunca
 
 // --- helpers -----------------------------------------------------------------
 
-const esBool = (v) => v === true || v === 'true' || v === true;
+// Acepta `1`/`'1'` además de `true`/`'true'`: son los valores que el resto del
+// proyecto trata como verdadero y los que alguien escribe a mano en la URL
+// (`?sin_precio=1`). El frontend manda `'true'`, así que esto no cambia nada de
+// lo que ya funciona.
+const esBool = (v) => v === true || v === 'true' || v === 1 || v === '1';
 
 /** `laboratorio`, `forma` y `linea` llegan como CSV (multi-selección). */
 function listaCsv(valor) {
@@ -346,9 +350,24 @@ export async function getDetalleInventario(req, res) {
         .order('costo_usd', { ascending: true, nullsFirst: false }),
       supabase
         .from('producto_moleculas')
-        .select('molecula_id, moleculas_referencias(nombre, atc_id, sinonimos)')
+        // `atc_clasificaciones` es aditivo: `atc_id` es el id interno de la tabla y
+        // solo el `codigo` es el ATC que un humano puede leer (1.428 refs lo tienen
+        // en NULL y devuelven null acá, que es lo correcto). La tabla va con el
+        // MISMO spelling que usa el vademécum (`moleculas.controller.js`).
+        .select(
+          'molecula_id, moleculas_referencias(nombre, atc_id, sinonimos, atc_clasificaciones(id, codigo, nombre, nivel))',
+        )
         .eq('producto_id', id),
     ]);
+
+    // supabase-js NUNCA rechaza: resuelve `{ data, error }`, así que estas dos
+    // queries nunca llegan al `catch` de abajo. Sin revisarlas, un embed roto
+    // (PGRST200), un RLS o un timeout devolvían 200 con `costos: []` — y como
+    // `sin_proveedor` se deriva de eso, el drawer le AFIRMABA al almacenista que
+    // el producto no tiene proveedor y lo invitaba a editar el precio sobre esa
+    // premisa. Un dato falso con formato de dato verdadero.
+    if (costos.error) throw costos.error;
+    if (moleculas.error) throw moleculas.error;
 
     const listaCostos = (costos.data || []).map((c) => ({
       ...c,
