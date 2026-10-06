@@ -7,7 +7,7 @@ import {
   getDescuentosVigentes,
   resolverPrecioCliente,
 } from './descuentos.controller.js';
-import { notificarDisponibles } from './alertasDisponibilidad.controller.js';
+import { alPublicarPrecio } from './alertasDisponibilidad.controller.js';
 import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
 import {
   construirArgsBuscarProductos,
@@ -605,7 +605,7 @@ let precioAnterior = null;
     const teniaPrecio = precioAnterior && Number(precioAnterior) > 0;
     const tieneAhora = data.precio_usd && Number(data.precio_usd) > 0;
     if (!teniaPrecio && tieneAhora) {
-      notificarDisponibles(data).catch((err) =>
+      alPublicarPrecio(data).catch((err) =>
         console.error('Error al notificar disponibilidad:', err)
       );
       await emitirNotificacionStaff({
@@ -690,7 +690,7 @@ export async function preciosBulkUpdate(req, res) {
           // Cruzó de "sin precio" a "con precio": avisar a quien se suscribió.
           // No bloquea la respuesta del bulk.
           if (!teniaPrecio) {
-            notificarDisponibles(fila).catch((err) =>
+            alPublicarPrecio(fila).catch((err) =>
               console.error('Error al notificar disponibilidad:', err)
             );
           }

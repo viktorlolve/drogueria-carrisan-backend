@@ -24,7 +24,7 @@ import sharp from 'sharp';
 
 import { supabase } from '../config/supabase.js';
 import { normalizarTerminoBusqueda } from './productos.controller.js';
-import { notificarDisponibles } from './alertasDisponibilidad.controller.js';
+import { alPublicarPrecio } from './alertasDisponibilidad.controller.js';
 import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
 import {
   armarCambiosFoto,
@@ -578,7 +578,7 @@ export async function actualizarPrecioProducto(req, res) {
   // Avisos de "avísame cuando llegue", igual que en /staff/precios. Solo cuando el
   // producto PASÓ de no-tener-precio a tener-precio (previo leído antes de la RPC).
   if (precioGuardado !== null && precioGuardado > 0 && !teniaPrecio) {
-    notificarDisponibles(producto).catch((err) =>
+    alPublicarPrecio(producto).catch((err) =>
       console.error('Error al notificar disponibilidad:', err),
     );
     await emitirNotificacionStaff({

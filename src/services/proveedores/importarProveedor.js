@@ -239,6 +239,7 @@ export async function importarProveedor({ buffer, nombre = 'archivo', proveedor 
     const ids = costosArray.map(([id]) => id);
     let actualizados = 0;
     let publicados = 0;
+    const productosPublicados = [];
     for (let i = 0; i < ids.length; i += CHUNK) {
       const loteIds = ids.slice(i, i + CHUNK);
       // Valor previo de precio para contar "publicados por primera vez"
@@ -262,13 +263,14 @@ export async function importarProveedor({ buffer, nombre = 'archivo', proveedor 
           GROUP BY producto_id
         ) sub
         WHERE sub.producto_id = p.id
-        RETURNING p.id, p.precio_usd
+        RETURNING p.id, p.precio_usd, p.nombre_comercial
       `, [MARGEN, loteIds]);
 
       for (const r of res) {
         actualizados++;
         if (r.precio_usd != null && Number(r.precio_usd) > 0 && (prevPrecio.get(r.id) == null || Number(prevPrecio.get(r.id)) <= 0)) {
           publicados++;
+          productosPublicados.push({ id: r.id, nombre_comercial: r.nombre_comercial });
         }
       }
     }
@@ -287,6 +289,9 @@ export async function importarProveedor({ buffer, nombre = 'archivo', proveedor 
         publicados,
       },
       csv,
+      // Productos que cruzaron de "sin precio" a "con precio" en esta corrida.
+      // El controller los pasa por alPublicarPrecio (importar publicaba sin avisar).
+      productosPublicados,
     };
   } catch (err) {
     console.error('Error en importarProveedor:', err);

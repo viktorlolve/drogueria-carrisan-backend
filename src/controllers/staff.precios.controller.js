@@ -1,6 +1,6 @@
 import { supabase } from '../config/supabase.js';
 import { aplicarDescuentosAProductos } from './descuentos.controller.js';
-import { notificarDisponibles } from './alertasDisponibilidad.controller.js';
+import { alPublicarPrecio } from './alertasDisponibilidad.controller.js';
 import importarProveedor from '../services/proveedores/importarProveedor.js';
 import PROVEEDORES from '../config/proveedores.js';
 import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
@@ -27,6 +27,24 @@ export async function importarPreciosProveedor(req, res) {
       nombre: req.file.originalname,
       proveedor,
     });
+
+    // La importación publica productos: alPublicarPrecio cierra la asimetría
+    // (antes publicaba sin notificar al cliente ni resolver requerimientos).
+    const productosPublicados = resultado?.productosPublicados || [];
+    for (const p of productosPublicados) {
+      alPublicarPrecio(p).catch((err) =>
+        console.error('Error al notificar disponibilidad:', err)
+      );
+    }
+    if (productosPublicados.length > 0) {
+      await emitirNotificacionStaff({
+        tipo: 'producto_con_precio',
+        titulo: 'Precios publicados por importación',
+        mensaje: `${productosPublicados.length} producto(s) pasaron a tener precio (${proveedor}).`,
+        excluirStaffId: req.staff?.id ?? null,
+      });
+    }
+
     res.json(resultado);
   } catch (err) {
     console.error('Error al importar precios de proveedor (staff):', err);
@@ -147,7 +165,7 @@ export async function actualizarPrecioStaff(req, res) {
 
     const tieneAhora = data.precio_usd != null && Number(data.precio_usd) > 0;
     if (tieneAhora && !(Number(precioAnterior) > 0)) {
-      notificarDisponibles(data).catch((err) =>
+      alPublicarPrecio(data).catch((err) =>
         console.error('Error al notificar disponibilidad:', err)
       );
       await emitirNotificacionStaff({
@@ -238,7 +256,7 @@ export async function actualizarPreciosLoteStaff(req, res) {
           if (fila.precio_usd != null && Number(fila.precio_usd) > 0) {
             publicados++;
             if (!teniaPrecio) {
-              notificarDisponibles(fila).catch((err) =>
+              alPublicarPrecio(fila).catch((err) =>
                 console.error('Error al notificar disponibilidad:', err)
               );
             }
