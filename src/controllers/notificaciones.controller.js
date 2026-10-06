@@ -154,19 +154,20 @@ export async function cleanupNotificaciones(req, res) {
 }
 
 // Función helper para crear notificación (usada por otros controllers)
-export async function crearNotificacion(usuario_id, tipo, titulo, mensaje, orden_id = null) {
+export async function crearNotificacion(usuario_id, tipo, titulo, mensaje, orden_id = null, url = null) {
   try {
     const { error } = await supabase
       .from('notificaciones')
-      .insert({ usuario_id, tipo, titulo, mensaje, orden_id });
+      .insert({ usuario_id, tipo, titulo, mensaje, orden_id, url });
 
     if (error) {
       console.error('Error al crear notificación:', error);
       return;
     }
 
-    const url = orden_id ? `/orders/${orden_id}` : '/';
-    await enviarPushAlUsuario(usuario_id, { titulo, mensaje, url, tipo });
+    // El deep-link explícito (ej. /producto/:id) manda sobre el de orden.
+    const urlPush = url || (orden_id ? `/orders/${orden_id}` : '/');
+    await enviarPushAlUsuario(usuario_id, { titulo, mensaje, url: urlPush, tipo });
   } catch (err) {
     console.error('Error al crear notificación:', err);
   }
