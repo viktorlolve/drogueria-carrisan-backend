@@ -9,6 +9,11 @@ import {
 } from './descuentos.controller.js';
 import { notificarDisponibles } from './alertasDisponibilidad.controller.js';
 import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
+import {
+  construirArgsBuscarProductos,
+  esErrorRpcInexistente,
+  ordenarPorIds,
+} from '../services/buscarProductos.service.js';
 
 // Slugs cortos → valor real de `productos.linea` en la BD (la columna guarda
 // 'Linea Farmacia', 'Linea Hospitalaria', 'Material Medico' — ver
@@ -102,17 +107,69 @@ export function limiteBusquedaLigera(limit) {
   return Math.min(Math.max(n, 1), 20);
 }
 
+// Aviso unico (una vez por proceso) cuando la RPC buscar_productos no existe
+// en la BD y el buscador cae al camino legacy ILIKE. No es un error de
+// usuarios: solo indica que hay que aplicar la migracion 046.
+let rpcBuscarProductosAvisada = false;
+function advertirRpcBuscarProductosFaltante(error) {
+  if (rpcBuscarProductosAvisada) return;
+  rpcBuscarProductosAvisada = true;
+  console.warn(
+    'RPC buscar_productos no disponible; usando busqueda legacy ILIKE. Aplicar migracion 046:',
+    error?.message || error
+  );
+}
+
+// Reconsulta las filas completas por ids (la RPC devuelve solo ids+tier).
+// PostgREST no garantiza el orden de un `.in()` grande; el reorden lo hace
+// ordenarPorIds. Se pagina en lotes de 200 para no estallar la URL.
+async function fetchProductosPorIds(ids, columnas) {
+  const LOTE = 200;
+  const filas = [];
+  for (let i = 0; i < ids.length; i += LOTE) {
+    const lote = ids.slice(i, i + LOTE);
+    const { data, error } = await supabase
+      .from('productos')
+      .select(columnas)
+      .in('id', lote);
+    if (error) throw error;
+    filas.push(...(data || []));
+  }
+  return filas;
+}
+
 // GET /products/buscar?q=&limit= — PÚBLICO, solo para los buscadores del sitio.
 // Devuelve un array plano con el shape mínimo; con sesión válida agrega
 // foto_url y precio_usd. NO usar el price-descubierto: no trae nombres.
+// Primero intenta la RPC buscar_productos (tolerancia a typos + expansión
+// marca<->molécula); si no existe en la BD, cae al ILIKE legacy.
 export async function buscarProductos(req, res) {
   const { ok, valor: termino } = normalizarTerminoBusqueda(req.query.q ?? req.query.search);
   if (!ok) return res.json([]);
 
+  const columnas = req.user ? COLUMNAS_BUSQUEDA_CON_SESION : COLUMNAS_BUSQUEDA;
+  const limite = limiteBusquedaLigera(req.query.limit);
+
   try {
+    const { data: filasRpc, error: errorRpc } = await supabase.rpc('buscar_productos', {
+      p_termino: termino,
+      p_limite: limite,
+    });
+
+    if (errorRpc && !esErrorRpcInexistente(errorRpc)) throw errorRpc;
+
+    if (!errorRpc) {
+      const ids = (filasRpc || []).map((f) => f.producto_id);
+      if (ids.length === 0) return res.json([]);
+      const productos = await fetchProductosPorIds(ids, columnas);
+      return res.json(ordenarPorIds(productos, ids));
+    }
+
+    advertirRpcBuscarProductosFaltante(errorRpc);
+
     const { data, error } = await supabase
       .from('productos')
-      .select(req.user ? COLUMNAS_BUSQUEDA_CON_SESION : COLUMNAS_BUSQUEDA)
+      .select(columnas)
       .eq('activo', true)
       .or(
         `nombre_comercial.ilike.*${termino}*,` +
@@ -120,7 +177,7 @@ export async function buscarProductos(req, res) {
         `laboratorio.ilike.*${termino}*`
       )
       .order('nombre_comercial', { ascending: true })
-      .limit(limiteBusquedaLigera(req.query.limit));
+      .limit(limite);
 
     if (error) throw error;
     res.json(data || []);
@@ -162,6 +219,69 @@ export async function getProductos(req, res) {
   const to = from + limitNum - 1;
 
   try {
+    // ── Camino RPC (nuevo) ──────────────────────────────────────────────────
+    // Solo con `search` y sin `ids` (el modo lista manual de la vitrina no
+    // busca por texto). La RPC resuelve tolerancia a typos + expansión
+    // marca<->molécula y aplica los mismos filtros del catálogo inline.
+    // Sin `page` el backend histórico NO limitaba el resultado (los
+    // consumidores recortan con .slice() en el frontend) → p_limite null.
+    if (search && ids === undefined) {
+      const args = construirArgsBuscarProductos({
+        termino: search,
+        limite: usarPaginacion ? limitNum : null,
+        offset: usarPaginacion ? from : 0,
+        orden: sort,
+        linea: linea ? (NORMALIZAR_LINEA[String(linea).toLowerCase()] || linea) : null,
+        categoria: categoria || null,
+        laboratorio: laboratorio || null,
+        forma: forma || null,
+        disponible: disponible === 'true' ? true : disponible === 'false' ? false : null,
+        sinPrecio: sin_precio === 'true',
+        precioMin: precio_min,
+        precioMax: precio_max,
+        molecula: molecula || null,
+        marcaId: marca_id,
+      });
+
+      const { data: filasRpc, error: errorRpc } = await supabase.rpc('buscar_productos', args);
+
+      if (errorRpc && !esErrorRpcInexistente(errorRpc)) throw errorRpc;
+
+      if (!errorRpc) {
+        const idsPagina = (filasRpc || []).map((f) => f.producto_id);
+        const total = filasRpc && filasRpc.length > 0 ? filasRpc[0].total : 0;
+
+        if (idsPagina.length === 0) {
+          return usarPaginacion
+            ? res.json({ productos: [], total: 0, hasMore: false, page: pageNum })
+            : res.json([]);
+        }
+
+        const productos = await fetchProductosPorIds(idsPagina, '*, marcas(id, nombre)');
+        const productosOrdenados = ordenarPorIds(productos, idsPagina);
+        const productosConDescuento = await enriquecerPrecios(productosOrdenados, req.user?.etiqueta);
+
+        if (!usarPaginacion) {
+          const productosConRating = await enriquecerConValoraciones(productosConDescuento);
+          return res.json(omitirCostos(productosConRating));
+        }
+
+        return res.json({
+          productos: omitirCostos(productosConDescuento),
+          total,
+          hasMore: total > to + 1,
+          page: pageNum,
+        });
+      }
+
+      advertirRpcBuscarProductosFaltante(errorRpc);
+      // Sigue el camino legacy de abajo (ILIKE sobre nombre_comercial).
+    }
+
+    // ── Camino legacy (PostgREST) ───────────────────────────────────────────
+    // Se mantiene íntegro: sin `search`, con `ids` (vitrina), o como fallback
+    // cuando la RPC 046 no está aplicada en la BD.
+
     // Filtro por principio activo (molécula normalizada). Se resuelve aparte
     // porque depende de la RPC buscar_moleculas + la tabla puente producto_moleculas,
     // antes de poder filtrar la tabla productos por id.
