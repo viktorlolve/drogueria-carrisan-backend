@@ -271,6 +271,17 @@ Objetivo: crear un catálogo público de consulta (`productos_catalogo`) basado 
 6. **Carga en Supabase** (COMPLETADA 2026-09-05): migración 014 ejecutada, `scripts/cargar-catalogo.sql` cargado → **7,416 productos** activos, **6,149 con molécula enlazada**. RPCs verificados (`catalogo_metadata`, `catalogo_listar`, `catalogo_producto`). Nota: `cargar-catalogo.sql` es idempotente (upsert por `ef`, desactiva los que desaparecen en re-importaciones). Estado actual del bridge/composición (2026-09-10): `moleculas_referencias` **4,282**, `catalogo_moleculas` **6,329** enlaces, 1,878 productos sin molécula (esperado). Detalles en el AGENTS raíz (sección vademécum clínico).
 7. **Catálogo INHRR → tienda (IMPLEMENTADO 2026-09-07)**: copió `productos_catalogo`→`productos` como "consultar precio" (`precio_usd=NULL, disponible=false`; migraciones 016–020 + script `scripts/importar-tienda.mjs`, idempotente por `fuente_inhrr_ef` → **7,356 insertadas**, bridge `producto_moleculas` **6,109**, RPC `productos_por_atc(2,'N02')`=92). Gestión de precios: admin `POST /products/precios-bulk` + `GET /products/stats` + filtros `sin_precio`/`disponible` (todas con `notificarDisponibles` al publicar), y staff Comercial **`/staff/precios`** (`controllers/staff.precios.controller.js` + `routes/staff.precios.routes.js`, montado ANTES del `/staff` base; `PATCH /lote` antes de `PATCH /:id`; roles `vendedor/administrador/director/admin`). **REGLA cumplida**: `construirOrden` rechaza `precio_usd` NULL/0 aunque `disponible=true`. QA funcional EJECUTADO (2026-09-09/10) + **rutas "avísame" montadas (2026-09-10)**: `GET/POST/DELETE /products/:id/avisame` en `productos.routes.js` con `verifyJWT` consumiendo `alertasDisponibilidad.controller.js`. Pendiente operativo (no bloquea): limpieza del QA (cuentas QA, scripts `_qa_*.mjs`, logs) y decidir estado TRAMAL. Detalle completo en el AGENTS.md raíz (sección "Catálogo INHRR → tienda + gestión de precios"). **NOTA**: después de la reconstrucción por SKUs (2026-09-08) `productos` bajó a **2,314 filas** y **NO se corre `importar-tienda.mjs`** (su upsert depende del UNIQUE de `fuente_inhrr_ef` que eliminó la migración 024).
 
+### Avísame cuando llegue unificado (IMPLEMENTADO - 2026-10-06)
+
+Unifica "Avísame cuando llegue" con el pipeline de Solicitudes (spec/plan en el AGENTS raíz: `analisis/design-avisame-unificado-2026-10-06.md` + `analisis/plan-avisame-unificado-2026-10-06.md`).
+
+- **Migración `047_notificaciones_url.sql`** (APLICADA): columna `notificaciones.url text NULL` (deep-link). `crearNotificacion(usuario_id, tipo, titulo, mensaje, orden_id = null, url = null)` — `url` opcional; el push usa `url || (orden_id ? "/orders/"+orden_id : "/")`.
+- **`alPublicarPrecio(producto)`** (`alertasDisponibilidad.controller.js:152`) — helper CENTRAL, reemplaza a `notificarDisponibles` (**prohibido reintroducirlo; `git grep notificarDisponibles src/` debe dar 0**). Lo llaman: `updateProducto` (admin), `precios-bulk`, `/staff/precios` (editar y lote), inventario e `importar-proveedor` (vía `productosPublicados`). Efecto: notifica UNA vez por usuario (`tipo='producto_disponible'`, "Ya llegó {producto}", `url='/producto/:id'`) a suscriptores de alerta + dueños de requerimientos abiertos con ese producto; marca alertas `notificado=true`; items `estado_item: pendiente→listo`; requerimientos `pendiente→respondido` (`fecha_respuesta`) solo si no les queda ningún item pendiente. Devuelve `usuario_id[]` (los usa `responderRequerimiento` para dedupe). Fire-and-forget: nunca lanza al caller (catch → `[]`).
+- **`suscribirseAlerta`** (`POST /products/:id/avisame`): inserta la fila de `alertas_disponibilidad` y, TOLERANTE a fallo, llama el helper privado `crearRequerimientoAutomatico(usuario_id, producto_id)`: guard anti-duplicado (requerimiento pendiente del usuario con item `estado_item='pendiente'` enlazado al mismo `producto_id`), crea requerimiento + item (`nombre_solicitado` = nombre del producto, `producto_id`, `cantidad:1`; si falla el item, borra el requerimiento y relanza) y notifica staff `requerimiento_nuevo` vía `emitirNotificacionStaff`. `cancelarAlerta` borra la fila de alerta (no el requerimiento).
+- **`responderRequerimiento`** (`requerimientos.controller.js:117`) ramifica **en DB** por `itemDb.producto_id` (seguridad real, no el payload): `producto_id != null` → producto EXISTENTE: valida `precio_unitario > 0`, `UPDATE productos` (precio + `disponible:true`), item `→listo`, `await alPublicarPrecio(producto)` y dedupe de la noti `requerimiento_respondido` para los ya notificados — NUNCA crea producto nuevo; `producto_id == null` → camino manual histórico (crea producto `visible_catalogo:false` con `nombre_final` y pega `producto_id` al item).
+- **Estados**: requerimiento `pendiente|respondido`, item `pendiente|listo|rechazado`. `productos.id` es INTEGER.
+- Frontend: `FilasConfianza(sinPrecio)` + `ProductoDetalle` (CTA único), click de noti `url`, modales read-only para producto existente. Detalle en AGENTS raíz/frontend.
+
 ### Rate Limiting (5 limiters)
 
 Proteccion anti-bot del registro: `authLimiter` (10 req/15 min por IP) cubre TODAS las rutas `/auth` (via `app.use('/auth', authLimiter)` en `server.js`) y `/staff/login` + `/staff/registro`. **No hay Turnstile** (eliminado 2026-09-28, ver abajo), asi que estos limiters son la unica barrera contra registros automatizados.
@@ -321,7 +332,7 @@ Proteccion anti-bot del registro: `authLimiter` (10 req/15 min por IP) cubre TOD
 | logistica.controller.js | Logística: retiros, incidencias, verificar-paquete, completadas, agencias |
 | cupones.controller.js | Cupones giftcard admin |
 | catalogo.controller.js | Catálogo público INHRR: `catalogo_listar`/`catalogo_producto`/`catalogo_metadata` |
-| alertasDisponibilidad.controller.js | "Avísame cuando llegue": alertas por producto sin precio |
+| alertasDisponibilidad.controller.js | "Avísame cuando llegue unificado": alertas + `alPublicarPrecio` central (resuelve requerimientos + notifica con url) |
 | shorts.controller.js | Shorts/videos cortos (público) |
 | noticias.controller.js | Noticias |
 | registroInvita.controller.js | Registro por invitación (status/config) |
@@ -338,7 +349,7 @@ Proteccion anti-bot del registro: `authLimiter` (10 req/15 min por IP) cubre TOD
 
 ## Migraciones SQL
 
-Ubicacion: `src/migrations/` (010-037)
+Ubicacion: `src/migrations/` (010-040 + 047)
 
 Las migraciones son SQL plano. NO hay sistema de migraciones automatico — se ejecutan manualmente en Supabase SQL Editor. Varios números quedaron duplicados (025, 026, 032) porque se crearon en paralelo — verificar por nombre de archivo.
 
@@ -377,6 +388,7 @@ Las migraciones son SQL plano. NO hay sistema de migraciones automatico — se e
 | 036_perfiles_profesional_cedula.sql | Perfiles profesional: cédula |
 | 037_etiquetas_precio.sql | Etiquetas de precio en productos |
 | 040_job_ejecucion.sql | Historial persistente de los jobs programados: tabla `job_ejecucion` (una fila por job) + RPC atómico `job_ejecucion_registrar(...)` (upsert + incremento de contadores en una sola transacción). **APLICADA en BD 2026-09-29** (conexión directa `SUPABASE_DB_*`; verificada: el RPC acumula contadores y un arranque real escribió su fila). Requerida por el scheduler externo, el panel `/admin/monitoreo` y el catch-up on boot. |
+| 047_notificaciones_url.sql | "Avísame" unificado: columna `notificaciones.url text NULL` (deep-link de notificación, p.ej. `/producto/:id` para "Ya llegó"). APLICADA 2026-10-06 |
 
 **NOTA**: Las migraciones 002-009 ya NO existen como archivos (fueron consolidadas/aplicadas directamente en Supabase). La tabla principal `users` tampoco esta en estas migraciones — fue creada directamente en Supabase. Si necesitas ver su schema, busca las queries en los controllers (especialmente auth.controller.js y users.controller.js).
 
