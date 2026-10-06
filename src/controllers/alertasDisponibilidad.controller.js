@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js';
 import { crearNotificacion } from './notificaciones.controller.js';
+import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
 
 // ---------------------------------------------------------
 // "Avísame cuando llegue" — para productos con precio_usd = 0.
@@ -30,6 +31,8 @@ export async function getEstadoAlerta(req, res) {
 }
 
 // POST /products/:id/avisame — suscribirse
+// Además del aviso, crea un requerimiento pendiente para que Comercial tenga
+// el lead en /staff/solicitudes (flujo unificado "Avísame cuando llegue").
 export async function suscribirseAlerta(req, res) {
   const { id: producto_id } = req.params;
   const usuario_id = req.user.id;
@@ -51,11 +54,70 @@ export async function suscribirseAlerta(req, res) {
       .insert({ usuario_id, producto_id });
 
     if (error) throw error;
+
+    // Tolerante a fallo: la suscripción ya quedó hecha y es la función
+    // principal del endpoint. Si el requerimiento falla, se loguea y ya.
+    try {
+      await crearRequerimientoAutomatico(usuario_id, producto_id);
+    } catch (errAuto) {
+      console.error('Error al crear requerimiento automático de avísame:', errAuto);
+    }
+
     res.status(201).json({ suscrito: true });
   } catch (err) {
     console.error('Error al suscribirse a la alerta:', err);
     res.status(500).json({ error: 'Error del servidor' });
   }
+}
+
+// Crea el requerimiento + item (con producto_id) que alimenta /staff/solicitudes.
+async function crearRequerimientoAutomatico(usuario_id, producto_id) {
+  const { data: producto, error: errProd } = await supabase
+    .from('productos')
+    .select('nombre_comercial')
+    .eq('id', producto_id)
+    .single();
+  if (errProd || !producto) return;
+
+  // Guard anti-duplicado: si este usuario ya tiene un requerimiento pendiente
+  // con este producto, no crear otro (p.ej. canceló la suscripción y la re-puso).
+  const { data: previo, error: errPrevio } = await supabase
+    .from('requerimiento_items')
+    .select('id, requerimientos!inner(id, usuario_id, estado)')
+    .eq('producto_id', producto_id)
+    .eq('estado_item', 'pendiente')
+    .eq('requerimientos.usuario_id', usuario_id)
+    .eq('requerimientos.estado', 'pendiente')
+    .limit(1)
+    .maybeSingle();
+  if (errPrevio) throw errPrevio;
+  if (previo) return;
+
+  const { data: requerimiento, error: errorReq } = await supabase
+    .from('requerimientos')
+    .insert({ usuario_id })
+    .select('id')
+    .single();
+  if (errorReq) throw errorReq;
+
+  const { error: errorItems } = await supabase
+    .from('requerimiento_items')
+    .insert({
+      requerimiento_id: requerimiento.id,
+      nombre_solicitado: producto.nombre_comercial,
+      producto_id,
+      cantidad: 1,
+    });
+  if (errorItems) {
+    await supabase.from('requerimientos').delete().eq('id', requerimiento.id);
+    throw errorItems;
+  }
+
+  await emitirNotificacionStaff({
+    tipo: 'requerimiento_nuevo',
+    titulo: 'Nuevo requerimiento (avísame)',
+    mensaje: `Cliente #${usuario_id} se suscribió a "${producto.nombre_comercial}" y pide precio.`,
+  });
 }
 
 // DELETE /products/:id/avisame — cancelar suscripción
