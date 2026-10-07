@@ -207,12 +207,31 @@ export async function registrarStaff(req, res) {
 
 // GET /staff/despacho — cola de órdenes en estado 'enviado', las más
 // antiguas primero (orden de despacho, no de creación reciente).
+// ?tipo=delivery | envio_nacional separa las dos colas de Despacho
+// (Delivery y Envíos por agencia); sin parámetro = todas, como siempre.
+// Mismo criterio que el badge correspondiente (staffBadges.js): si cambia
+// uno, hay que cambiar el otro (scripts/staffBadges.test.mjs lo exige).
 export async function getColaDespacho(req, res) {
   try {
-    const { data, error } = await supabase
+    const { tipo } = req.query;
+    if (tipo && tipo !== 'delivery' && tipo !== 'envio_nacional') {
+      return res.status(400).json({ error: 'tipo inválido: use delivery o envio_nacional' });
+    }
+
+    let query = supabase
       .from('ordenes')
       .select('*, users(id, nombre, email, telefono), direcciones_envio(direccion, ciudad, estado), ordenes_items(*, productos(nombre_comercial))')
-      .eq('estado', 'enviado')
+      .eq('estado', 'enviado');
+
+    // Legacy: órdenes sin tipo_envio caen en Delivery (retiro jamás llega a
+    // 'enviado', así que todo lo que está en la cola es delivery o agencia).
+    if (tipo === 'delivery') {
+      query = query.or('tipo_envio.eq.delivery,tipo_envio.is.null');
+    } else if (tipo === 'envio_nacional') {
+      query = query.eq('tipo_envio', 'envio_nacional');
+    }
+
+    const { data, error } = await query
       // Una orden con incidencia abierta ya la atendio el motorizado: si
       // apareciera aqui otra vez podria reportarla dos veces. Envios = lo que
       // falta entregar; Incidencias = lo que fallo. Las dos colas son disjuntas.

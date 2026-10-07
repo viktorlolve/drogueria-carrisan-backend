@@ -23,10 +23,17 @@ function aplicarFiltros(query, filtros) {
   if (filtros.incidencia === false) {
     query = query.is('incidencia_motivo', null);
   }
+  // Mismo criterio que getColaDespacho: delivery incluye el legacy sin
+  // tipo_envio (retiro jamás llega a 'enviado'); agencia es explícito.
+  if (filtros.tipo_envio === 'delivery') {
+    query = query.or('tipo_envio.eq.delivery,tipo_envio.is.null');
+  } else if (filtros.tipo_envio) {
+    query = query.eq('tipo_envio', filtros.tipo_envio);
+  }
   return query;
 }
 
-// Un head-count por clave: payload cero, 6 queries cheap. No hace falta un RPC
+// Un head-count por clave: payload cero, 7 queries cheap. No hace falta un RPC
 // en Postgres para esto (ver design 3.4).
 async function contar(clave) {
   const query = aplicarFiltros(

@@ -858,7 +858,7 @@ await crearNotificacion(
       reporte.usuario_id,
       'pago_verificado',
       'Pago verificado',
-      `Tu pago fue verificado. ${orden_ids.length === 1 ? `Tu orden #${orden_ids[0]}` : `Tus ��rdenes ${orden_ids.map(o => `#${o}`).join(', ')}`} continǧa su preparaci��n.`,
+      `Tu pago fue verificado. ${orden_ids.length === 1 ? `Tu orden #${orden_ids[0]}` : `Tus ordenes ${orden_ids.map(o => `#${o}`).join(', ')}`} continuan su preparación.`,
       null
     );
 
@@ -1045,7 +1045,7 @@ await crearNotificacion(
       orden.usuario_id,
       'pago_verificado',
       'Pago verificado',
-      `Tu pago fue verificado. Tu orden #${orden.id} continǧa su preparaci��n.`,
+      `Tu pago fue verificado. Tu orden #${orden.id} continua su preparación`,
       null
     );
 

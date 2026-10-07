@@ -14,6 +14,8 @@
 //   pagoAutorizado: true  → .or('forma_pago.eq.credito,and(forma_pago.eq.contado,estado_pago.eq.verificado)')
 //   incidencia: true      → .not('incidencia_motivo', 'is', null)
 //   incidencia: false     → .is('incidencia_motivo', null)
+//   tipo_envio: 'delivery'        → .or('tipo_envio.eq.delivery,tipo_envio.is.null')
+//   tipo_envio: 'envio_nacional'  → .eq('tipo_envio', 'envio_nacional')
 //
 // TRAMPA — NULL en `estado_pago`: un `.neq('estado_pago','verificado')` a secas
 // DESCARTA las filas con `estado_pago IS NULL`, que son justamente las que
@@ -40,8 +42,12 @@ export const FILTROS_BADGES = {
   // GET /staff/logistica/retiros
   retiros: { estado: 'listo_para_retiro' },
 
-  // GET /staff/despacho (con el filtro de incidencia que se agrega en este task)
-  envios: { estado: 'enviado', incidencia: false },
+  // GET /staff/despacho?tipo=delivery (con el filtro de incidencia que se
+  // agrega en este task). Las dos colas de Despacho son disjuntas: Delivery
+  // = tipo_envio delivery (y el legacy sin tipo_envio, que nunca fue retiro),
+  // Envíos = tipo_envio envio_nacional.
+  delivery: { estado: 'enviado', incidencia: false, tipo_envio: 'delivery' },
+  envios: { estado: 'enviado', incidencia: false, tipo_envio: 'envio_nacional' },
 
   // GET /staff/logistica/incidencias
   incidencias: { incidencia: true, estado_ne: 'cancelado' },
@@ -52,6 +58,7 @@ export const CLAVES_BADGES = [
   'preparar',
   'preparar_esperando_pago',
   'retiros',
+  'delivery',
   'envios',
   'incidencias',
 ];

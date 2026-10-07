@@ -6,12 +6,13 @@ import {
   esPagoAutorizado,
 } from '../src/services/staffBadges.js';
 
-test('las 6 claves del badge están declaradas y no hay más', () => {
+test('las 7 claves del badge están declaradas y no hay más', () => {
   assert.deepEqual(CLAVES_BADGES, [
     'nuevas',
     'preparar',
     'preparar_esperando_pago',
     'retiros',
+    'delivery',
     'envios',
     'incidencias',
   ]);
@@ -27,7 +28,25 @@ test('cada filtro replica EXACTAMENTE la cola que representa', () => {
   // es el que obliga a revisar el badge (o al revés, que ya no miente).
   assert.deepEqual(FILTROS_BADGES.nuevas, { estado: 'pedido_creado' });
   assert.deepEqual(FILTROS_BADGES.retiros, { estado: 'listo_para_retiro' });
-  assert.deepEqual(FILTROS_BADGES.envios, { estado: 'enviado', incidencia: false });
+  assert.deepEqual(FILTROS_BADGES.envios, {
+    estado: 'enviado',
+    incidencia: false,
+    tipo_envio: 'envio_nacional',
+  });
+  assert.deepEqual(FILTROS_BADGES.delivery, {
+    estado: 'enviado',
+    incidencia: false,
+    tipo_envio: 'delivery',
+  });
+});
+
+test('delivery y envios (agencia) son disjuntas por tipo_envio', () => {
+  assert.notEqual(FILTROS_BADGES.delivery.tipo_envio, FILTROS_BADGES.envios.tipo_envio);
+  assert.equal(FILTROS_BADGES.delivery.estado, 'enviado');
+  assert.equal(FILTROS_BADGES.envios.estado, 'enviado');
+  // ambas excluyen incidencias: Incidencias = lo que fallo
+  assert.equal(FILTROS_BADGES.delivery.incidencia, false);
+  assert.equal(FILTROS_BADGES.envios.incidencia, false);
 });
 
 test('preparar = accionable; preparar_esperando_pago = informativo', () => {
