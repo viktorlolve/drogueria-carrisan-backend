@@ -81,7 +81,7 @@ export function armarNombre(ctx) {
   //    con la marca al frente) no empieza por ella. Las combinaciones de varias
   //    palabras ('Sodio Cloruro', 'Hierro Sacarosa', 'Agua Destilada') se
   //    conservan: forman parte del nombre visible del producto.
-  const tokensMol = normalizar(molecula || '').split(/\s+/).filter((t) => t.length > 2);
+  const tokensMol = normalizar(molecula || '').split(/\s+/).filter((t) => t.length > 3);
   if (molecula && tokensMol.length === 1 && !empiezaConMolecula(s, molecula)) {
     s = quitarMolecula(s, molecula);
   }
@@ -101,7 +101,7 @@ export function armarNombre(ctx) {
   const palabraAmpollaEnCrudo = /(ampoll|inyect)/i.test(String(nombreCrudo || ''));
   if (!/X\s*\d+\s*AMPOLL/i.test(s)) {
     if (porCaja) s = `${s} X ${porCaja} AMPOLLAS`;
-    else if (palabraAmpollaEnCrudo || (proveedor === 'bc-group' && maxVol <= 100)) {
+    else if (palabraAmpollaEnCrudo || (proveedor === 'bc-group' && maxVol > 0 && maxVol <= 100)) {
       s = `${s} X AMPOLLA`;
     }
   }

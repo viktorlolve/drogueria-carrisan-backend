@@ -87,3 +87,11 @@ test('extraerVolumenes ignora dosis en mg', () => {
   assert.deepEqual(extraerVolumenes('CIPRO 200 MG/100ML'), [100]);
   assert.deepEqual(extraerVolumenes('CIPRO 200 MG'), []);
 });
+
+test('bc-group sin volúmenes no recibe sufijo de ampolla (maxVol=0 no cuenta)', () => {
+  assert.equal(
+    armarNombre({ proveedor: 'bc-group', nombreCrudo: 'SINVOL 500 MG', marca: 'SINVOL',
+      laboratorio: 'CASA DE REPRESENTACION BC GROUP MEDICAL C.A.', molecula: 'Paracetamol',
+      seccionHint: 'LINEA ANALGESICOS', volumenes: [], porCaja: null }),
+    'SINVOL 500 MG');
+});
