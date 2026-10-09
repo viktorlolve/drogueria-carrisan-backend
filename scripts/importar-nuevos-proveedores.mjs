@@ -169,7 +169,126 @@ async function dryRun() {
   }
 }
 
-// ---------- apply (Task 11 lo completa) ----------
-async function apply() { /* ver Task 11 */ }
+// ---------- apply ----------
+async function siguienteSku(db, categoria) {
+  // Solo SKUs con cero inicial (los nuevos); los INHRR (ME41487) nunca colisionan.
+  const r = await db.query(
+    `SELECT sku FROM productos WHERE sku ~ $1 ORDER BY sku DESC LIMIT 1`,
+    [`^${categoria}0[0-9]{4}$`]);
+  const n = r.rows.length ? Number(r.rows[0].sku.slice(2)) + 1 : 1;
+  if (n > 9999) throw new Error(`SKU agotado para ${categoria}`);
+  return skuSiguiente(categoria, n);
+}
+
+async function apply() {
+  const db = conectar();
+  await db.connect();
+  try {
+    const matcheados = leerCsv(`data/${PREFIJO}_matcheados.csv`).filter((f) => !f.flag);
+    const nuevos = leerCsv(`data/${PREFIJO}_nuevos.csv`).filter((f) => !f.flag)
+      .concat(leerCsv(`data/${PREFIJO}_revisar.csv`).filter((f) => !f.flag));
+    const saltados = leerCsv(`data/${PREFIJO}_nuevos.csv`).filter((f) => f.flag)
+      .concat(leerCsv(`data/${PREFIJO}_revisar.csv`).filter((f) => f.flag));
+    if (!matcheados.length && !nuevos.length) { console.log('Nada para aplicar (todo con flag).'); return; }
+
+    // 1. BACKUP de previos (spec §9)
+    const ids = matcheados.map((f) => Number(f.producto_id));
+    const previos = ids.length
+      ? (await db.query(
+          `SELECT id, nombre_comercial, costo_usd, precio_usd, foto_url FROM productos WHERE id = ANY($1)`, [ids])).rows
+      : [];
+    emitirCsv(`data/${PREFIJO}_backup_previos.csv`,
+      ['id', 'nombre_comercial', 'costo_usd', 'precio_usd', 'foto_url'], previos);
+
+    await db.query('BEGIN');
+    try {
+      // 2. MATCH: upsert costo + recalc MIN + precio (spec §9.1)
+      for (const f of matcheados) {
+        await db.query(
+          `INSERT INTO producto_costos (proveedor, producto_id, costo_usd, fecha)
+           VALUES ($1, $2, $3, now())
+           ON CONFLICT (proveedor, producto_id)
+           DO UPDATE SET costo_usd = EXCLUDED.costo_usd, fecha = now()`,
+          [f.proveedor, Number(f.producto_id), Number(f.costo_nuevo)]);
+      }
+      const idsMatch = [...new Set(ids)];
+      let afectados = [];
+      if (idsMatch.length) {
+        afectados = (await db.query(
+          `UPDATE productos p
+              SET costo_usd = m.min, precio_usd = ROUND(m.min / $2, 2)
+             FROM (SELECT producto_id, MIN(costo_usd) AS min
+                     FROM producto_costos WHERE producto_id = ANY($1) GROUP BY 1) m
+            WHERE p.id = m.producto_id
+            RETURNING p.id, p.nombre_comercial, p.precio_usd`, [idsMatch, MARGEN])).rows;
+      }
+
+      // 3. NUEVO: SKU secuencial + insert + costo + puente de molécula (spec §9.2)
+      const creados = [];
+      for (const f of nuevos) {
+        const dup = await db.query(
+          `SELECT id FROM productos WHERE laboratorio = $1 AND nombre_comercial = $2 LIMIT 1`,
+          [f.laboratorio, f.nombre_comercial]);
+        if (dup.rows.length) { console.log(`  ya aplicado (skip): ${f.nombre_comercial}`); continue; }
+        const sku = await siguienteSku(db, f.categoria);
+        const r = await db.query(
+          `INSERT INTO productos
+             (nombre_comercial, descripcion, molecula, linea, forma, presentacion,
+              unidades_por_presentacion, laboratorio, sku, costo_usd, precio_usd,
+              foto_estado, activo, visible_catalogo, disponible,
+              requiere_cotizacion, es_cotizacion)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'sin_foto',true,true,true,false,false)
+           RETURNING id`,
+          [f.nombre_comercial, f.nombre_comercial, f.molecula || null, f.linea, f.forma || null,
+           f.presentacion || null, f.unidades ? Number(f.unidades) : null, f.laboratorio, sku,
+           Number(f.costo_usd), Number(f.precio_sugerido)]);
+        const pid = r.rows[0].id;
+        await db.query(
+          `INSERT INTO producto_costos (proveedor, producto_id, costo_usd, fecha)
+           VALUES ($1, $2, $3, now())
+           ON CONFLICT (proveedor, producto_id) DO UPDATE SET costo_usd = EXCLUDED.costo_usd, fecha = now()`,
+          [f.proveedor, pid, Number(f.costo_usd)]);
+        if (f.ref_id) {
+          await db.query(
+            `INSERT INTO producto_moleculas (producto_id, molecula_id) VALUES ($1, $2)
+             ON CONFLICT (producto_id, molecula_id) DO NOTHING`, [pid, Number(f.ref_id)]);
+        } else {
+          console.warn(`  SIN REF: ${sku} ${f.nombre_comercial} (molecula texto: ${f.molecula})`);
+        }
+        creados.push({ sku, id: pid, nombre: f.nombre_comercial, foto_propuesta: f.foto_propuesta || '' });
+      }
+      await db.query('COMMIT');
+
+      // 4. alPublicarPrecio solo para MATCH cuyo precio cambió (spec §9.1)
+      const previoPorId = new Map(previos.map((p) => [p.id, p]));
+      const { alPublicarPrecio } = await import('../src/controllers/alertasDisponibilidad.controller.js');
+      let publicados = 0;
+      for (const a of afectados) {
+        const prev = previoPorId.get(a.id);
+        if (prev && Number(prev.precio_usd) !== Number(a.precio_usd)) {
+          await alPublicarPrecio(a);
+          publicados++;
+        }
+      }
+
+      emitirCsv(`data/${PREFIJO}_aplicado.csv`,
+        ['tipo', 'id', 'sku', 'nombre', 'proveedor', 'costo', 'precio'],
+        [
+          ...matcheados.map((f) => ({ tipo: 'MATCH', id: f.producto_id, sku: '',
+            nombre: f.nombre_bd, proveedor: f.proveedor, costo: f.costo_nuevo, precio: f.precio_nuevo })),
+          ...creados.map((c) => ({ tipo: 'NUEVO', id: c.id, sku: c.sku, nombre: c.nombre,
+            proveedor: '', costo: '', precio: '' })),
+        ]);
+      console.log(`\nAPLICADO: ${matcheados.length} match, ${creados.length} nuevos, ${publicados} publicados.`);
+      if (saltados.length) console.log(`Saltados con flag (${saltados.length}) → ver ${PREFIJO}_revisar.csv / _nuevos.csv`);
+      console.log('Siguiente: fotos → node scripts/importar-nuevos-proveedores.mjs --apply ... (Task 12)');
+    } catch (e) {
+      await db.query('ROLLBACK');
+      throw e;
+    }
+  } finally {
+    await db.end();
+  }
+}
 
 if (APPLY) await apply(); else await dryRun();
