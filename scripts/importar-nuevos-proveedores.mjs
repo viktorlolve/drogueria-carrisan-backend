@@ -169,6 +169,41 @@ async function dryRun() {
   }
 }
 
+// ---- fase de fotos (Task 12, plan §verbatim; con foto_propuesta vacía es un no-op) ----
+async function aplicarFotos(db, creados, nuevos) {
+  if (!creados.length) return 0;
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY;
+  if (!url || !key) throw new Error('Faltan SUPABASE_URL / SUPABASE_SERVICE_KEY');
+  const { createClient } = await import('@supabase/supabase-js');
+  const storage = createClient(url, key, { auth: { persistSession: false } });
+  const bucket = storage.storage.from('crsnimages');
+  const sharp = (await import('sharp')).default;
+  const crypto = await import('node:crypto');
+  let subidas = 0;
+  for (const c of creados) {
+    const fila = nuevos.find((n) => n.nombre_comercial === c.nombre);
+    if (!fila?.foto_propuesta) continue;
+    try {
+      const resp = await fetch(fila.foto_propuesta);
+      if (!resp.ok) throw new Error(`fetch ${resp.status}`);
+      const buf = Buffer.from(await resp.arrayBuffer());
+      const jpeg = await sharp(buf).rotate().resize({ width: 1200, withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer();
+      const ruta = `catalogo/${crypto.randomUUID()}.jpg`;
+      const { error } = await bucket.upload(ruta, jpeg, { contentType: 'image/jpeg', upsert: false });
+      if (error) throw new Error(`upload: ${error.message}`);
+      const pub = bucket.getPublicUrl(ruta).data.publicUrl;
+      const r = await db.query(
+        `UPDATE productos SET foto_url = $1, foto_estado = 'ok'
+          WHERE id = $2 AND foto_url IS NULL`, [pub, c.id]);   // nunca pisa foto existente
+      if (r.rowCount) subidas++; else await bucket.remove([ruta]);
+    } catch (e) {
+      console.warn(`  FOTO FALLA ${c.sku} ${c.nombre}: ${e.message} (queda sin_foto)`);
+    }
+  }
+  return subidas;
+}
+
 // ---------- apply ----------
 async function siguienteSku(db, categoria) {
   // Solo SKUs con cero inicial (los nuevos); los INHRR (ME41487) nunca colisionan.
@@ -271,6 +306,9 @@ async function apply() {
         }
       }
 
+      // 4b. fotos de los NUEVOS a Storage (spec §10; no-op si no hay foto_propuesta)
+      const subidas = await aplicarFotos(db, creados, nuevos);
+
       emitirCsv(`data/${PREFIJO}_aplicado.csv`,
         ['tipo', 'id', 'sku', 'nombre', 'proveedor', 'costo', 'precio'],
         [
@@ -279,9 +317,9 @@ async function apply() {
           ...creados.map((c) => ({ tipo: 'NUEVO', id: c.id, sku: c.sku, nombre: c.nombre,
             proveedor: '', costo: '', precio: '' })),
         ]);
-      console.log(`\nAPLICADO: ${matcheados.length} match, ${creados.length} nuevos, ${publicados} publicados.`);
+      console.log(`\nAPLICADO: ${matcheados.length} match, ${creados.length} nuevos, ${publicados} publicados, fotos subidas=${subidas}.`);
       if (saltados.length) console.log(`Saltados con flag (${saltados.length}) → ver ${PREFIJO}_revisar.csv / _nuevos.csv`);
-      console.log('Siguiente: fotos → node scripts/importar-nuevos-proveedores.mjs --apply ... (Task 12)');
+      console.log('Siguiente: verificar → node scripts/verificar-importacion-nuevos.mjs ' + PREFIJO);
     } catch (e) {
       await db.query('ROLLBACK');
       throw e;
