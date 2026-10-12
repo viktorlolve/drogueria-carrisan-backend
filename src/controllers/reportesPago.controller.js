@@ -101,13 +101,19 @@ export async function createReportePago(req, res) {
       .update({ estado_pago: 'reportado' })
       .in('id', orden_ids);
 
-    if (errorUpdateOrdenes) throw errorUpdateOrdenes;
+    if (errorUpdateOrdenes) {
+      // Rollback compensatorio: el reporte y sus vínculos ya se insertaron pero las
+      // órdenes no quedaron marcadas → se limpian para no dejar un reporte huérfano.
+      await supabase.from('reporte_pago_ordenes').delete().eq('reporte_pago_id', reporte.id);
+      await supabase.from('reportes_pago').delete().eq('id', reporte.id);
+      throw errorUpdateOrdenes;
+    }
 
-await crearNotificacion(
+    await crearNotificacion(
       usuario_id,
       'pago_reportado',
       'Pago reportado',
-      `Reportaste tu pago por Bs. ${monto_bs.toFixed(2)} (${orden_ids.length === 1 ? `orden #${orden_ids[0]}` : `${orden_ids.length} ��rdenes`}). Lo verificaremos pronto.`,
+      `Reportaste tu pago por Bs. ${monto_bs.toFixed(2)} (${orden_ids.length === 1 ? `orden #${orden_ids[0]}` : `${orden_ids.length} órdenes`}). Lo verificaremos pronto.`,
       null
     );
 
@@ -234,49 +240,65 @@ export async function verificarReportePago(req, res) {
       .select()
       .single();
 
-    if (errorUpdateReporte) throw errorUpdateReporte;
+    if (errorUpdateReporte) {
+      // Rollback compensatorio: sin esto quedaba un pago huérfano si fallaba el update del reporte.
+      await supabase.from('pagos').delete().eq('id', pago.id);
+      throw errorUpdateReporte;
+    }
 
     // 4. Saber qué órdenes del reporte aún están en 'procesando' (legacy)
     //    para migrarlas a 'preparando' con su historial.
-    const { data: ordenesActuales, error: errorEstados } = await supabase
-      .from('ordenes')
-      .select('id, estado')
-      .in('id', orden_ids);
-    if (errorEstados) throw errorEstados;
-
-    const enProcesando = (ordenesActuales || []).filter(o => o.estado === 'procesando');
-
-    const { error: errorUpdatePagoOrdenes } = await supabase
-      .from('ordenes')
-      .update({ estado_pago: 'verificado' })
-      .in('id', orden_ids);
-
-    if (errorUpdatePagoOrdenes) throw errorUpdatePagoOrdenes;
-
-    for (const orden of enProcesando) {
-      const { error: errorUpdateEstado } = await supabase
+    //    Todo el bloque es multi-tabla sin transacción: si algo falla se revierte
+    //    lo escrito (reporte, órdenes y pago) para no dejar el reporte "verificado"
+    //    sin efecto real ni un pago sin reflejo en las órdenes.
+    try {
+      const { data: ordenesActuales, error: errorEstados } = await supabase
         .from('ordenes')
-        .update({ estado: 'preparando' })
-        .eq('id', orden.id);
+        .select('id, estado')
+        .in('id', orden_ids);
+      if (errorEstados) throw errorEstados;
 
-      if (errorUpdateEstado) throw errorUpdateEstado;
+      const enProcesando = (ordenesActuales || []).filter(o => o.estado === 'procesando');
 
-      const { error: errorHistorial } = await supabase
-        .from('ordenes_historial')
-        .insert({ 
-          orden_id: orden.id, 
-          estado: 'preparando' 
-        });
+      const { error: errorUpdatePagoOrdenes } = await supabase
+        .from('ordenes')
+        .update({ estado_pago: 'verificado' })
+        .in('id', orden_ids);
 
-      if (errorHistorial) throw errorHistorial;
+      if (errorUpdatePagoOrdenes) throw errorUpdatePagoOrdenes;
+
+      for (const orden of enProcesando) {
+        const { error: errorUpdateEstado } = await supabase
+          .from('ordenes')
+          .update({ estado: 'preparando' })
+          .eq('id', orden.id);
+
+        if (errorUpdateEstado) throw errorUpdateEstado;
+
+        const { error: errorHistorial } = await supabase
+          .from('ordenes_historial')
+          .insert({
+            orden_id: orden.id,
+            estado: 'preparando'
+          });
+
+        if (errorHistorial) throw errorHistorial;
+      }
+    } catch (e) {
+      await supabase.from('reportes_pago')
+        .update({ estado: 'pendiente_verificacion', verificado_por: null, fecha_verificacion: null })
+        .eq('id', id);
+      await supabase.from('ordenes').update({ estado_pago: 'reportado' }).in('id', orden_ids);
+      await supabase.from('pagos').delete().eq('id', pago.id);
+      throw e;
     }
 
-// 5. Notificar al cliente
+    // 5. Notificar al cliente
     await crearNotificacion(
       reporte.usuario_id,
       'pago_verificado',
       'Pago verificado',
-      `Tu pago fue verificado. ${orden_ids.length === 1 ? `Tu orden #${orden_ids[0]}` : `Tus ��rdenes ${orden_ids.map(o => `#${o}`).join(', ')}`} continǧa su preparaci��n.`,
+      `Tu pago fue verificado. ${orden_ids.length === 1 ? `Tu orden #${orden_ids[0]}` : `Tus órdenes ${orden_ids.map(o => `#${o}`).join(', ')}`} continúa su preparación.`,
       null
     );
 

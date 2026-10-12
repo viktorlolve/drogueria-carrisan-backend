@@ -31,53 +31,80 @@ export async function getResumenClientes(req, res) {
 
     if (errorClientes) throw errorClientes;
 
-    const resumen = await Promise.all(
-      clientes.map(async (cliente) => {
-        const { data: ordenesDeuda } = await supabase
-          .from('ordenes')
-          .select('total_usd')
-          .eq('usuario_id', cliente.id)
-          .neq('estado', 'cancelado')
-          .neq('estado_pago', 'verificado');
+    const clienteIds = (clientes || []).map((c) => c.id);
 
-        const { data: facturas } = await supabase
-          .from('facturas')
-          .select('tipo, monto_facturado, anulada')
-          .eq('usuario_id', cliente.id);
+    // Batch (evita N+1): órdenes con deuda, facturas y pagos de TODOS los
+    // clientes en 3 queries, agrupadas en memoria.
+    const [ordenesRes, facturasRes, pagosRes] = await Promise.all([
+      clienteIds.length
+        ? supabase
+            .from('ordenes')
+            .select('usuario_id, total_usd')
+            .in('usuario_id', clienteIds)
+            .neq('estado', 'cancelado')
+            .or('estado_pago.neq.verificado,estado_pago.is.null')
+        : Promise.resolve({ data: [], error: null }),
+      clienteIds.length
+        ? supabase
+            .from('facturas')
+            .select('usuario_id, tipo, monto_facturado, anulada')
+            .in('usuario_id', clienteIds)
+        : Promise.resolve({ data: [], error: null }),
+      clienteIds.length
+        ? supabase
+            .from('pagos')
+            .select('usuario_id, monto')
+            .in('usuario_id', clienteIds)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+    if (ordenesRes.error) throw ordenesRes.error;
+    if (facturasRes.error) throw facturasRes.error;
+    if (pagosRes.error) throw pagosRes.error;
 
-        const { data: pagos } = await supabase
-          .from('pagos')
-          .select('monto')
-          .eq('usuario_id', cliente.id);
+    const agruparPorUsuario = (filas) => {
+      const m = new Map();
+      for (const f of filas || []) {
+        if (!m.has(f.usuario_id)) m.set(f.usuario_id, []);
+        m.get(f.usuario_id).push(f);
+      }
+      return m;
+    };
+    const ordenesPorUsuario = agruparPorUsuario(ordenesRes.data);
+    const facturasPorUsuario = agruparPorUsuario(facturasRes.data);
+    const pagosPorUsuario = agruparPorUsuario(pagosRes.data);
 
-        let total_facturado = 0;
-        let notasDebito = 0;
-        let notasCredito = 0;
-        for (const f of facturas || []) {
-          if (f.anulada) continue;
-          if (f.tipo === 'nota_debito') notasDebito += Number(f.monto_facturado || 0);
-          else if (f.tipo === 'nota_credito') notasCredito += Number(f.monto_facturado || 0);
-          else total_facturado += Number(f.monto_facturado || 0);
-        }
+    const resumen = (clientes || []).map((cliente) => {
+      const ordenesDeuda = ordenesPorUsuario.get(cliente.id) || [];
+      const facturas = facturasPorUsuario.get(cliente.id) || [];
+      const pagos = pagosPorUsuario.get(cliente.id) || [];
 
-        const ordenesDeudaTotal = (ordenesDeuda || []).reduce((sum, o) => sum + Number(o.total_usd), 0);
-        const deuda_actual = ordenesDeudaTotal + notasDebito - notasCredito;
-        const total_pagado = (pagos || []).reduce((sum, p) => sum + Number(p.monto), 0);
+      let total_facturado = 0;
+      let notasDebito = 0;
+      let notasCredito = 0;
+      for (const f of facturas) {
+        if (f.anulada) continue;
+        if (f.tipo === 'nota_debito') notasDebito += Number(f.monto_facturado || 0);
+        else if (f.tipo === 'nota_credito') notasCredito += Number(f.monto_facturado || 0);
+        else total_facturado += Number(f.monto_facturado || 0);
+      }
 
-        return {
-          id: cliente.id,
-          nombre: cliente.nombre,
-          email: cliente.email,
-          rif_cedula: cliente.rif_cedula,
-          telefono: cliente.telefono,
-          linea_credito: Number(cliente.linea_credito || 0),
-          total_facturado,
-          total_pagado,
-          deuda_actual,
-          saldo: Number(cliente.linea_credito || 0) - deuda_actual,
-        };
-      })
-    );
+      const ordenesDeudaTotal = ordenesDeuda.reduce((sum, o) => sum + Number(o.total_usd), 0);
+      const deuda_actual = ordenesDeudaTotal + notasDebito - notasCredito;
+      const total_pagado = pagos.reduce((sum, p) => sum + Number(p.monto), 0);
+
+      return {
+        id: cliente.id,
+        nombre: cliente.nombre,
+        email: cliente.email,
+        rif_cedula: cliente.rif_cedula,
+        telefono: cliente.telefono,
+        linea_credito: Number(cliente.linea_credito || 0),
+        total_facturado,
+        total_pagado,
+        deuda_actual,
+        saldo: Number(cliente.linea_credito || 0) - deuda_actual,
+      };
+    });
 
     res.json(resumen);
   } catch (err) {
@@ -107,7 +134,7 @@ export async function getEstadoCuentaCliente(req, res) {
       .select('id, total_usd, forma_pago, estado, estado_pago, created_at, fecha_vencimiento')
       .eq('usuario_id', usuario_id)
       .neq('estado', 'cancelado')
-      .neq('estado_pago', 'verificado');
+      .or('estado_pago.neq.verificado,estado_pago.is.null');
 
     if (errorOrdenes) throw errorOrdenes;
 
@@ -282,7 +309,13 @@ export async function createPago(req, res) {
         .update({ estado: 'pagada' })
         .in('id', factura_ids);
 
-      if (errorEstado) throw errorEstado;
+      if (errorEstado) {
+        // Rollback compensatorio: el pago y sus vínculos ya se insertaron pero las
+        // facturas no quedaron marcadas → se limpian para no dejar un pago huérfano.
+        await supabase.from('pago_facturas').delete().eq('pago_id', pago.id);
+        await supabase.from('pagos').delete().eq('id', pago.id);
+        throw errorEstado;
+      }
     }
 
     const facturasTexto = factura_ids && factura_ids.length > 0
@@ -529,7 +562,7 @@ const nombreDoc = labelTipo(tipo);
       Number(usuario_id),
       'factura_emitida',
       `${nombreDoc} emitida`,
-      `Se emiti�� la ${nombreDoc.toLowerCase()} #${numero_factura} por $${montoUSD.toFixed(2)}`,
+      `Se emitió la ${nombreDoc.toLowerCase()} #${numero_factura} por $${montoUSD.toFixed(2)}`,
       null
     );
 
@@ -702,23 +735,14 @@ export async function getOrdenesSinFacturar(req, res) {
   const { solo_pagadas } = req.query;
 
   try {
-    const { data: ordenesFacturadas, error: errorFacturadas } = await supabase
-      .from('factura_ordenes')
-      .select('orden_id');
-
-    if (errorFacturadas) throw errorFacturadas;
-
-    const idsFacturados = ordenesFacturadas.map(o => o.orden_id);
-
+    // Antes se traía TODA la tabla factura_ordenes (todas las facturas del sistema)
+    // solo para excluir las de este cliente. Ahora se acota al cliente y se trae la
+    // relación facturada por embedding (to-one: objeto o null), sin escanear la tabla.
     let query = supabase
       .from('ordenes')
-      .select('id, created_at, total_usd, forma_pago, estado, estado_pago')
+      .select('id, created_at, total_usd, forma_pago, estado, estado_pago, factura_ordenes(orden_id)')
       .eq('usuario_id', Number(id))
       .order('created_at', { ascending: false });
-
-    if (idsFacturados.length > 0) {
-      query = query.not('id', 'in', idsFacturados);
-    }
 
     // Facturación: solo se facturan órdenes pagadas (verificadas) y no canceladas.
     if (solo_pagadas === '1' || solo_pagadas === 'true') {
@@ -728,7 +752,11 @@ export async function getOrdenesSinFacturar(req, res) {
     const { data, error } = await query;
     if (error) throw error;
 
-    res.json(data);
+    const sinFacturar = (data || [])
+      .filter((o) => !o.factura_ordenes)
+      .map(({ factura_ordenes, ...resto }) => resto);
+
+    res.json(sinFacturar);
   } catch (err) {
     console.error('Error al obtener órdenes sin facturar (contabilidad):', err);
     res.status(500).json({ error: 'Error del servidor' });
@@ -815,46 +843,61 @@ export async function verificarReportePago(req, res) {
       .select()
       .single();
 
-    if (errorUpdateReporte) throw errorUpdateReporte;
+    if (errorUpdateReporte) {
+      // Rollback compensatorio: sin esto quedaba un pago huérfano si fallaba el update del reporte.
+      await supabase.from('pagos').delete().eq('id', pago.id);
+      throw errorUpdateReporte;
+    }
 
     // Saber qué órdenes del reporte aún están en 'procesando' (legacy)
     // para migrarlas a 'preparando' con su evento de historial. Las que
     // ya están en 'preparando' solo cambian estado_pago (condición de
     // pago, no estado logístico).
-    const { data: ordenesActuales, error: errorEstados } = await supabase
-      .from('ordenes')
-      .select('id, estado')
-      .in('id', orden_ids);
-    if (errorEstados) throw errorEstados;
-
-    const enProcesando = (ordenesActuales || []).filter(o => o.estado === 'procesando');
-
-    const { error: errorUpdatePagoOrdenes } = await supabase
-      .from('ordenes')
-      .update({ estado_pago: 'verificado' })
-      .in('id', orden_ids);
-
-    if (errorUpdatePagoOrdenes) throw errorUpdatePagoOrdenes;
-
-    for (const orden of enProcesando) {
-      const { error: errorUpdateEstado } = await supabase
+    // Bloque multi-tabla sin transacción: si algo falla se revierte lo escrito
+    // (reporte, órdenes y pago) para no dejar el reporte "verificado" sin efecto.
+    try {
+      const { data: ordenesActuales, error: errorEstados } = await supabase
         .from('ordenes')
-        .update({ estado: 'preparando' })
-        .eq('id', orden.id);
+        .select('id, estado')
+        .in('id', orden_ids);
+      if (errorEstados) throw errorEstados;
 
-      if (errorUpdateEstado) throw errorUpdateEstado;
+      const enProcesando = (ordenesActuales || []).filter(o => o.estado === 'procesando');
 
-      const { error: errorHistorial } = await supabase
-        .from('ordenes_historial')
-        .insert({
-          orden_id: orden.id,
-          estado: 'preparando',
-        });
+      const { error: errorUpdatePagoOrdenes } = await supabase
+        .from('ordenes')
+        .update({ estado_pago: 'verificado' })
+        .in('id', orden_ids);
 
-      if (errorHistorial) throw errorHistorial;
+      if (errorUpdatePagoOrdenes) throw errorUpdatePagoOrdenes;
+
+      for (const orden of enProcesando) {
+        const { error: errorUpdateEstado } = await supabase
+          .from('ordenes')
+          .update({ estado: 'preparando' })
+          .eq('id', orden.id);
+
+        if (errorUpdateEstado) throw errorUpdateEstado;
+
+        const { error: errorHistorial } = await supabase
+          .from('ordenes_historial')
+          .insert({
+            orden_id: orden.id,
+            estado: 'preparando',
+          });
+
+        if (errorHistorial) throw errorHistorial;
+      }
+    } catch (e) {
+      await supabase.from('reportes_pago')
+        .update({ estado: 'pendiente_verificacion', verificado_por_staff: null, fecha_verificacion: null })
+        .eq('id', id);
+      await supabase.from('ordenes').update({ estado_pago: 'reportado' }).in('id', orden_ids);
+      await supabase.from('pagos').delete().eq('id', pago.id);
+      throw e;
     }
 
-await crearNotificacion(
+    await crearNotificacion(
       reporte.usuario_id,
       'pago_verificado',
       'Pago verificado',

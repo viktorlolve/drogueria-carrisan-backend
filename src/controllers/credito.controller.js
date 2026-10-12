@@ -26,65 +26,83 @@ export async function getAgingReport(req, res) {
     if (errClientes) throw errClientes;
 
     const ahora = new Date();
-    const reporte = await Promise.all(
-      clientes.map(async (cliente) => {
-        // Órdenes con deuda: no canceladas, no verificadas
-        const { data: ordenesRaw } = await supabase
-          .from('ordenes')
-          .select('id, total_usd, estado, estado_pago, created_at, fecha_vencimiento')
-          .eq('usuario_id', cliente.id)
-          .neq('estado', 'cancelado')
-          .neq('estado_pago', 'verificado');
+    const clienteIds = (clientes || []).map((c) => c.id);
 
-        const ordenes = (ordenesRaw || []).map((o) => ({
-          ...o,
-          vencida: !!o.fecha_vencimiento && new Date(o.fecha_vencimiento) < ahora,
-          dias_vencida: o.fecha_vencimiento
-            ? Math.max(0, Math.floor((ahora - new Date(o.fecha_vencimiento)) / 86400000))
-            : 0,
-        }));
+    // Batch (evita N+1): una query para las órdenes con deuda de TODOS los
+    // clientes y otra para sus notas de seguimiento, agrupadas en memoria.
+    const [ordenesRes, notasRes] = await Promise.all([
+      clienteIds.length
+        ? supabase
+            .from('ordenes')
+            .select('id, usuario_id, total_usd, estado, estado_pago, created_at, fecha_vencimiento')
+            .in('usuario_id', clienteIds)
+            .neq('estado', 'cancelado')
+            .or('estado_pago.neq.verificado,estado_pago.is.null')
+        : Promise.resolve({ data: [], error: null }),
+      clienteIds.length
+        ? supabase
+            .from('cobranza_notas')
+            .select('usuario_id, fecha_seguimiento')
+            .in('usuario_id', clienteIds)
+            .not('fecha_seguimiento', 'is', null)
+            .gte('fecha_seguimiento', ahora.toISOString().split('T')[0])
+            .order('fecha_seguimiento', { ascending: true })
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+    if (ordenesRes.error) throw ordenesRes.error;
+    if (notasRes.error) throw notasRes.error;
 
-        const deuda_total = ordenes.reduce((s, o) => s + Number(o.total_usd), 0);
-        const deuda_vencida = ordenes.filter((o) => o.vencida).reduce((s, o) => s + Number(o.total_usd), 0);
+    const ordenesPorUsuario = new Map();
+    for (const o of ordenesRes.data || []) {
+      if (!ordenesPorUsuario.has(o.usuario_id)) ordenesPorUsuario.set(o.usuario_id, []);
+      ordenesPorUsuario.get(o.usuario_id).push(o);
+    }
 
-        // Buckets de aging (solo órdenes vencidas)
-        const buckets = { '0-30': 0, '31-60': 0, '61-90': 0, '90+': 0 };
-        for (const o of ordenes.filter((o) => o.vencida)) {
-          const d = o.dias_vencida;
-          if (d <= 30) buckets['0-30'] += Number(o.total_usd);
-          else if (d <= 60) buckets['31-60'] += Number(o.total_usd);
-          else if (d <= 90) buckets['61-90'] += Number(o.total_usd);
-          else buckets['90+'] += Number(o.total_usd);
-        }
+    // Primera fecha de seguimiento por usuario (las notas vienen ordenadas asc).
+    const seguimientoPorUsuario = new Map();
+    for (const n of notasRes.data || []) {
+      if (!seguimientoPorUsuario.has(n.usuario_id)) {
+        seguimientoPorUsuario.set(n.usuario_id, n.fecha_seguimiento);
+      }
+    }
 
-        // Órdenes vencidas count
-        const ordenes_vencidas_count = ordenes.filter((o) => o.vencida).length;
+    const reporte = (clientes || []).map((cliente) => {
+      const ordenes = (ordenesPorUsuario.get(cliente.id) || []).map((o) => ({
+        ...o,
+        vencida: !!o.fecha_vencimiento && new Date(o.fecha_vencimiento) < ahora,
+        dias_vencida: o.fecha_vencimiento
+          ? Math.max(0, Math.floor((ahora - new Date(o.fecha_vencimiento)) / 86400000))
+          : 0,
+      }));
 
-        // Próxima fecha de seguimiento pendiente
-        const { data: notaSeg } = await supabase
-          .from('cobranza_notas')
-          .select('fecha_seguimiento')
-          .eq('usuario_id', cliente.id)
-          .not('fecha_seguimiento', 'is', null)
-          .gte('fecha_seguimiento', ahora.toISOString().split('T')[0])
-          .order('fecha_seguimiento', { ascending: true })
-          .limit(1)
-          .single();
+      const deuda_total = ordenes.reduce((s, o) => s + Number(o.total_usd), 0);
+      const deuda_vencida = ordenes.filter((o) => o.vencida).reduce((s, o) => s + Number(o.total_usd), 0);
 
-        return {
-          id: cliente.id,
-          nombre: cliente.nombre,
-          email: cliente.email,
-          linea_credito: Number(cliente.linea_credito || 0),
-          deuda_total,
-          deuda_vencida,
-          buckets,
-          ordenes_vencidas_count,
-          credito_bloqueado: cliente.credito_bloqueado || false,
-          proximo_seguimiento: notaSeg?.fecha_seguimiento || null,
-        };
-      })
-    );
+      // Buckets de aging (solo órdenes vencidas)
+      const buckets = { '0-30': 0, '31-60': 0, '61-90': 0, '90+': 0 };
+      for (const o of ordenes.filter((o) => o.vencida)) {
+        const d = o.dias_vencida;
+        if (d <= 30) buckets['0-30'] += Number(o.total_usd);
+        else if (d <= 60) buckets['31-60'] += Number(o.total_usd);
+        else if (d <= 90) buckets['61-90'] += Number(o.total_usd);
+        else buckets['90+'] += Number(o.total_usd);
+      }
+
+      const ordenes_vencidas_count = ordenes.filter((o) => o.vencida).length;
+
+      return {
+        id: cliente.id,
+        nombre: cliente.nombre,
+        email: cliente.email,
+        linea_credito: Number(cliente.linea_credito || 0),
+        deuda_total,
+        deuda_vencida,
+        buckets,
+        ordenes_vencidas_count,
+        credito_bloqueado: cliente.credito_bloqueado || false,
+        proximo_seguimiento: seguimientoPorUsuario.get(cliente.id) || null,
+      };
+    });
 
     // Ordenar por deuda_vencida DESC (mayor prioridad primero)
     reporte.sort((a, b) => b.deuda_vencida - a.deuda_vencida);
@@ -124,7 +142,7 @@ export async function getClienteCredito(req, res) {
       .select('id, total_usd, forma_pago, estado, estado_pago, created_at, fecha_vencimiento')
       .eq('usuario_id', usuario_id)
       .neq('estado', 'cancelado')
-      .neq('estado_pago', 'verificado');
+      .or('estado_pago.neq.verificado,estado_pago.is.null');
 
     const ordenes = (ordenesRaw || []).map((o) => ({
       ...o,
@@ -205,7 +223,7 @@ export async function getLineaClientes(req, res) {
       .select('usuario_id, total_usd')
       .in('usuario_id', ids)
       .neq('estado', 'cancelado')
-      .neq('estado_pago', 'verificado');
+      .or('estado_pago.neq.verificado,estado_pago.is.null');
 
     const deudaPorCliente = {};
     for (const o of ordenesRaw || []) {
@@ -293,8 +311,8 @@ export async function setLineaCredito(req, res) {
       await crearNotificacion(
         usuario_id,
         'credito_bloqueado',
-        'L��nea de crǸdito suspendida',
-        'Tu l��nea de crǸdito fue ajustada a $0. Contacta a la empresa ante cualquier duda.',
+        'Línea de crédito suspendida',
+        'Tu línea de crédito fue ajustada a $0. Contacta a la empresa ante cualquier duda.',
         null
       );
     }
@@ -455,7 +473,7 @@ export async function toggleBloqueoCredito(req, res) {
 await crearNotificacion(
       usuario_id,
       bloqueado ? 'credito_bloqueado' : 'credito_desbloqueado',
-      bloqueado ? 'CrǸdito suspendido' : 'CrǸdito reactivado',
+      bloqueado ? 'Crédito suspendido' : 'Crédito reactivado',
       mensaje,
       null
     );

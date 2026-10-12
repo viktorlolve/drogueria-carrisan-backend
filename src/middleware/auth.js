@@ -15,7 +15,7 @@ export async function verifyJWT(req, res, next) {
 
     const { data: user, error } = await supabase
       .from('users')
-      .select('token_version, activo')
+      .select('token_version, activo, es_admin')
       .eq('id', decoded.id)
       .single();
 
@@ -31,7 +31,10 @@ export async function verifyJWT(req, res, next) {
       return res.status(401).json({ error: 'Sesión revocada, inicia sesión de nuevo' });
     }
 
-    req.user = decoded; 
+    // Refrescar es_admin desde la BD, NO confiar en el rol congelado en el token:
+    // si al usuario le quitan el admin, sus tokens vigentes seguían sirviendo como
+    // admin hasta expirar. Mismo criterio que verifyStaffJWT (el rol no sale del JWT).
+    req.user = { ...decoded, es_admin: !!user.es_admin };
     next();
   } catch (error) {
     return res.status(401).json({ error: 'Token inválido o expirado' });

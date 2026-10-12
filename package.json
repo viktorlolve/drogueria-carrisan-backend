@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon src/server.js",
+    "dev": "node --watch src/server.js",
     "start": "node src/server.js"
   },
   "type": "module",
@@ -12,29 +12,25 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@duckdb/node-api": "^1.5.5-r.4",
     "@supabase/supabase-js": "^2.115.0",
     "axios": "^1.20.0",
     "bcrypt": "^6.0.0",
     "cheerio": "^1.2.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
-    "duckdb": "^1.4.4",
     "express": "^5.2.1",
     "express-rate-limit": "^7.4.1",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^1.4.5-lts.1",
     "node-cron": "^4.6.0",
-    "open": "^11.0.1",
     "pg": "^8.23.0",
-    "postgres": "^3.4.9",
     "sharp": "^0.35.4",
     "web-push": "^3.6.7",
-    "xlsx": "^0.18.5"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "@duckdb/node-api": "^1.5.6-r.1"
   },
   "repository": {
     "type": "git",

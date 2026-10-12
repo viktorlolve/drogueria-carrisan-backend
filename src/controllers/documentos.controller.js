@@ -91,7 +91,7 @@ if (tipo.automatica) {
       await crearNotificacion(
         usuario_id,
         'documento_listo',
-        `Tu ${tipo.label} estǭ listo`,
+        `Tu ${tipo.label} está listo`,
         `Tienes ${HORAS_VIGENCIA_AUTOMATICA} horas para descargarlo desde Mis Solicitudes.`,
         null
       );
@@ -256,7 +256,7 @@ await crearNotificacion(
       solicitud.usuario_id,
       'documento_rechazado',
       'Tu solicitud de documento fue rechazada',
-      nota_admin || 'Contǭctanos para mǭs informaci��n.',
+      nota_admin || 'Contáctanos para más información.',
       null
     );
 

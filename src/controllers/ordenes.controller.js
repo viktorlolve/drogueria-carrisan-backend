@@ -269,23 +269,23 @@ export async function construirOrden(usuario_id, datos, opciones = {}) {
       throw new ErrorOrden(403, 'Crédito suspendido. Contacte a la empresa para regularizar su cuenta.');
     }
 
-    const { data: facturas, error: errorFacturas } = await supabase
-      .from('facturas')
-      .select('monto_facturado')
-      .eq('usuario_id', usuario_id);
+    // Deuda actual con la MISMA definición que el módulo de Crédito/Cuentas por
+    // cobrar (y la que el cliente ve en su estado de cuenta): suma de órdenes no
+    // canceladas que todavía no tienen pago verificado. ANTES se calculaba como
+    // facturas−pagos, una definición distinta: una orden a crédito sin factura no
+    // contaba como deuda aquí pero sí en Finanzas, así que el checkout aceptaba o
+    // rechazaba crédito de forma inconsistente con lo que veía el cliente.
+    // OJO PostgREST: .neq() NO incluye NULL → .or() para las órdenes a crédito.
+    const { data: ordenesConDeuda, error: errorDeuda } = await supabase
+      .from('ordenes')
+      .select('total_usd')
+      .eq('usuario_id', usuario_id)
+      .neq('estado', 'cancelado')
+      .or('estado_pago.neq.verificado,estado_pago.is.null');
 
-    if (errorFacturas) throw errorFacturas;
+    if (errorDeuda) throw errorDeuda;
 
-    const { data: pagos, error: errorPagos } = await supabase
-      .from('pagos')
-      .select('monto')
-      .eq('usuario_id', usuario_id);
-
-    if (errorPagos) throw errorPagos;
-
-    const total_facturado = facturas.reduce((sum, f) => sum + Number(f.monto_facturado), 0);
-    const total_pagado = pagos.reduce((sum, p) => sum + Number(p.monto), 0);
-    const deuda_actual = total_facturado - total_pagado;
+    const deuda_actual = (ordenesConDeuda || []).reduce((sum, o) => sum + Number(o.total_usd), 0);
     const saldo_disponible = Number(cliente.linea_credito) - deuda_actual;
 
     if (saldo_disponible >= totalFinal) {

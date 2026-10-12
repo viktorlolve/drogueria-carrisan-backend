@@ -112,7 +112,7 @@ export async function getResumen(req, res) {
       .from('ordenes')
       .select('id, total_usd, fecha_vencimiento')
       .neq('estado', 'cancelado')
-      .neq('estado_pago', 'verificado')
+      .or('estado_pago.neq.verificado,estado_pago.is.null')
       .not('fecha_vencimiento', 'is', null)
       .lte('fecha_vencimiento', hastaFin);
 

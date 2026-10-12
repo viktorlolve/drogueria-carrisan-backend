@@ -16,7 +16,9 @@ const POR_PAGINA_DEFAULT = 20;
 const POR_PAGINA_MAX = 50;
 
 // Lógica de deuda replicada de credito.controller.js L31-46
-// Supabase .neq() es NULL-safe (PostgREST incluye NULL).
+// OJO: Supabase .neq() NO es NULL-safe (PostgREST usa <> y descarta los NULL).
+// Las órdenes a crédito tienen estado_pago NULL, así que el filtro correcto es
+// .or('estado_pago.neq.verificado,estado_pago.is.null'). Corregido 2026-10-12.
 async function calcularDeudasPorUsuarioIds(ids) {
   if (!ids.length) return {};
   const { data: ordenesRaw } = await supabase
@@ -24,7 +26,7 @@ async function calcularDeudasPorUsuarioIds(ids) {
     .select('usuario_id, total_usd, fecha_vencimiento')
     .in('usuario_id', ids)
     .neq('estado', 'cancelado')
-    .neq('estado_pago', 'verificado');
+    .or('estado_pago.neq.verificado,estado_pago.is.null');
 
   const ahora = new Date();
   const deudas = {};

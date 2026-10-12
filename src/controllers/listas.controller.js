@@ -195,6 +195,20 @@ export async function removeItemFromLista(req, res) {
   const { id, productoId } = req.params;
 
   try {
+    // Verificar que la lista pertenece al usuario (mismo control que getListaItems).
+    // Sin esto, cualquier usuario autenticado podía borrar items de listas ajenas
+    // con solo conocer/adivinar los ids (IDOR).
+    const { data: lista, error: errorLista } = await supabase
+      .from('listas')
+      .select('id')
+      .eq('id', id)
+      .eq('usuario_id', req.user.id)
+      .single();
+
+    if (errorLista || !lista) {
+      return res.status(404).json({ error: 'Lista no encontrada' });
+    }
+
     const { error } = await supabase
       .from('listas_items')
       .delete()

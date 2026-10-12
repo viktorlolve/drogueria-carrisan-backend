@@ -296,6 +296,21 @@ if (limpiezaOn) {
 // hace nada porque el `continue` va antes de cualquier query.
 correrCatchup().catch((err) => console.error('[catchup] fallo general:', err));
 
+// 404 JSON para rutas no montadas (el default de Express devuelve HTML).
+app.use((req, res) => {
+  res.status(404).json({ error: 'Ruta no encontrada' });
+});
+
+// Handler global de errores: captura las excepciones que lleguen por next()
+// (incluidas las rechazadas de handlers async en Express 5). Devuelve JSON
+// uniforme y NO expone el stack al cliente; el 5xx se loguea del lado servidor.
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error('Error no manejado:', err);
+  if (res.headersSent) return next(err);
+  res.status(err.status || 500).json({ error: 'Error del servidor' });
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
 });

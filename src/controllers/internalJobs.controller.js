@@ -9,7 +9,7 @@ async function pingHealthchecks(nombre) {
   const url = process.env[`HEALTHCHECKS_PING_${nombre.toUpperCase().replace(/-/g, '_')}`];
   if (!url) return;
   try {
-    await fetch(url, { method: 'GET' });
+    await fetch(url, { method: 'GET', signal: AbortSignal.timeout(8000) });
   } catch (err) {
     console.error(`[internal] fallo el ping a healthchecks de ${nombre}:`, err?.message || err);
   }

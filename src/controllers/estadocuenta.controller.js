@@ -40,7 +40,7 @@ export async function getEstadoCuenta(req, res) {
       .select('id, total_usd, forma_pago, estado, estado_pago, created_at, fecha_vencimiento')
       .eq('usuario_id', usuario_id)
       .neq('estado', 'cancelado')
-      .neq('estado_pago', 'verificado');
+      .or('estado_pago.neq.verificado,estado_pago.is.null');
 
     if (errorOrdenes) throw errorOrdenes;
 
@@ -183,7 +183,7 @@ export async function getResumenClientes(req, res) {
           .select('total_usd')
           .eq('usuario_id', cliente.id)
           .neq('estado', 'cancelado')
-          .neq('estado_pago', 'verificado');
+          .or('estado_pago.neq.verificado,estado_pago.is.null');
 
         const deuda_actual = (ordenesDeuda || []).reduce((sum, o) => sum + Number(o.total_usd), 0);
 

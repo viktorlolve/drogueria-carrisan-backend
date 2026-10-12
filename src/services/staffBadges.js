@@ -8,7 +8,7 @@
 //
 // Convenciones de los filtros:
 //   estado: string        → .eq('estado', estado)
-//   estado_ne: string     → .neq('estado', estado_ne)   (PostgREST .neq es NULL-safe)
+//   estado_ne: string     → .neq('estado', estado_ne)   (OJO: .neq NO es NULL-safe; aquí 'estado' nunca es NULL)
 //   forma_pago: string    → .eq('forma_pago', forma_pago)
 //   estado_pago: 'ne'     → .or('estado_pago.neq.verificado,estado_pago.is.null')
 //   pagoAutorizado: true  → .or('forma_pago.eq.credito,and(forma_pago.eq.contado,estado_pago.eq.verificado)')

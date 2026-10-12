@@ -12,6 +12,16 @@ const BUCKET = 'crsndocs';
 const TIPOS_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 const TAMANO_MAXIMO_BYTES = 2 * 1024 * 1024; // 2 MB
 
+// La extensión SIEMPRE se deriva del mimetype validado, nunca del `originalname`
+// (que lo controla el cliente): antes un archivo llamado "pwn.html" subido como
+// image/png se guardaba con extensión .html en un bucket público.
+const EXTENSIONES_POR_MIME = {
+  'application/pdf': 'pdf',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+};
+
 // POST /uploads/comprobante (cliente, multipart/form-data, campo "archivo")
 export async function subirComprobante(req, res) {
   const archivo = req.file;
@@ -30,7 +40,7 @@ export async function subirComprobante(req, res) {
     const usuario_id = req.user.id;
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2, 8);
-    const extension = archivo.originalname.split('.').pop();
+    const extension = EXTENSIONES_POR_MIME[archivo.mimetype] || 'bin';
     const nombreArchivo = `comprobantes/u${usuario_id}_${timestamp}-${random}.${extension}`;
 
     const { error } = await supabase.storage
@@ -60,12 +70,6 @@ const TIPOS_PERMITIDOS_REGISTRO = ['application/pdf'];
 // el resto de documentos del registro sigue siendo solo PDF.
 const DOCS_CON_IMAGEN = ['cedula_identidad'];
 const TIPOS_PERMITIDOS_CON_IMAGEN = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
-const EXTENSIONES_POR_MIME = {
-  'application/pdf': 'pdf',
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-};
 
 // POST /uploads/registro (público, multipart/form-data, campo "archivo")
 // Sin verifyJWT: durante el registro el usuario todavía no tiene cuenta

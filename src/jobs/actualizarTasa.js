@@ -21,7 +21,7 @@ const FUENTES = [
 async function consultarTasaExterna() {
   for (const fuente of FUENTES) {
     try {
-      const response = await fetch(fuente.url);
+      const response = await fetch(fuente.url, { signal: AbortSignal.timeout(8000) });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       const valor = fuente.extraer(data);

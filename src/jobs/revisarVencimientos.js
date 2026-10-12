@@ -38,7 +38,7 @@ export async function revisarVencimientos({ autoFreeze = true } = {}) {
       .from('ordenes')
       .select('id, usuario_id, total_usd, fecha_vencimiento')
       .neq('estado', 'cancelado')
-      .neq('estado_pago', 'verificado')
+      .or('estado_pago.neq.verificado,estado_pago.is.null')
       .eq('notificado_proximo', false)
       .not('fecha_vencimiento', 'is', null)
       .gte('fecha_vencimiento', ahoraISO)
@@ -84,7 +84,7 @@ export async function revisarVencimientos({ autoFreeze = true } = {}) {
         .from('ordenes')
         .select('usuario_id, total_usd, fecha_vencimiento')
         .neq('estado', 'cancelado')
-        .neq('estado_pago', 'verificado')
+        .or('estado_pago.neq.verificado,estado_pago.is.null')
         .not('fecha_vencimiento', 'is', null)
         .lt('fecha_vencimiento', limiteFreeze.toISOString());
 
@@ -145,7 +145,7 @@ export async function revisarVencimientos({ autoFreeze = true } = {}) {
       .from('ordenes')
       .select('id, usuario_id, total_usd, fecha_vencimiento')
       .neq('estado', 'cancelado')
-      .neq('estado_pago', 'verificado')
+      .or('estado_pago.neq.verificado,estado_pago.is.null')
       .eq('notificado_vencido', false)
       .not('fecha_vencimiento', 'is', null)
       .lt('fecha_vencimiento', ahoraISO);

@@ -31,7 +31,7 @@ export async function limpiezaNotificaciones() {
 
     const { count: eliminadasOfertas, error: errorOfertas } = await supabase
       .from('notificaciones')
-      .delete()
+      .delete({ count: 'exact' })
       .eq('tipo', 'oferta')
       .lt('created_at', limiteOfertas.toISOString());
 
@@ -48,7 +48,7 @@ export async function limpiezaNotificaciones() {
 
     const { count: eliminadasLeidas, error: errorLeidas } = await supabase
       .from('notificaciones')
-      .delete()
+      .delete({ count: 'exact' })
       .eq('leida', true)
       .lt('created_at', limiteLeidas.toISOString());
 
@@ -65,7 +65,7 @@ export async function limpiezaNotificaciones() {
 
     const { count: eliminadasNoLeidas, error: errorNoLeidas } = await supabase
       .from('notificaciones')
-      .delete()
+      .delete({ count: 'exact' })
       .eq('leida', false)
       .lt('created_at', limiteNoLeidas.toISOString());
 

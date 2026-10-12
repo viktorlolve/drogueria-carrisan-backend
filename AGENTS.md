@@ -459,6 +459,41 @@ Panel de salud para el dueño, implementado 2026-09-29. Detalle completo en el A
 
 **TRAMPA — un monitor cada 5 min es un pinger encubierto**: si UptimeRobot (o cualquier monitor externo) golpea `/health/deep` cada 5 minutos, el servicio **nunca duerme** y se vuelven a burningar las ~744 h/mes. Eso contradice el objetivo de las instance-hours. Si configurás un monitor externo, poné el intervalo **largo (30–60 min)** y aceptá que cada comprobación despierte el servicio, o no lo configures. Recordá que además despertarlo con `/health/deep` cuesta una query a la BD.
 
+## Auditoría de seguridad y calidad (IMPLEMENTADA — 2026-10-12)
+
+Revisión profunda del backend a raíz de 12 vulnerabilidades reportadas por Render. Todo lo de abajo está aplicado en el working tree (no commiteado) y verificado con `node --check` + `npm test` (382 pass) + `npm audit` (**0 vulnerabilities**). Herramienta: subagentes `general` (el harness free no deja usar `security/security-auditor` ni `devtools/code-reviewer`, fallan con "OpenCode's free tier…").
+
+**Dependencias (`package.json`)**:
+- Eliminados `duckdb`, `postgres`, `open` (no se usaban en runtime). `@duckdb/node-api` movido a **devDependencies** (solo lo usan scripts de importación). `nodemon` eliminado; el `dev` script es `node --watch src/server.js`.
+- `xlsx` pinneado al tarball parcheado del CDN de SheetJS: `"xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"` (0.18.5 tenía Prototype Pollution + ReDoS sin fix en npm). Verificado: los tests del importador pasan con 0.20.3.
+
+**B1 — `.neq()` de PostgREST NO es NULL-safe (bug de negocio)**: `.neq('estado_pago','verificado')` usa `<>` y **descarta los NULL**. Las órdenes a crédito tienen `estado_pago = NULL` por diseño, así que la deuda a crédito se contaba **1 en vez de 5**. Todas las ocurrencias (13, en `revisarVencimientos.js`, `estadocuenta`, `credito`, `contabilidad`, `monitoreo`, `reportes`, `staff.clientes`) se reemplazaron por el filtro NULL-inclusive `.or('estado_pago.neq.verificado,estado_pago.is.null')`. Regla general: **cualquier filtro de "no pagado" DEBE incluir `is.null`**.
+
+**Seguridad**:
+- **IDOR en listas**: `removeItemFromLista` (`listas.controller.js`) borraba un item por id **sin verificar dueño**. Ahora hace `.eq('usuario_id', req.user.id).single()` → 404 si no es del usuario (mismo patrón de `getListaItems`).
+- **`es_admin` desde el token**: `verifyJWT` (`middleware/auth.js`) confiaba en el `es_admin` del payload JWT (podía quedar stale si se revocaba el rol). Ahora selecciona `es_admin` de `users` y sobrescribe `req.user.es_admin`. Beneficia a `verifyAdmin`, `soloAdmin.middleware.js` y las rutas que lo usan (`notificaciones`, `promociones`).
+- **Extensión de archivos subidos**: `Uploads.controller.js` derivaba la extensión del nombre original (path traversal / extensión arbitraria). Ahora la deriva del MIME real con el mapa `EXTENSIONES_POR_MIME` (fallback `bin`).
+- **Multer en `/staff/precios/importar-proveedor`**: sin `fileFilter` ni traducción de errores. Se agregó `fileFilter` (`.xlsx/.xls/.csv`) y un wrapper que traduce errores de multer a JSON (mismo patrón de `staff.inventario.routes.js`).
+
+**A2 — Escrituras multi-tabla sin transacción**: como PostgREST no ofrece transacciones, se aplicó el patrón de **rollback compensatorio** ya usado en `construirOrden`:
+- `createPago` (staff): si falla el `UPDATE facturas → pagada`, se borran `pago_facturas` + `pagos` insertados.
+- `verificarReportePago` (staff `contabilidad.controller.js` y admin `reportesPago.controller.js`): si falla el update del reporte se borra el `pago`; si falla el bloque de órdenes (estado_pago + migración legacy `procesando→preparando`) se revierte el reporte a `pendiente_verificacion`, las órdenes a `estado_pago='reportado'` y se borra el pago.
+- `createReportePago`: si falla marcar las órdenes como `reportado`, se borra el reporte y sus vínculos.
+
+**A4 — Definición de deuda unificada**: `construirOrden` (`ordenes.controller.js`) validaba el crédito con `facturas − pagos` (−35.77 con data real) mientras Crédito usa las órdenes impagas (**167.57**). Ahora usa la definición canónica (órdenes no canceladas, no pagadas) → ambas pantallas coinciden.
+
+**A5 — N+1**: `getAgingReport` (`credito.controller.js`) hacía 2N queries (órdenes + `cobranza_notas` por cliente); `getResumenClientes` (`contabilidad.controller.js`) hacía 3N (órdenes + facturas + pagos por cliente). Ahora ambas hacen 3/2 queries batch `.in('usuario_id', ids)` y agrupan en memoria.
+
+**Robustez**:
+- `limpiezaNotificaciones.js`: los 3 `.delete()` sin `{ count: 'exact' }` devolvían `count: null` → logueaban "0 borradas". Agregado `count: 'exact'`.
+- `getOrdenesSinFacturar` (`contabilidad.controller.js`): cargaba **toda** la tabla `factura_ordenes` y filtraba en memoria; ahora embedding `factura_ordenes(orden_id)` (relación to-one → objeto o `null`) acotado a los ids del cliente.
+- **Timeouts en `fetch` externo** (`jobs/actualizarTasa.js`, `controllers/internalJobs.controller.js`): `AbortSignal.timeout(8000)`.
+- **Handler global de errores + 404 JSON** en `server.js` (al final, tras las rutas): devuelve JSON uniforme, loguea el 5xx y **no filtra el stack** al cliente. Cubre las promesas rechazadas de handlers async (Express 5 las reenvía a `next`).
+
+**Mojibake**: se limpiaron caracteres corruptos (U+FFFD / U+01F8 `é` / U+01ED `á` / U+01E7 `ú`) en strings de error de `credito`, `contabilidad`, `reportesPago` y `documentos`. Rescan completo de `src/` = 0 restantes.
+
+**Verificación final**: `npm audit` → **0 vulnerabilities**; `node --test` → **382 pass / 0 fail**; `node --check` en todos los archivos tocados. **No commiteado** (el working tree lo dejó listo el agente).
+
 ## Cosas a tener en cuenta
 
 1. **No hay ORM**. Cada query es inline en el controller. Si cambias una tabla en Supabase, busca todos los controllers que la referencien.

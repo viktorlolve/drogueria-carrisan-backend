@@ -80,7 +80,7 @@ async function construirEstado() {
     // si esto es > 0 de forma sostenida, ese job no se está ejecutando.
     contar('ordenes', (q) => q
       .neq('estado', 'cancelado')
-      .neq('estado_pago', 'verificado')
+      .or('estado_pago.neq.verificado,estado_pago.is.null')
       .eq('notificado_vencido', false)
       .not('fecha_vencimiento', 'is', null)
       .lt('fecha_vencimiento', ahoraISO)),
