@@ -194,6 +194,122 @@ export function armarCambiosPrecio(body) {
   };
 }
 
+// --- datos del producto ------------------------------------------------------
+//
+// Segundo camino de escritura de la consola: además de la foto y el precio, la
+// gerencia puede corregir los datos de texto del producto (nombre, laboratorio,
+// línea, forma, molécula…). Nada de esto toca `precio_usd`/`costo_usd`/`sku`/
+// `foto_url`: cada uno tiene su propio endpoint.
+
+// Los campos que este PATCH puede escribir. Cualquier otra cosa que venga en el
+// body se IGNORA — la whitelist es la barrera anti mass-assignment.
+export const CAMPOS_PRODUCTO_EDITABLES = [
+  'nombre_comercial',
+  'descripcion',
+  'laboratorio',
+  'molecula',
+  'linea',
+  'forma',
+  'pais_origen',
+  'activo',
+  'visible_catalogo',
+];
+
+// Topes de largo. `text` en Postgres no tiene límite; esto solo evita que un
+// body gigante se guarde. Son holgados a propósito (un nombre con presentación
+// ronda los 45 caracteres).
+export const NOMBRE_MAX = 500;
+export const TEXTO_MAX = 2000;
+
+/**
+ * Recorta un texto y trata el vacío como `null`.
+ * @returns {string|null}
+ * @throws {Error} si supera el tope
+ */
+function sanearTexto(valor, max) {
+  if (valor === null || valor === undefined) return null;
+  const v = String(valor).trim();
+  if (v === '') return null;
+  if (v.length > max) {
+    throw new Error(`El texto supera los ${max} caracteres`);
+  }
+  return v;
+}
+
+/**
+ * Limpia el nombre de un laboratorio. Quita comas y comillas dobles y colapsa
+ * espacios: el filtro del catálogo usa la COMA como separador multi-selección,
+ * así que un laboratorio con coma (`"DISTRILAB, C.A."`) se parte y deja de
+ * matchear (fix del 2026-09-30). Se limpia acá, no en el frontend, para que
+ * valga para cualquier cliente de la API.
+ * @returns {string|null}
+ */
+export function sanearLaboratorio(valor) {
+  if (valor === null || valor === undefined) return null;
+  const v = String(valor)
+    .replace(/[",]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (v === '') return null;
+  if (v.length > TEXTO_MAX) {
+    throw new Error(`El texto supera los ${TEXTO_MAX} caracteres`);
+  }
+  return v;
+}
+
+/** `true`/`false` o sus formas de texto/1/0. `null` si no es reconocible. */
+function sanearBool(valor) {
+  if (valor === true || valor === 'true' || valor === 1 || valor === '1') return true;
+  if (valor === false || valor === 'false' || valor === 0 || valor === '0') return false;
+  return null;
+}
+
+/**
+ * Arma el objeto de cambios de un PATCH de datos del producto.
+ *
+ * Solo escribe los campos de `CAMPOS_PRODUCTO_EDITABLES` que vengan en el body
+ * (los ausentes no se tocan). `updated_at` lo pone el servidor.
+ *
+ * ⚠️ Editar `molecula` cambia SOLO el texto de la columna: NO actualiza la
+ * bridge `producto_moleculas`, así que el filtro por molécula/ATC de la ficha
+ * queda como estaba. Eso es intencional — la bridge la mantiene HIGIA.
+ *
+ * @returns {{ cambios: object } | { error: string }}
+ */
+export function armarCambiosProducto(body) {
+  const b = body && typeof body === 'object' ? body : {};
+  const cambios = {};
+
+  try {
+    if ('nombre_comercial' in b) {
+      const nombre = sanearTexto(b.nombre_comercial, NOMBRE_MAX);
+      if (!nombre) return { error: 'El nombre comercial no puede quedar vacío' };
+      cambios.nombre_comercial = nombre;
+    }
+    if ('descripcion' in b) cambios.descripcion = sanearTexto(b.descripcion, TEXTO_MAX);
+    if ('laboratorio' in b) cambios.laboratorio = sanearLaboratorio(b.laboratorio);
+    if ('molecula' in b) cambios.molecula = sanearTexto(b.molecula, TEXTO_MAX);
+    if ('linea' in b) cambios.linea = sanearTexto(b.linea, TEXTO_MAX);
+    if ('forma' in b) cambios.forma = sanearTexto(b.forma, TEXTO_MAX);
+    if ('pais_origen' in b) cambios.pais_origen = sanearTexto(b.pais_origen, TEXTO_MAX);
+
+    for (const campo of ['activo', 'visible_catalogo']) {
+      if (campo in b) {
+        const bool = sanearBool(b[campo]);
+        if (bool === null) return { error: `"${campo}" debe ser true o false` };
+        cambios[campo] = bool;
+      }
+    }
+  } catch (e) {
+    return { error: e.message };
+  }
+
+  if (Object.keys(cambios).length === 0) {
+    return { error: 'No se recibió ningún campo editable' };
+  }
+  return { cambios: { ...cambios, updated_at: new Date() } };
+}
+
 // --- foto_editable / helpers de lectura --------------------------------------
 
 /** Nombre corto del estado, para logs y para el ledger. */
@@ -223,6 +339,16 @@ export const ROLES_INVENTARIO_VER = [
 export const ROLES_INVENTARIO_PRECIO = ['administrador', 'director', 'admin'];
 
 export const puedeEditarPrecio = (rol) => ROLES_INVENTARIO_PRECIO.includes(rol);
+
+// Editar los datos del producto (nombre, laboratorio, línea…) es tan sensible
+// como el precio: un laboratorio con coma rompe el filtro del catálogo y un
+// renombre afecta a `descuentos`/`vitrina_config`, que guardan el texto EXACTO.
+// Por eso comparten la misma terna de gerencia. Si algún día se quiere que el
+// almacenista corrija nombres, este es el único lugar a tocar (la ruta y el
+// controller leen de acá, así que no se pueden desincronizar).
+export const ROLES_INVENTARIO_DATOS = ['administrador', 'director', 'admin'];
+
+export const puedeEditarDatos = (rol) => ROLES_INVENTARIO_DATOS.includes(rol);
 
 // Tope de ids que se mandan a PostgREST en el filtro de molécula. El `or=(...)`
 // viaja en la URL, y 800 ids ≈ 4.8 KB: más que eso se pasa del límite de header

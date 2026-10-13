@@ -30,8 +30,10 @@ import {
   armarCambiosFoto,
   errorCoherenciaFoto,
   armarCambiosPrecio,
+  armarCambiosProducto,
   sanearFotoEstado,
   puedeEditarPrecio,
+  puedeEditarDatos,
   MAX_IDS_MOLECULA,
   MAX_MOLECULAS_OPCIONES,
 } from '../services/inventario/inventarioReglas.js';
@@ -68,6 +70,7 @@ const vacio = (pagina) => ({
   por_pagina: Number(pagina?.por_pagina) || 20,
   total_paginas: 0,
   puede_editar_precio: false,
+  puede_editar_datos: false,
 });
 
 const ORDENES = {
@@ -230,6 +233,7 @@ export async function listarInventario(req, res) {
         return res.json({
           ...vacio({ pagina, por_pagina: porPagina }),
           puede_editar_precio: puedeEditarPrecio(req.staff?.rol),
+          puede_editar_datos: puedeEditarDatos(req.staff?.rol),
         });
       }
       query = query.in('id', ids);
@@ -264,6 +268,7 @@ export async function listarInventario(req, res) {
       por_pagina: porPagina,
       total_paginas: Math.ceil(total / porPagina),
       puede_editar_precio: puedeEditarPrecio(req.staff?.rol),
+      puede_editar_datos: puedeEditarDatos(req.staff?.rol),
     });
   } catch (err) {
     console.error('Error al listar inventario:', err);
@@ -390,6 +395,7 @@ export async function getDetalleInventario(req, res) {
       sin_proveedor: listaCostos.length === 0,
       moleculas: moleculas.data || [],
       puede_editar_precio: puedeEditarPrecio(req.staff?.rol),
+      puede_editar_datos: puedeEditarDatos(req.staff?.rol),
     });
   } catch (err) {
     console.error('Error al obtener detalle de inventario:', err);
@@ -605,4 +611,39 @@ export async function actualizarPrecioProducto(req, res) {
       precioGuardado !== null &&
       Number(r.costo_minimo) !== Number(r.costo_escrito),
   });
+}
+
+// --- PATCH /staff/inventario/:id ---------------------------------------------
+//
+// Corrección de los DATOS de texto del producto (nombre, laboratorio, línea,
+// forma, molécula, descripción, país, activo, visible_catalogo). El precio y la
+// foto tienen su propia ruta a propósito: son campos con reglas propias (el
+// precio pasa por la RPC, la foto por Storage). `sku`/`precio_usd`/`costo_usd`/
+// `foto_url`/`id`/timestamps quedan FUERA de la whitelist de `armarCambiosProducto`.
+
+export async function actualizarDatosProducto(req, res) {
+  const { id } = req.params;
+
+  // La whitelist vive en el service (puro y testeado) para que ningún campo de
+  // más pueda colarse aunque manipulen el body. El 403 real lo da la ruta.
+  const armado = armarCambiosProducto(req.body);
+  if (armado.error) {
+    return res.status(400).json({ error: armado.error });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('productos')
+      .update(armado.cambios)
+      .eq('id', id)
+      .select('id, nombre_comercial, descripcion, laboratorio, molecula, linea, forma, pais_origen, activo, visible_catalogo, updated_at')
+      .single();
+    if (error || !data) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+    res.json(data);
+  } catch (err) {
+    console.error('Error al actualizar datos de producto:', err);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
 }

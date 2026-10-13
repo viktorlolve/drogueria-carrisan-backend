@@ -14,12 +14,14 @@ import {
   actualizarFotoProducto,
   eliminarFotoProducto,
   actualizarPrecioProducto,
+  actualizarDatosProducto,
 } from '../controllers/staff.inventario.controller.js';
 import { verifyStaffJWT, checkRolStaff } from '../middleware/staffAuth.js';
 import { uploadsCatalogoLimiter } from '../middleware/Ratelimit.js';
 import {
   ROLES_INVENTARIO_VER,
   ROLES_INVENTARIO_PRECIO,
+  ROLES_INVENTARIO_DATOS,
 } from '../services/inventario/inventarioReglas.js';
 
 const router = Router();
@@ -97,6 +99,16 @@ router.patch(
   verifyStaffJWT,
   checkRolStaff(ROLES_INVENTARIO_PRECIO),
   actualizarPrecioProducto,
+);
+
+// Datos del producto: misma terna de gerencia que el precio. El PATCH escribe
+// SOLO los campos de la whitelist de `armarCambiosProducto` (nunca un spread del
+// body). Va al final, después de `/:id/foto` y `/:id/precio`, por claridad.
+router.patch(
+  '/:id',
+  verifyStaffJWT,
+  checkRolStaff(ROLES_INVENTARIO_DATOS),
+  actualizarDatosProducto,
 );
 
 export default router;

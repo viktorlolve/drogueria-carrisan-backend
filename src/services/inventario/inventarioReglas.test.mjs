@@ -14,6 +14,7 @@ import {
   precioDesdeCosto,
   sanearPrecio,
   armarCambiosPrecio,
+  armarCambiosProducto,
 } from './inventarioReglas.js';
 
 const soloClaves = (o) => Object.keys(o).sort();
@@ -227,4 +228,90 @@ test('armarCambiosPrecio: body sin precio_usd es error (no un update no-op)', ()
 
 test('armarCambiosPrecio: precio negativo es error', () => {
   assert.match(armarCambiosPrecio({ precio_usd: -5 }).error, /inválido/);
+});
+
+// --- armarCambiosProducto ---------------------------------------------------
+//
+// El punto de estos tests es LA SEGURIDAD: la consola de Inventario manda un
+// body que puede venir manipulado, y el objeto de cambios tiene que salir campo
+// por campo. Todo lo que no esté en la whitelist se ignora.
+
+test('armarCambiosProducto IGNORA campos no previstos (no hay mass-assignment)', () => {
+  const r = armarCambiosProducto({
+    nombre_comercial: 'IBUPROFENO',
+    precio_usd: 1,
+    costo_usd: 0.01,
+    sku: 'HACKEADO',
+    foto_url: 'https://x/a.jpg',
+    id: 999,
+    disponible: false,
+    updated_at: '1999-01-01',
+  });
+  assert.ok(r.cambios);
+  assert.deepEqual(soloClaves(r.cambios), ['nombre_comercial', 'updated_at']);
+  assert.equal(r.cambios.precio_usd, undefined);
+  assert.equal(r.cambios.costo_usd, undefined);
+  assert.equal(r.cambios.sku, undefined);
+  assert.equal(r.cambios.foto_url, undefined);
+  assert.equal(r.cambios.disponible, undefined);
+  // `updated_at` lo pone el servidor, nunca el body.
+  assert.notEqual(String(r.cambios.updated_at), '1999-01-01');
+});
+
+test('armarCambiosProducto: body vacío o sin campos editables es error, no un update no-op', () => {
+  assert.match(armarCambiosProducto({}).error, /campo/i);
+  assert.match(armarCambiosProducto({ precio_usd: 1 }).error, /campo/i);
+  assert.match(armarCambiosProducto(null).error, /campo/i);
+  assert.match(armarCambiosProducto(undefined).error, /campo/i);
+});
+
+test('armarCambiosProducto: el nombre no puede quedar vacío', () => {
+  assert.match(armarCambiosProducto({ nombre_comercial: '   ' }).error, /vac[ií]o/i);
+  assert.match(armarCambiosProducto({ nombre_comercial: '' }).error, /vac[ií]o/i);
+});
+
+test('armarCambiosProducto: recorta espacios y trata el texto vacío como null', () => {
+  const r = armarCambiosProducto({
+    nombre_comercial: '  IBUPROFENO 400  ',
+    descripcion: '   ',
+    pais_origen: 'USA',
+  });
+  assert.equal(r.cambios.nombre_comercial, 'IBUPROFENO 400');
+  assert.equal(r.cambios.descripcion, null);
+  assert.equal(r.cambios.pais_origen, 'USA');
+});
+
+test('armarCambiosProducto: el laboratorio pierde comas y comillas dobles', () => {
+  const r = armarCambiosProducto({
+    laboratorio: 'CASA DE REPRESENTACION DISTRILAB, C.A.',
+  });
+  assert.equal(r.cambios.laboratorio, 'CASA DE REPRESENTACION DISTRILAB C.A.');
+
+  const r2 = armarCambiosProducto({ laboratorio: '  "LAB",  S.A.  ' });
+  assert.equal(r2.cambios.laboratorio, 'LAB S.A.');
+
+  // Un laboratorio que queda vacío al limpiar se guarda como null.
+  assert.equal(armarCambiosProducto({ laboratorio: ' ,  ' }).cambios.laboratorio, null);
+});
+
+test('armarCambiosProducto: activo y visible_catalogo aceptan booleanos y sus formas de texto', () => {
+  assert.equal(armarCambiosProducto({ activo: false }).cambios.activo, false);
+  assert.equal(armarCambiosProducto({ activo: 'true' }).cambios.activo, true);
+  assert.equal(armarCambiosProducto({ activo: 0 }).cambios.activo, false);
+  assert.equal(armarCambiosProducto({ visible_catalogo: 'false' }).cambios.visible_catalogo, false);
+  assert.equal(armarCambiosProducto({ visible_catalogo: 1 }).cambios.visible_catalogo, true);
+});
+
+test('armarCambiosProducto: un booleano inválido es error', () => {
+  assert.match(armarCambiosProducto({ activo: 'si' }).error, /true o false/);
+  assert.match(armarCambiosProducto({ visible_catalogo: {} }).error, /true o false/);
+});
+
+test('armarCambiosProducto: la molécula vacía queda en null', () => {
+  const r = armarCambiosProducto({ molecula: '' });
+  assert.equal(r.cambios.molecula, null);
+});
+
+test('armarCambiosProducto: campos de texto larguísimos se rechazan', () => {
+  assert.match(armarCambiosProducto({ nombre_comercial: 'a'.repeat(600) }).error, /supera/i);
 });
