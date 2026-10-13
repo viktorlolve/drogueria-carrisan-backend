@@ -30,7 +30,7 @@ src/
 ├── middleware/                 # auth.js, Ratelimit.js, soloAdmin.middleware.js, staffAuth.js (JWT staff interno)
 ├── services/                  # push.service.js (web-push), monitoreo.service.js, proveedores/ (importarProveedor, parsers)
 ├── jobs/                      # Tareas cron (actualizarTasa, limpiezaNotificaciones, revisarVencimientos)
-├── migrations/                # SQL de migraciones (010-037) + scripts de import
+├── migrations/                # SQL de migraciones (010-047) + scripts de import
 ```
 
 ## Arquitectura
@@ -51,7 +51,7 @@ Si necesitas entender la schema de la DB, mira los controllers (los nombres de c
 
 Todos los archivos de `routes/` estan importados y montados en `server.js` (montaje verificable en `server.js:88-139`):
 - **Públicas / cliente**: `/auth`, `/marcas`, `/products`, `/shorts`, `/prices`, `/orders`, `/users`, `/admin/codigos-invitacion`, `/descuentos`, `/facturas`, `/pagos`, `/reportes-pago`, `/clientes`, `/notifications`, `/lists`, `/direcciones`, `/perfil`, `/favoritos`, `/uploads`, `/moleculas`, `/catalogo`, `/registro-invita`, `/delivery-tarifas`, `/requerimientos`, `/cotizaciones`, `/documentos`, `/chat`, `/presupuestos`, `/subusuarios`, `/admin/analytics`, `/admin/monitoreo`, `/push`, `/promociones`, `/cupones`, `/noticias`, `/products` (valoraciones, junto al router de productos).
-- **Staff** (se montan ANTES del `/staff` base, cada uno con `verifyStaffJWT` + `checkRolStaff`): `/staff/almacen`, `/staff/contabilidad`, `/staff/cotizaciones`, `/staff/requerimientos`, `/staff/documentos`, `/staff/promociones`, `/staff/direcciones`, `/staff/precios`, `/staff/credito`, `/staff/tesoreria`, `/staff/reportes`, `/staff/logistica`, `/staff/chat`, `/staff/cupones`, `/staff/badges` (usa solo `verifyStaffJWT`, sin `checkRolStaff`), `/staff` (base: login/registro/ordenes/despacho/bridge).
+- **Staff** (se montan ANTES del `/staff` base, cada uno con `verifyStaffJWT` + `checkRolStaff`): `/staff/almacen`, `/staff/contabilidad`, `/staff/cotizaciones`, `/staff/requerimientos`, `/staff/documentos`, `/staff/promociones`, `/staff/direcciones`, `/staff/precios`, `/staff/inventario` (siempre antes del `/staff` base: tiene `GET /:id` y el base se comería sus subrutas), `/staff/credito`, `/staff/tesoreria`, `/staff/reportes`, `/staff/logistica`, `/staff/chat`, `/staff/cupones`, `/staff/badges` (usa solo `verifyStaffJWT`, sin `checkRolStaff`), `/staff` (base: login/registro/ordenes/despacho/bridge).
 - **Internos (scheduler externo)**: `/internal/jobs` — `POST /internal/jobs/:nombre`, `verifyInternalSecret` + `internalJobsLimiter`, montada DESPUÉS de `apiLimiter`. Sin JWT: la llama cron-job.org con header `X-Internal-Secret`. Ver "Keep-alive y jobs programados" abajo.
 - **Cron**: `cron.schedule('0 18 * * 1-5', actualizarTasa, ...)` (tasa de cambio, lun-vie 18:00 hora Venezuela) y `cron.schedule('0 6 * * *', sincronizarNoticias)` (noticias RSS) — sin gatear. Los **tres jobs de negocio van gateados por env var y OFF por defecto** (ver "Cron gateado" abajo).
 
@@ -174,6 +174,8 @@ Login aparte para trabajadores de la empresa (vendedores, despachadores, almacen
   - **`/staff/tesoreria`** (`contabilidad/administrador/director/admin`): ingresos consolidados (read-only desde `pagos`), egresos manuales + salidas internas (`movimientos_caja`), por tercero, export PDF/CSV. Migraciones `027_tesoreria_movimientos_caja.sql` + `028_tesoreria_ampliada.sql`.
   - **`/staff/reportes`** (`contabilidad/administrador/director/admin`): `GET /resumen?desde=&hasta=` — informe financiero consolidado (6 bloques: ventas, crédito aprobado, crédito vencido con aging, cobros, facturado_vs_cobrado, egresos).
   - **`/staff/logistica`** (`almacenista/administrador/director/admin`, agencias solo admin): retiros (`GET/PATCH /retiros`), incidencias (`GET/PATCH /incidencias`), verificar paquete (`/verificar-paquete`, `/reintentar`), completadas (`/completadas`), agencias CRUD (`/agencias*`). Migración `029_logistica.sql`.
+  - **`/staff/inventario`** (`GET`/foto: `almacenista/despachador/administrador/director/admin`; precio/datos: `administrador/director/admin`): consola de Inventario (Logística) que además de las fotos edita datos y precios del producto. `GET /opciones` (listas de los filtros: líneas, formas, laboratorios, moléculas), `GET /` (grid paginado + filtros), `GET /:id` (detalle con costos por proveedor y estado de edición), `POST|PATCH|DELETE /:id/foto` (subir/reemplazar/borrar `foto_url`; **solo `DELETE` escribe `foto_url=NULL`**, subida con `uploadsCatalogoLimiter` + recodificado a JPEG con Sharp), `PATCH /:id/precio` (fija `precio_usd`; pasa por la RPC atómica `aplicar_precio_inventario` de la migración `043`, que escribe `costo_usd=round(precio×0.6,2)` y publica), `PATCH /:id` (datos — ver siguiente bullet). Migraciones `037_etiquetas_precio.sql`, `042_inventario_foto_estado.sql`, `043_inventario_precio_rpc.sql`, `044_inventario_sin_proveedor_rpc.sql`, `045_inventario_opciones_rpc.sql`.
+  - **`/staff/inventario` — `PATCH /:id` (datos del producto, 2026-10-13)**: edición de los datos de TEXTO del producto (nombre, laboratorio, línea, forma, molécula, descripción, país, estado). **La whitelist es la barrera anti mass-assignment**: `armarCambiosProducto(body)` (`src/services/inventario/inventarioReglas.js`, puro y con tests) escribe SOLO `CAMPOS_PRODUCTO_EDITABLES` = `nombre_comercial, descripcion, laboratorio, molecula, linea, forma, pais_origen, activo, visible_catalogo` — **NUNCA `{ ...req.body }`** (patrón prohibido en el proyecto, ver `design-inventario-logistica-2026-10-05.md` §7 y §8 "Fuera de alcance", que este PATCH revierte). Saneos: recorte + vacío→`NULL`, topes `NOMBRE_MAX=500`/`TEXTO_MAX=2000`, `nombre_comercial` vacío → 400; `laboratorio` normalizado con `sanearLaboratorio` (quita comas y comillas dobles y colapsa espacios — un laboratorio con coma rompe el filtro multi-selección del catálogo, fix `2026-09-30`); `activo`/`visible_catalogo` coercionados a booleano (valor no reconocible → 400). Sin ningún campo de la whitelist → **400 `'No se recibió ningún campo editable'`** (nunca un update no-op). Fuera de la whitelist: `sku`, `precio_usd`/`costo_usd` (su propia ruta), `foto_url` (su propia ruta), `id`/timestamps. **OJO**: editar `molecula` actualiza SOLO la columna de texto, NO la bridge `producto_moleculas` (el filtro por molécula/ATC de la ficha queda stale; la bridge la mantiene HIGIA) — degradación intencional, avisada en la UI. Roles `ROLES_INVENTARIO_DATOS` = `administrador/director/admin` (misma terna que el precio: el laboratorio con coma y el renombre afectan `descuentos`/`vitrina_config`, que guardan el texto EXACTO). El `puede_editar_datos` que ve la UI sale de `puedeEditarDatos(rol)`, la MISMA fuente que usa `checkRolStaff` en la ruta (no se pueden desincronizar). Respuesta: la fila actualizada (`id, nombre_comercial, descripcion, laboratorio, molecula, linea, forma, pais_origen, activo, visible_catalogo, updated_at`); 404 si el id no existe.
   - **`/staff/badges`** (solo `verifyStaffJWT`, sin `checkRolStaff`): `GET /badges` — 7 head-counts para el nav de Logística (`nuevas`, `preparar`, `preparar_esperando_pago`, `retiros`, `delivery`, `envios`, `incidencias` — `delivery`/`envios` son las dos colas de Despacho disjuntas por `tipo_envio`, desde 2026-10-07). Filtros puros en `src/services/staffBadges.js` (la llave del contador es el `id` del item en `MODULOS` del frontend); **solo cuenta lo accionable** (`preparar` = crédito o pago verificado; las que esperan pago van a `preparar_esperando_pago` aparte). Tests en `scripts/staffBadges.test.mjs`: contador y cola deben ser LA MISMA consulta.
   - **`/staff/chat`** (`vendedor/administrador/director/admin`): `GET /conversaciones` (todas, `updated_at desc`), `GET|POST /conversaciones/:id/mensajes`. Migración `031_mensajes_chat_staff.sql`.
   - **`/staff/cupones`** (`admin/administrador/director`): CRUD de códigos giftcard (tipo % o monto). Migración `034_cupones_descuento.sql`.
@@ -324,6 +326,7 @@ Proteccion anti-bot del registro: `authLimiter` (10 req/15 min por IP) cubre TOD
 | staff.clientes.controller.js | Comercial Clientes: listar (buscador + pág), detalle ficha, órdenes/cotizaciones/requerimientos del cliente |
 | staff.chat.controller.js | Chat staff Comercial: conversaciones + mensajes |
 | staff.precios.controller.js | Precios staff: grid + edición + lote + importar proveedor |
+| staff.inventario.controller.js | Consola de Inventario (Logística): grid/detalle, foto (subir/reemplazar/borrar), precio (RPC) y **datos del producto** (`PATCH /:id`, whitelist). Reglas puras en `src/services/inventario/inventarioReglas.js` |
 | staff.productos.controller.js | Buscador server-side de productos para presupuestos/órdenes |
 | almacen.controller.js | Colas revisar/preparar, aprobar/cancelar, marcar enviado/listo-retiro |
 | contabilidad.controller.js | Estado de cuenta, pagos, facturas, reportes de pago, verificación (solo confirma, no factura) |
@@ -350,7 +353,7 @@ Proteccion anti-bot del registro: `authLimiter` (10 req/15 min por IP) cubre TOD
 
 ## Migraciones SQL
 
-Ubicacion: `src/migrations/` (010-040 + 047)
+Ubicacion: `src/migrations/` (010-047)
 
 Las migraciones son SQL plano. NO hay sistema de migraciones automatico — se ejecutan manualmente en Supabase SQL Editor. Varios números quedaron duplicados (025, 026, 032) porque se crearon en paralelo — verificar por nombre de archivo.
 
@@ -388,7 +391,15 @@ Las migraciones son SQL plano. NO hay sistema de migraciones automatico — se e
 | 035_registro_invita.sql | Registro por invitación (profesional/honorífico): tabla `registro_invita_config` (habilitado + token), RLS lectura pública |
 | 036_perfiles_profesional_cedula.sql | Perfiles profesional: cédula |
 | 037_etiquetas_precio.sql | Etiquetas de precio en productos |
+| 038_shorts_clips.sql | Previews de shorts del carrusel: tabla `shorts_clips` (el pipeline de GitHub Actions descarga clip corto con yt-dlp+ffmpeg, lo sube al bucket `shorts-previews` y marca `listo`; `/shorts` adjunta `preview_url`) |
+| 039_vitrina_config.sql | Config de la Vitrina (Home) administrada desde `/staff/vitrina`: tabla `vitrina_config` (una fila por bloque, `config` JSON validado en el controller) |
 | 040_job_ejecucion.sql | Historial persistente de los jobs programados: tabla `job_ejecucion` (una fila por job) + RPC atómico `job_ejecucion_registrar(...)` (upsert + incremento de contadores en una sola transacción). **APLICADA en BD 2026-09-29** (conexión directa `SUPABASE_DB_*`; verificada: el RPC acumula contadores y un arranque real escribió su fila). Requerida por el scheduler externo, el panel `/admin/monitoreo` y el catch-up on boot. |
+| 041_notificaciones_staff.sql | Notificaciones del personal interno (staff): fanout por persona + push compartido por endpoint entre cliente y staff. APLICADA 2026-10-01 |
+| 042_inventario_foto_estado.sql | Consola de Inventario: columna `productos.foto_estado` (`ok`/`manual`/`dudosa`/`sin_foto`) — el estado de la foto ya no se infiere de `foto_url IS NULL` |
+| 043_inventario_precio_rpc.sql | Consola de Inventario: RPC atómico `aplicar_precio_inventario(producto, precio)` — el PRECIO manda (`costo_usd=round(precio×0.6,2)`), `precio=0` → NULL + despublica, escribe costos por proveedor en una sola sentencia (evita la carrera leer→calcular→escribir) |
+| 044_inventario_sin_proveedor_rpc.sql | Consola de Inventario: RPC del filtro `sin_proveedor` (`NOT EXISTS` no se puede expresar con supabase-js sin romper el límite de header / `max-rows=1000` de PostgREST) |
+| 045_inventario_opciones_rpc.sql | Consola de Inventario: RPC de agregados de `GET /staff/inventario/opciones` (datalists + contadores de cola; sin esto los `select` se truncaban a 1.000 de 2.612 filas) |
+| 046_buscar_productos.sql | Buscador del catálogo con tolerancia a typos + expansión bidireccional marca↔molécula (tiers por `word_similarity`/expansión) |
 | 047_notificaciones_url.sql | "Avísame" unificado: columna `notificaciones.url text NULL` (deep-link de notificación, p.ej. `/producto/:id` para "Ya llegó"). APLICADA 2026-10-06 |
 
 **NOTA**: Las migraciones 002-009 ya NO existen como archivos (fueron consolidadas/aplicadas directamente en Supabase). La tabla principal `users` tampoco esta en estas migraciones — fue creada directamente en Supabase. Si necesitas ver su schema, busca las queries en los controllers (especialmente auth.controller.js y users.controller.js).
@@ -493,6 +504,14 @@ Revisión profunda del backend a raíz de 12 vulnerabilidades reportadas por Ren
 **Mojibake**: se limpiaron caracteres corruptos (U+FFFD / U+01F8 `é` / U+01ED `á` / U+01E7 `ú`) en strings de error de `credito`, `contabilidad`, `reportesPago` y `documentos`. Rescan completo de `src/` = 0 restantes.
 
 **Verificación final**: `npm audit` → **0 vulnerabilities**; `node --test` → **382 pass / 0 fail**; `node --check` en todos los archivos tocados. **No commiteado** (el working tree lo dejó listo el agente).
+
+## Fotos TAGUAPIREFARMA desde drotafarma.com.ve (IMPLEMENTADO — 2026-10-13)
+
+Crucero de fotos de los **183 productos TAGUA** desde el sitio propio del lab (`drotafarma.com.ve`, Store API WooCommerce `/wp-json/wc/store/v1/products`, JSON público — **NO scraping de HTML**). Detalle completo y deuda en el AGENTS raíz (sección homónima).
+
+- **Archivos**: `scripts/lib/drotafarmaParser.mjs` (lib pura: parseo sitio+BD, `scoreDrotafarma` + gates duros, `elegirMejor`) + `scripts/drotafarmaParser.test.mjs` (**20 tests**) + `scripts/importar-fotos-drotafarma.mjs` (orquestador: dry-run por defecto, `--muestras` control visual, `--apply` escribe). Reutiliza helpers de `cobecaParser.mjs` / `farmanselmoParser.mjs` / `higia/lib/fotos.js`. Cache del sitio en `C:/Users/Usuario/AppData/Local/Temp/opencode/tagua_sitio_cache.json`.
+- **`--apply`** (aprobado por el dueño): descarga → `sharp(buf).rotate().flatten({ background:'#ffffff' }).resize({800, withoutEnlargement}).jpeg({ quality:82, mozjpeg:true })` (**flatten obligatorio: los PNG del sitio tienen alpha**) → `client.storage.from('crsnimages').upload('catalogo/<uuid>.jpg')` (service key) → `UPDATE productos SET foto_url=$1, foto_estado='ok' WHERE id=$2 AND foto_url IS NULL` (nunca sobrescribe ni escribe NULL). Ledger `higia/data/limpiezas/2026-10-13_fotos_drotafarma_aplicadas.csv`.
+- **Resultado**: **160/183 aplicadas** (0 errores), 23 `dudosos` a CSV, 0 `sin_match`, 206 productos del sitio fuera del catálogo. Verificación independiente: `con foto = 160` == ledger; `foto_estado='ok'` 160; URLs HTTP 200 `image/jpeg`.
 
 ## Cosas a tener en cuenta
 
