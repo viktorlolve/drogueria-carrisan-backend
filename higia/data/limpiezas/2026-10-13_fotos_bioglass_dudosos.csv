@@ -1,0 +1,11 @@
+id,sku,nombre_comercial,nombre_sitio,id_sitio,url_imagen,score,estado,motivo,marca_bd,unidades_bd,unidades_sitio,forma_bd,forma_sitio,dosis_bd,dosis_sitio
+40117,ME00003,BIODEX + DEXAMETASONA 0.3% + 0.1% FRASCO X 5 ML,BIODEX,15255,https://bioglassve.com/web/wp-content/uploads/2026/03/Biodex2.jpg,0.850,dudoso,IMAGEN_COMPARTIDA,biodex,,,,,0.3|0.1,
+40118,ME00004,BIODEX 0.3% + DEXAMETASONA 0.1% UNGÜENTO OFTÁLMICO X 7.5 G,BIODEX,15255,https://bioglassve.com/web/wp-content/uploads/2026/03/Biodex2.jpg,0.900,dudoso,IMAGEN_COMPARTIDA,biodex,7,,unguento,,0.3|0.1|7.5,
+40123,ME00009,BIOMYCIN 0.3% SOLUCIÓN OFTÁLMICA FRASCO X 5 ML,BIOMYCIN,15257,https://bioglassve.com/web/wp-content/uploads/2026/03/Biomycin1.jpg,0.900,dudoso,IMAGEN_COMPARTIDA,biomycin,,,solucion oftalmica,,0.3,
+40122,ME00008,BIOMYCIN 0.3% UNGÜENTO OFTÁLMICO X 7.5 G,BIOMYCIN,15257,https://bioglassve.com/web/wp-content/uploads/2026/03/Biomycin1.jpg,0.900,dudoso,IMAGEN_COMPARTIDA,biomycin,7,,unguento,,0.3|7.5,
+40103,HO00019,BIORPES 250 MG VIAL POLVO LIOFILIZADO PARA USO IV,BIORPES,15258,https://bioglassve.com/web/wp-content/uploads/2026/03/Biorpes1-1.jpg,0.900,dudoso,IMAGEN_COMPARTIDA,biorpes,,,polvo,,250,
+40128,ME00014,BIORPES USP 3% UNGÜENTO OFTÁLMICO X 4.5 G,BIORPES,15258,https://bioglassve.com/web/wp-content/uploads/2026/03/Biorpes1-1.jpg,0.850,dudoso,IMAGEN_COMPARTIDA,biorpes,4,,unguento,,3|4.5,
+40142,ME00028,BRONGLASS BROMURO 0.25 MG 1 ML SUSPENSIÓN PARA INHALACIÓN X 20 ML,BRONGLASS PLUS,15279,https://bioglassve.com/web/wp-content/uploads/2026/03/Bronglass-Plus1.jpg,0.900,dudoso,IMAGEN_COMPARTIDA,bronglass,,,suspension,,0.25|1,
+40143,ME00029,BRONGLASS PLUS BROMURO 0.25 MG + FENOTEROL 0.5 MG 1 ML SUSPENSIÓN PARA INHALACIÓN X 15 ML,BRONGLASS PLUS,15279,https://bioglassve.com/web/wp-content/uploads/2026/03/Bronglass-Plus1.jpg,0.900,dudoso,IMAGEN_COMPARTIDA,bronglass,,,suspension,,0.25|0.5|1,
+40114,HO00030,KETOROLACO 30 MG / ML X AMPOLLA,KETOROLACO,14294,https://bioglassve.com/web/wp-content/uploads/2023/04/Ketorolaco-1.jpg,0.900,dudoso,IMAGEN_COMPARTIDA,ketorolaco,,,solucion inyectable,,30,
+40137,ME00023,KETOROLACO KETOROLACO TROMETAMINA 20 MG CÁPSULAS DE GELATINA BLANDA,KETOROLACO,14294,https://bioglassve.com/web/wp-content/uploads/2023/04/Ketorolaco-1.jpg,0.850,dudoso,IMAGEN_COMPARTIDA,ketorolaco,,,capsulas,,20,

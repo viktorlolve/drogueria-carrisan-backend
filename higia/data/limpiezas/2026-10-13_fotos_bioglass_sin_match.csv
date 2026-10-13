@@ -1,0 +1,4 @@
+id,sku,nombre_comercial,nombre_sitio,id_sitio,url_imagen,score,estado,motivo,marca_bd,unidades_bd,unidades_sitio,forma_bd,forma_sitio,dosis_bd,dosis_sitio
+40138,ME00024,ALBENDAZOL TABLETAS MASTICABLES 400 MG,BRONGLASS PLUS,15279,https://bioglassve.com/web/wp-content/uploads/2026/03/Bronglass-Plus1.jpg,0.000,sin_match,SIN_ANCLA,albendazol,,,masticable,,400,
+40088,HO00004,BIOBAC 200 MG 100 ML X AMPOLLA,BRONGLASS PLUS,15279,https://bioglassve.com/web/wp-content/uploads/2026/03/Bronglass-Plus1.jpg,0.000,sin_match,SIN_ANCLA,biobac,,,solucion inyectable,,200|100,
+40097,HO00013,BIOLOX 400 MG 100 ML FCO-VIAL X AMPOLLA,BRONGLASS PLUS,15279,https://bioglassve.com/web/wp-content/uploads/2026/03/Bronglass-Plus1.jpg,0.000,sin_match,SIN_ANCLA,biolox,,,solucion inyectable,,400|100,
