@@ -274,11 +274,22 @@ test('armarCambiosProducto: recorta espacios y trata el texto vacío como null',
   const r = armarCambiosProducto({
     nombre_comercial: '  IBUPROFENO 400  ',
     descripcion: '   ',
-    pais_origen: 'USA',
   });
   assert.equal(r.cambios.nombre_comercial, 'IBUPROFENO 400');
   assert.equal(r.cambios.descripcion, null);
-  assert.equal(r.cambios.pais_origen, 'USA');
+});
+
+test('armarCambiosProducto: ignora columnas que NO existen en productos', () => {
+  // `pais_origen` NO es una columna de `productos` (el país es `pais_id`).
+  // Si se colaba al UPDATE, PostgREST rechazaba el guardado entero con un error
+  // que el controller confundía con un 404. Regresión: nunca debe aparecer en los
+  // cambios, y si es el ÚNICO campo enviado debe dar "ningún campo editable".
+  const soloFantasma = armarCambiosProducto({ pais_origen: 'USA' });
+  assert.match(soloFantasma.error, /campo/i);
+
+  const r = armarCambiosProducto({ nombre_comercial: 'X', pais_origen: 'USA' });
+  assert.equal(r.cambios.nombre_comercial, 'X');
+  assert.ok(!('pais_origen' in r.cambios), 'pais_origen no debe viajar al UPDATE');
 });
 
 test('armarCambiosProducto: el laboratorio pierde comas y comillas dobles', () => {

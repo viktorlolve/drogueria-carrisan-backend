@@ -203,6 +203,12 @@ export function armarCambiosPrecio(body) {
 
 // Los campos que este PATCH puede escribir. Cualquier otra cosa que venga en el
 // body se IGNORA — la whitelist es la barrera anti mass-assignment.
+//
+// OJO con `pais_origen`: NO es una columna de `productos` (el país es
+// `productos.pais_id`, FK a `paises`, que hoy está en NULL para el 100% de las
+// filas). Si se agrega un nombre que no existe, PostgREST rechaza el UPDATE
+// entero y el error se confunde con "producto no encontrado" (le pasó a esta
+// lista: incluía `pais_origen` y rompía todo guardado). Solo campos reales.
 export const CAMPOS_PRODUCTO_EDITABLES = [
   'nombre_comercial',
   'descripcion',
@@ -210,7 +216,6 @@ export const CAMPOS_PRODUCTO_EDITABLES = [
   'molecula',
   'linea',
   'forma',
-  'pais_origen',
   'activo',
   'visible_catalogo',
 ];
@@ -291,7 +296,6 @@ export function armarCambiosProducto(body) {
     if ('molecula' in b) cambios.molecula = sanearTexto(b.molecula, TEXTO_MAX);
     if ('linea' in b) cambios.linea = sanearTexto(b.linea, TEXTO_MAX);
     if ('forma' in b) cambios.forma = sanearTexto(b.forma, TEXTO_MAX);
-    if ('pais_origen' in b) cambios.pais_origen = sanearTexto(b.pais_origen, TEXTO_MAX);
 
     for (const campo of ['activo', 'visible_catalogo']) {
       if (campo in b) {

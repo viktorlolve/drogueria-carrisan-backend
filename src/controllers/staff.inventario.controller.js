@@ -636,9 +636,21 @@ export async function actualizarDatosProducto(req, res) {
       .from('productos')
       .update(armado.cambios)
       .eq('id', id)
-      .select('id, nombre_comercial, descripcion, laboratorio, molecula, linea, forma, pais_origen, activo, visible_catalogo, updated_at')
+      .select('id, nombre_comercial, descripcion, laboratorio, molecula, linea, forma, activo, visible_catalogo, updated_at')
       .single();
-    if (error || !data) {
+    if (error) {
+      // Distinguir "no existe" (PGRST116: `single()` no encontró la fila) de un
+      // error real (columna inexistente, constraint, etc.). Antes TODO se devolvía
+      // como 404 "Producto no encontrado", y un typo en la whitelist se disfrazaba
+      // de "no encontrado" (así se coló `pais_origen`, que no existe en `productos`).
+      const noExiste = error.code === 'PGRST116';
+      console.error('Error al actualizar datos de producto:', id, error);
+      if (noExiste) {
+        return res.status(404).json({ error: 'Producto no encontrado' });
+      }
+      return res.status(400).json({ error: 'No se pudieron guardar los datos del producto' });
+    }
+    if (!data) {
       return res.status(404).json({ error: 'Producto no encontrado' });
     }
     res.json(data);

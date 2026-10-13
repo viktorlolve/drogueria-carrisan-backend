@@ -538,7 +538,7 @@ export async function getProductoById(req, res) {
 export async function createProducto(req, res) {
   const {
     nombre_comercial, descripcion, marca_id, precio_usd, foto_url,
-    laboratorio, pais_origen, molecula, linea, forma, disponible
+    laboratorio, molecula, linea, forma, disponible
   } = req.body;
 
   if (!nombre_comercial || !precio_usd) {
@@ -555,7 +555,6 @@ export async function createProducto(req, res) {
         precio_usd,
         foto_url,
         laboratorio,
-        pais_origen,
         molecula,
         linea,
         forma,
