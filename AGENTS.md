@@ -513,6 +513,17 @@ Crucero de fotos de los **183 productos TAGUA** desde el sitio propio del lab (`
 - **`--apply`** (aprobado por el dueño): descarga → `sharp(buf).rotate().flatten({ background:'#ffffff' }).resize({800, withoutEnlargement}).jpeg({ quality:82, mozjpeg:true })` (**flatten obligatorio: los PNG del sitio tienen alpha**) → `client.storage.from('crsnimages').upload('catalogo/<uuid>.jpg')` (service key) → `UPDATE productos SET foto_url=$1, foto_estado='ok' WHERE id=$2 AND foto_url IS NULL` (nunca sobrescribe ni escribe NULL). Ledger `higia/data/limpiezas/2026-10-13_fotos_drotafarma_aplicadas.csv`.
 - **Resultado**: **160/183 aplicadas** (0 errores), 23 `dudosos` a CSV, 0 `sin_match`, 206 productos del sitio fuera del catálogo. Verificación independiente: `con foto = 160` == ledger; `foto_estado='ok'` 160; URLs HTTP 200 `image/jpeg`.
 
+### Dudosos resueltos por el dueño (IMPLEMENTADO — 2026-10-13)
+
+El dueño revisó `higia/data/limpiezas/2026-10-13_fotos_drotafarma_dudosos.csv` **in place** (comentario por fila) y `scripts/aplicar-dudosos-drotafarma.mjs` aplica sus decisiones. **Resultado: 181/183 con foto**; quedan sin foto a propósito **40224 BUDESONIDA** ("no es la foto, otra presentación") y **40321 NITAZOXANIDA** ("dejar sin foto"). No fue solo fotos:
+
+- **Tabla de decisiones hardcodeada en el script** (`DECISIONES`, con `nota` citando al dueño). Cada fila puede aplicar/omitir foto, renombrar `nombre_comercial`, fijar el set EXACTO del puente `producto_moleculas` y actualizar la columna de texto `productos.molecula`.
+- **Renombres**: 40220→`TRIALIVIO UNGTO 15 GR`, 40240→`FINALGRIP X 10 TABLETAS RECUBIERTAS`, 40249 y 40276→`GYNO CANDERM 3 APLICADORES 20 GR CREMA VAG`, 40258 (tamsulosina primero), 40317→`ESPASIN BUTILBROMURO HIOSCINA X 20 TABLETAS`.
+- **Puentes corregidos/ampliados**: +Sulbactam (40206), +Gentamicina +Clotrimazol (40220), +Paracetamol +Fenilefrina (40240), +Paracetamol +Clorfenamina (40250, puente estaba vacío), +Montelukast (40179), +Tamsulosina (40258), +Levonorgestrel +Etinilestradiol (40266, vacío), +Nistatina (40314), +Trimetoprima (40345); **corregidos** los enlaces basura `Manzana`→Sales de Rehidratación Oral (40281), `Naranja`→Sales de Rehidratación Oral (40282) y `Hioscina`→Butilescopolamina Bromuro (40317). Ref elegida para Clorfenamina = **845** (ATC `R06AB04`), NO la 847 (ATC `D04AA91`, mal etiquetada). La columna `molecula` (texto) se sincronizó con el puente.
+- **Operación**: dry-run por defecto (plan + verificación HTTP de cada URL + backup); `--apply` sube las 21 fotos (concurrencia 4) y luego **una sola transacción** con guard `foto_url IS NULL` + `laboratorio = LAB_TAGUA` (si una subida falla, aborta antes de tocar la BD; `rowCount !== 1` → ROLLBACK). CSVs: `_dudosos_plan.csv`, `_dudosos_backup.csv` (estado previo, NUNCA borrar), `_dudosos_aplicadas.csv` (ledger).
+- **Verificación independiente**: TAGUA activos 183 / con foto **181** / `foto_estado='ok'` 181 / URLs en `catalogo/` 181 / 0 URLs compartidas; los 12 puentes con su set final exacto; HTTP 200 `image/jpeg` en muestra.
+- **Deuda del dueño**: la deuda conocida del cruce (detector de combo name-aware, dosis % / mL, concurrencia `pg`) sigue en el AGENTS raíz; aquí solo se aplicaron sus decisiones.
+
 ## Cosas a tener en cuenta
 
 1. **No hay ORM**. Cada query es inline en el controller. Si cambias una tabla en Supabase, busca todos los controllers que la referencien.
