@@ -572,13 +572,46 @@ export async function createProducto(req, res) {
   }
 }
 
-// PATCH /products/:id (admin) — ya era genérico, sigue funcionando igual con los campos nuevos
+// Campos que el admin puede editar en un producto. Es la MISMA lista que
+// acepta `createProducto` + `activo` (solo edición).
+//
+// PROHIBIDO `{ ...req.body }`: un campo que NO exista como columna en
+// `productos` (p.ej. `pais_origen` — trampa documentada) hace que PostgREST
+// rechace el UPDATE (`PGRST204`/`42703`) y el error se disfrazaba de 404
+// "Producto no encontrado" aunque el id existiera.
+const CAMPOS_PRODUCTO_EDITABLES_ADMIN = [
+  'nombre_comercial',
+  'descripcion',
+  'marca_id',
+  'precio_usd',
+  'foto_url',
+  'laboratorio',
+  'molecula',
+  'linea',
+  'forma',
+  'disponible',
+  'activo',
+];
+
+function armarCambiosAdmin(body) {
+  const cambios = {};
+  for (const campo of CAMPOS_PRODUCTO_EDITABLES_ADMIN) {
+    if (body?.[campo] !== undefined) cambios[campo] = body[campo];
+  }
+  return cambios;
+}
+
+// PATCH /products/:id (admin) — actualiza SOLO la whitelist de campos editables.
 export async function updateProducto(req, res) {
   const { id } = req.params;
-  const cambios = req.body;
+  const cambios = armarCambiosAdmin(req.body);
+
+  if (Object.keys(cambios).length === 0) {
+    return res.status(400).json({ error: 'No se recibió ningún campo editable' });
+  }
 
   try {
-let precioAnterior = null;
+    let precioAnterior = null;
     if (cambios.precio_usd !== undefined) {
       const { data: actual } = await supabase
         .from('productos')
@@ -595,7 +628,17 @@ let precioAnterior = null;
       .select()
       .single();
 
-    if (error || !data) {
+    if (error) {
+      // PGRST116 = 0 filas afectadas → el id no existe (404 legítimo).
+      // Cualquier otro error es real (columna inexistente, constraint…): se
+      // loguea y se devuelve 400 — nunca se disfraza de "no encontrado".
+      if (error.code === 'PGRST116') {
+        return res.status(404).json({ error: 'Producto no encontrado' });
+      }
+      console.error('Error al actualizar producto:', error);
+      return res.status(400).json({ error: 'No se pudo actualizar el producto' });
+    }
+    if (!data) {
       return res.status(404).json({ error: 'Producto no encontrado' });
     }
 
