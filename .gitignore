@@ -16,3 +16,6 @@ poblar-vademecum.js
 scraper-farmanselmo.mjs
 # Cache de sondeo de APIs: se regenera, no va al repo (2 MB por corrida)
 higia/data/limpiezas/*_cache.json
+
+# superpowers (brainstorm/sdd): artefactos de sesión (mockups, ledgers), no van al repo
+.superpowers/
