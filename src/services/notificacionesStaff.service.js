@@ -24,17 +24,11 @@ import { enviarPushAStaff } from './push.service.js'
 // Directivos: reciben todo (menos lo que ellos mismos ejecutaron).
 const ROLES_DIRECTIVOS = ['director', 'administrador', 'admin']
 
-// Los 7 roles de la tabla `staff` (mismo orden que
-// ROLES_STAFF_VALIDOS de codigosInvitacion.controller.js).
-export const ROLES_TODOS_STAFF = [
-  'vendedor',
-  'despachador',
-  'almacenista',
-  'contabilidad',
-  'administrador',
-  'director',
-  'admin',
-]
+// Fuente única: vive en el módulo puro `staff/staffAdminReglas.js` (sin imports de
+// Supabase, para que lo puedan usar los tests de `node --test`). Se re-exporta
+// para no romper a los importadores existentes (staff.notificaciones.routes.js).
+import { ROLES_TODOS_STAFF } from './staff/staffAdminReglas.js'
+export { ROLES_TODOS_STAFF }
 
 // ---------------------------------------------------------------
 // Reparto por tipo. Una función por tipo: recibe contexto y devuelve

@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { supabase } from '../config/supabase.js';
+import { ROLES_TODOS_STAFF as ROLES_STAFF_VALIDOS } from '../services/staff/staffAdminReglas.js';
 
 const HORAS_VALIDEZ = 48;
 const MAX_ATTEMPTS = 100;
@@ -18,7 +19,6 @@ function generarCodigoAlfanumerico() {
 }
 
 const TIPOS_VALIDOS = ['honorifico', 'staff'];
-const ROLES_STAFF_VALIDOS = ['vendedor', 'despachador', 'almacenista', 'contabilidad', 'administrador', 'director', 'admin'];
 
 // POST /admin/codigos-invitacion
 // Genera uno o varios códigos de invitación con expiración de 48h.
