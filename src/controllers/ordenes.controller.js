@@ -532,10 +532,10 @@ export async function getOrdenesPendientesPago(req, res) {
       .neq('estado', 'cancelado')
       .neq('estado', 'pedido_creado')
       .or(
-        "(forma_pago.eq.contado and estado_pago.in.(esperando,rechazado))," +
-        "(forma_pago.eq.credito and (estado_pago.neq.verificado or estado_pago.is.null))"
+        "and(forma_pago.eq.contado,estado_pago.in.(esperando,rechazado))," +
+        "and(forma_pago.eq.credito,or(estado_pago.neq.verificado,estado_pago.is.null))"
       )
-      .order('fecha_vencimiento', { ascending: true, nullsFirst: true })
+      .order('fecha_vencimiento', { ascending: true })
       .order('created_at', { ascending: false });
 
     if (error) throw error;
