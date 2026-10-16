@@ -19,6 +19,7 @@ import {
   cancelarOrdenProcesando,
   confirmarPagoOrden,
 } from '../controllers/contabilidad.controller.js';
+import { listarClientes } from '../controllers/staff.clientes.controller.js';
 import { verifyStaffJWT, checkRolStaff } from '../middleware/staffAuth.js';
 
 const router = Router();
@@ -27,6 +28,11 @@ const ROLES_CONTABILIDAD = ['contabilidad', 'administrador', 'director', 'admin'
 
 // Estado de cuenta
 router.get('/clientes', verifyStaffJWT, checkRolStaff(ROLES_CONTABILIDAD), getResumenClientes);
+// Buscador de clientes para Finanzas (Facturación): reutiliza el listado de Comercial
+// (buscar + paginación + línea/deuda/saldo batch) bajo el modulo de contabilidad, para
+// que el rol `contabilidad` no dependa de ROLES_VENTAS. OJO: DEBE ir ANTES de
+// `/clientes/:id` o Express tomaria `buscar` como `:id`.
+router.get('/clientes/buscar', verifyStaffJWT, checkRolStaff(ROLES_CONTABILIDAD), listarClientes);
 router.get('/clientes/:id', verifyStaffJWT, checkRolStaff(ROLES_CONTABILIDAD), getEstadoCuentaCliente);
 router.get('/clientes/:id/comparativa', verifyStaffJWT, checkRolStaff(ROLES_CONTABILIDAD), getComparativaMensual);
 router.get('/clientes/:id/sin-facturar', verifyStaffJWT, checkRolStaff(ROLES_CONTABILIDAD), getOrdenesSinFacturar);

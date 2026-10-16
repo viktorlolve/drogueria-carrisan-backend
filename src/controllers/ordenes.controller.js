@@ -518,11 +518,9 @@ export async function aplicarCambioEstado(orden, estado) {
   return data;
 }
 
-// GET /orders/pendientes-pago — órdenes del usuario a contado que están
-// esperando el pago (esperando o rechazadas) para la pantalla de gestión
-// de pagos, individual o multi-orden. Excluye las reportadas en
-// verificación ('reportado') o ya 'verificado'. La condición de pago se
-// lee de estado_pago, sin depender del estado logístico.
+// GET /orders/pendientes-pago — órdenes del usuario pendientes de pago para reportar
+// Incluye: contado (esperando/rechazado) y crédito (no cancelado, no verificado, estado != pedido_creado)
+// Excluye las recién creadas (pedido_creado)
 export async function getOrdenesPendientesPago(req, res) {
   const usuario_id = req.user.id;
 
@@ -531,12 +529,31 @@ export async function getOrdenesPendientesPago(req, res) {
       .from('ordenes')
       .select('*, ordenes_items(*, productos(nombre_comercial))')
       .eq('usuario_id', usuario_id)
-      .eq('forma_pago', 'contado')
-      .in('estado_pago', ['esperando', 'rechazado'])
+      .neq('estado', 'cancelado')
+      .neq('estado', 'pedido_creado')
+      .or(
+        "(forma_pago.eq.contado and estado_pago.in.(esperando,rechazado))," +
+        "(forma_pago.eq.credito and (estado_pago.neq.verificado or estado_pago.is.null))"
+      )
+      .order('fecha_vencimiento', { ascending: true, nullsFirst: true })
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    res.json(data);
+
+    const ahora = new Date();
+    const conDias = (data || []).map((o) => {
+      let dias_por_vencer = null;
+      if (o.fecha_vencimiento) {
+        const fv = new Date(o.fecha_vencimiento);
+        // Normalizar ambas fechas a medianoche para evitar desfases por hora
+        const fvMid = new Date(fv.getFullYear(), fv.getMonth(), fv.getDate());
+        const ahoraMid = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+        dias_por_vencer = Math.floor((fvMid - ahoraMid) / (1000 * 60 * 60 * 24));
+      }
+      return { ...o, dias_por_vencer };
+    });
+
+    res.json(conDias);
   } catch (err) {
     console.error('Error al obtener órdenes pendientes de pago:', err);
     res.status(500).json({ error: 'Error del servidor' });

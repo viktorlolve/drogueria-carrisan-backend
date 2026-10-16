@@ -998,23 +998,39 @@ export async function rechazarReportePago(req, res) {
 // CUENTAS POR COBRAR (tab "Por cobrar")
 // ---------------------------------------------------------------
 
-// GET /staff/contabilidad/ordenes-procesando — órdenes contado que esperan
-// el reporte de pago del cliente ('esperando') o están a la espera de
-// verificación ('reportado'). Desde aquí contabilidad puede cancelarlas.
-// El estado logístico es 'preparando' (antes 'procesando', legacy): la
-// condición de pago se lee de estado_pago, no del estado de la orden.
+// GET /staff/contabilidad/ordenes-procesando — "En espera de pago"
+// Contado: estado_pago esperando/reportado
+// Crédito: no cancelado, no verificado, estado != pedido_creado
+// También muestra 'rechazado' del contado para que puedan gestionarlo
 export async function getOrdenesProcesando(req, res) {
   try {
     const { data, error } = await supabase
       .from('ordenes')
       .select('*, users(id, nombre, email, telefono), ordenes_items(*, productos(nombre_comercial))')
-      .eq('forma_pago', 'contado')
-      .in('estado', ['preparando', 'procesando'])
-      .in('estado_pago', ['esperando', 'reportado'])
-      .order('created_at', { ascending: true });
+      .neq('estado', 'cancelado')
+      .neq('estado', 'pedido_creado')
+      .or(
+        "(forma_pago.eq.contado and estado_pago.in.(esperando,rechazado,reportado))," +
+        "(forma_pago.eq.credito and (estado_pago.neq.verificado or estado_pago.is.null))"
+      )
+      .order('fecha_vencimiento', { ascending: true, nullsFirst: true })
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
-    res.json(data || []);
+
+    const ahora = new Date();
+    const conDias = (data || []).map((o) => {
+      let dias_por_vencer = null;
+      if (o.fecha_vencimiento) {
+        const fv = new Date(o.fecha_vencimiento);
+        const fvMid = new Date(fv.getFullYear(), fv.getMonth(), fv.getDate());
+        const ahoraMid = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+        dias_por_vencer = Math.floor((fvMid - ahoraMid) / (1000 * 60 * 60 * 24));
+      }
+      return { ...o, dias_por_vencer };
+    });
+
+    res.json(conDias);
   } catch (err) {
     console.error('Error al obtener órdenes por cobrar (contabilidad):', err);
     res.status(500).json({ error: 'Error del servidor' });
