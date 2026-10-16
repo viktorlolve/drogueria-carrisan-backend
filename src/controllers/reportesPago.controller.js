@@ -35,10 +35,13 @@ export async function createReportePago(req, res) {
       if (orden.usuario_id !== usuario_id) {
         return res.status(403).json({ error: 'No autorizado sobre una de las órdenes' });
       }
-      if (orden.forma_pago !== 'contado') {
-        return res.status(400).json({ error: `La orden #${orden.id} no es a contado` });
+      if (orden.estado_pago === 'verificado') {
+        return res.status(400).json({ error: `La orden #${orden.id} ya está verificada` });
       }
-      if (!['esperando', 'rechazado'].includes(orden.estado_pago)) {
+      // Contado: solo se reporta pago mientras espera o fue rechazado.
+      // Crédito: el cliente también puede reportar un abono/pago anticipado
+      // aunque estado_pago sea NULL; la verificación es del staff de Finanzas.
+      if (orden.forma_pago === 'contado' && !['esperando', 'rechazado'].includes(orden.estado_pago)) {
         return res.status(400).json({ error: `La orden #${orden.id} no está disponible para reportar pago` });
       }
     }
