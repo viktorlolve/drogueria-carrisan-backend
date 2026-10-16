@@ -126,7 +126,7 @@ export async function enviarPushAlUsuario(usuario_id, { titulo, mensaje, url, ti
 
   const payload = JSON.stringify({ titulo, mensaje, url: url || '/' });
 
-  const resultados = await Promise.allSettled(subs.map(async sub => {
+  const resultados = await Promise.all(subs.map(async sub => {
     const subscription = {
       endpoint: sub.endpoint,
       keys: { p256dh: sub.p256dh, auth: sub.auth }
@@ -134,6 +134,7 @@ export async function enviarPushAlUsuario(usuario_id, { titulo, mensaje, url, ti
 
     try {
       await webpush.sendNotification(subscription, payload);
+      return true;
     } catch (err) {
       if (SUBSCRIPTION_INVALIDA.includes(err.statusCode)) {
         console.warn(`[Push] Suscripción inválida (sub ${sub.id}), eliminando`);
@@ -143,14 +144,17 @@ export async function enviarPushAlUsuario(usuario_id, { titulo, mensaje, url, ti
       } else {
         console.error(`[Push] Error enviando a sub ${sub.id}:`, err.message, `(statusCode: ${err.statusCode})`);
       }
+      return false;
     }
   }));
 
-  const exitos = resultados.filter(r => r.status === 'fulfilled');
-  const fallos = resultados.filter(r => r.status === 'rejected');
-  if (fallos.length > 0 || exitos.length > 0) {
-    console.log(`[Push] Resultado user ${usuario_id}: ${exitos.length} éxitos, ${fallos.length} fallos`);
-  }
+  // Se cuenta por lo que DEVUELVE el mapa, no por el estado del promise: con el
+  // catch adentro, toda promesa se resuelve aunque el envío haya fallado, así que
+  // contar por settled daba SIEMPRE "N éxitos, 0 fallos" (el fallo 401/403 quedaba
+  // enmascarado y el push "no llegaba" sin rastro en el resumen).
+  const exitos = resultados.filter(Boolean).length;
+  const fallos = resultados.length - exitos;
+  console.log(`[Push] Resultado user ${usuario_id}: ${exitos} éxitos, ${fallos} fallos`);
 }
 
 // Envío al personal interno (tabla `staff`). El staff no tiene fila en
@@ -198,7 +202,7 @@ export async function enviarPushAStaff(staffId, { titulo, mensaje, url, tipo }) 
 
   const payload = JSON.stringify({ titulo, mensaje, url: url || '/staff/notificaciones' });
 
-  const resultados = await Promise.allSettled(subs.map(async sub => {
+  const resultados = await Promise.all(subs.map(async sub => {
     const subscription = {
       endpoint: sub.endpoint,
       keys: { p256dh: sub.p256dh, auth: sub.auth }
@@ -206,6 +210,7 @@ export async function enviarPushAStaff(staffId, { titulo, mensaje, url, tipo }) 
 
     try {
       await webpush.sendNotification(subscription, payload);
+      return true;
     } catch (err) {
       if (SUBSCRIPTION_INVALIDA.includes(err.statusCode)) {
         console.warn(`[Push] Suscripción inválida (sub ${sub.id}), eliminando`);
@@ -215,12 +220,13 @@ export async function enviarPushAStaff(staffId, { titulo, mensaje, url, tipo }) 
       } else {
         console.error(`[Push] Error enviando a sub ${sub.id}:`, err.message, `(statusCode: ${err.statusCode})`);
       }
+      return false;
     }
   }));
 
-  const exitos = resultados.filter(r => r.status === 'fulfilled');
-  const fallos = resultados.filter(r => r.status === 'rejected');
-  if (fallos.length > 0 || exitos.length > 0) {
-    console.log(`[Push] Resultado staff ${staffId}: ${exitos.length} éxitos, ${fallos.length} fallos`);
-  }
+  // Mismo criterio que enviarPushAlUsuario: contar por el valor devuelto, no por el
+  // estado del promise (el catch interno lo dejaría siempre en "0 fallos").
+  const exitos = resultados.filter(Boolean).length;
+  const fallos = resultados.length - exitos;
+  console.log(`[Push] Resultado staff ${staffId}: ${exitos} éxitos, ${fallos} fallos`);
 }
