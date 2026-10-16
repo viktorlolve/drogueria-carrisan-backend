@@ -1,8 +1,12 @@
 import { supabase } from '../config/supabase.js';
+import { diagnosticoVapid } from '../services/push.service.js';
 
 // GET /push/public-key
+// Devuelve la clave pública (la que usa el frontend para suscribirse) + un
+// diagnóstico del par VAPID sin exponer la privada. Si `vapid` no aparece en la
+// respuesta, es que el deploy todavía no tiene este código.
 export function getPublicKey(req, res) {
-  res.json({ publicKey: process.env.VAPID_PUBLIC_KEY });
+  res.json({ publicKey: process.env.VAPID_PUBLIC_KEY, vapid: diagnosticoVapid() });
 }
 
 // POST /push/subscribe

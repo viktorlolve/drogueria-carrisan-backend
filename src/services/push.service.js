@@ -1,12 +1,35 @@
 import webpush from 'web-push';
 import { supabase } from '../config/supabase.js';
+import { estadoVapid } from './vapidEstado.js';
 
-const vapidSubject = process.env.VAPID_SUBJECT;
-const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
-const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
+// Los valores se pegan a mano en Render y es muy fácil que se cuelen espacios o
+// saltos de línea invisibles al final. web-push RECHAZA la clave en ese caso con
+// un throw que ocurre ANTES de enviar nada: el push "no llega" y el único rastro
+// queda en los logs. Por eso se recortan SIEMPRE (el trim es inofensivo cuando
+// las claves ya vienen limpias).
+const vapidSubjectRaw = process.env.VAPID_SUBJECT;
+const vapidPublicKeyRaw = process.env.VAPID_PUBLIC_KEY;
+const vapidPrivateKeyRaw = process.env.VAPID_PRIVATE_KEY;
+
+const vapidSubject = (vapidSubjectRaw || '').trim();
+const vapidPublicKey = (vapidPublicKeyRaw || '').trim();
+const vapidPrivateKey = (vapidPrivateKeyRaw || '').trim();
 
 if (!vapidSubject || !vapidPublicKey || !vapidPrivateKey) {
   console.error('🚨  Faltan variables de entorno VAPID (VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY). Las notificaciones push NO funcionarán. Configúralas en Render.');
+} else {
+  // Diagnóstico de arranque: convierte un fallo silencioso en algo visible.
+  const estado = estadoVapid({ subject: vapidSubjectRaw, publica: vapidPublicKeyRaw, privada: vapidPrivateKeyRaw });
+  if (!estado.publicaLimpia || !estado.privadaLimpia) {
+    console.warn('⚠️  VAPID: alguna clave traía espacios/saltos de línea al pegarla en Render (se recortó automáticamente). Corregí el valor en Render para no depender del recorte.');
+  }
+  if (estado.parConsistente === false) {
+    console.error('🚨  VAPID: la VAPID_PRIVATE_KEY NO corresponde a la VAPID_PUBLIC_KEY. TODO envío push fallará hasta que ambas sean del MISMO par (Render y Vercel).');
+  } else if (estado.parConsistente === true) {
+    console.log('[Push] VAPID OK: la privada corresponde a la pública.');
+  } else if (estado.error) {
+    console.error(`🚨  VAPID: no se pudo validar el par (${estado.error}).`);
+  }
 }
 
 webpush.setVapidDetails(
@@ -14,6 +37,17 @@ webpush.setVapidDetails(
   vapidPublicKey || '',
   vapidPrivateKey || ''
 );
+
+// Diagnóstico del par VAPID (SIN material de clave) para el endpoint público
+// GET /push/public-key: permite saber desde afuera si el push del servidor está
+// bien configurado (claves presentes, sin espacios y del mismo par).
+export function diagnosticoVapid() {
+  return estadoVapid({
+    subject: vapidSubjectRaw,
+    publica: vapidPublicKeyRaw,
+    privada: vapidPrivateKeyRaw,
+  });
+}
 
 const SUBSCRIPTION_INVALIDA = [404, 410];
 
