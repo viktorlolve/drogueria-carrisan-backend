@@ -53,7 +53,7 @@ Todos los archivos de `routes/` estan importados y montados en `server.js` (mont
 - **Públicas / cliente**: `/auth`, `/marcas`, `/products`, `/shorts`, `/prices`, `/orders`, `/users`, `/admin/codigos-invitacion`, `/descuentos`, `/facturas`, `/pagos`, `/reportes-pago`, `/clientes`, `/notifications`, `/lists`, `/direcciones`, `/perfil`, `/favoritos`, `/uploads`, `/moleculas`, `/catalogo`, `/registro-invita`, `/delivery-tarifas`, `/requerimientos`, `/cotizaciones`, `/documentos`, `/chat`, `/presupuestos`, `/subusuarios`, `/admin/analytics`, `/admin/monitoreo`, `/admin/staff`, `/push`, `/promociones`, `/cupones`, `/noticias`, `/products` (valoraciones, junto al router de productos).
 - **Staff** (se montan ANTES del `/staff` base, cada uno con `verifyStaffJWT` + `checkRolStaff`): `/staff/almacen`, `/staff/contabilidad`, `/staff/cotizaciones`, `/staff/requerimientos`, `/staff/documentos`, `/staff/promociones`, `/staff/direcciones`, `/staff/precios`, `/staff/inventario` (siempre antes del `/staff` base: tiene `GET /:id` y el base se comería sus subrutas), `/staff/credito`, `/staff/tesoreria`, `/staff/reportes`, `/staff/logistica`, `/staff/chat`, `/staff/cupones`, `/staff/badges` (usa solo `verifyStaffJWT`, sin `checkRolStaff`), `/staff` (base: login/registro/ordenes/despacho/bridge).
 - **Internos (scheduler externo)**: `/internal/jobs` — `POST /internal/jobs/:nombre`, `verifyInternalSecret` + `internalJobsLimiter`, montada DESPUÉS de `apiLimiter`. Sin JWT: la llama cron-job.org con header `X-Internal-Secret`. Ver "Keep-alive y jobs programados" abajo.
-- **Cron**: `cron.schedule('0 18 * * 1-5', actualizarTasa, ...)` (tasa de cambio, lun-vie 18:00 hora Venezuela) y `cron.schedule('0 6 * * *', sincronizarNoticias)` (noticias RSS) — sin gatear. Los **tres jobs de negocio van gateados por env var y OFF por defecto** (ver "Cron gateado" abajo).
+- **Cron**: `cron.schedule('0 21 * * *', actualizarTasa, ...)` (tasa de cambio, **diario 21:00** hora Venezuela) y `cron.schedule('0 6 * * *', sincronizarNoticias)` (noticias RSS) — sin gatear. Los **tres jobs de negocio van gateados por env var y OFF por defecto** (ver "Cron gateado" abajo).
 
 Si agregas un endpoint nuevo, recuerda importar y montar el archivo de rutas en `server.js`.
 
@@ -112,7 +112,7 @@ Decisión del dueño (2026-09-29): **dejar los jobs de negocio apagados** hasta 
 | healthchecks.io | Dead-man's switch: ping **solo si el job terminó bien**. | Sin configurar (innecesario con los flags OFF) |
 | Catch-up on boot | Al arrancar, si el job no corrió hoy, lo ejecuta. | Listo, inactivo (flags OFF) |
 
-Nombres de job en la URL (kebab-case, son las claves de `job_ejecucion`): `revisar-vencimientos`, `limpieza-notificaciones`.
+Nombres de job en la URL (son las claves de `job_ejecucion`): `revisar-vencimientos`, `limpieza-notificaciones`, `actualizarTasa` (camelCase a proposito: la fila de `job_ejecucion` que escribe `envolverJob('actualizarTasa', …)` ya usa ese nombre y asi el historico no queda huerfano).
 
 **Variables de entorno (backend):**
 
@@ -128,6 +128,7 @@ HEALTHCHECKS_PING_LIMPIEZA_NOTIFICACIONES=https://hc-ping.com/...
 **Puntos clave de la implementación:**
 
 - **Flag OFF = HTTP 200 y no ejecuta** (`{ok:true, ejecutado:false}`). Un único switch (la env var) gobierna tanto el cron interno como el endpoint, así el scheduler no se marca caído por un apagado deliberado. Se registra la corrida con `resultado='flag_apagada'`.
+- **Un job SIN `flag` esta siempre encendido.** `flagDeJobActivada(job)` (`flags.js`) devuelve `true` cuando el job no declara `flag` (p. ej. `actualizarTasa`, que no se gatea), y para los que si lo declaran sigue leyendo su env var. Lo usan el endpoint externo y el catch-up. Es la razon por la que la tasa de cambio no necesita `nombrePersistente` ni env var.
 - **El `nombre` de la URL ≠ el `nombre` en memoria.** El job en memoria es camelCase (`revisarVencimientos`), el de la URL/BD es kebab-case (`revisar-vencimientos`). Para que el panel pueda unir ambas mitades, `registrarJob` acepta **`nombrePersistente`**, y `envolverJob` persiste con esa clave. Ojo: **si agregás un job nuevo con endpoint externo y olvidás `nombrePersistente`, el panel no le muestra el histórico persisted.**
 - **Migración 040 YA APLICADA** (2026-09-29, conexión directa `pg` con `SUPABASE_DB_*`; el RPC se probó con dos llamadas y acumula bien). Nota: la conexión directa **es posible** en este repo — `drogueria-carrisan-backend/.env` trae `SUPABASE_DB_HOST/PORT/NAME/USER/PASSWORD`, y el patrón está en `src/migrations/importar_sql.js`. Un buen número de migraciones "aplicar a mano" se pueden aplicar así (DDL/DML); las que dependen del SQL Editor por permisos específicos, no.
 - **El pinger y los jobs usan mecanismos distintos a propósito**: el pinger es `GET /health` público (barato, sin auth, es solo para despertarse), los jobs son `POST` autenticados con secreto (se paga por ejecución, no por latencia).

@@ -24,6 +24,15 @@ export const JOBS = {
       return limpiezaNotificaciones();
     },
   },
+  actualizarTasa: {
+    // Sin `flag`: la tasa no se gatea (no toca clientes, no requiere backfill).
+    // flagDeJobActivada la trata como encendida.
+    descripcion: 'Tasa de cambio (diario 21:00 Vzla)',
+    ejecutar: async () => {
+      const { actualizarTasa } = await import('../jobs/actualizarTasa.js');
+      return actualizarTasa();
+    },
+  },
 };
 
 // Solo la allowlist. No usar `nombre in JOBS` sin este check: "constructor" y

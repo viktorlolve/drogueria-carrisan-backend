@@ -39,7 +39,7 @@ const TABLAS_CONTEO = [
 // Umbrales (ajústalos aquí, en un solo lugar)
 const HORAS_ORDEN_SIN_ATENDER = 48;
 const HORAS_REPORTE_PAGO_SIN_REVISAR = 24;
-const HORAS_TASA_DESACTUALIZADA = 96; // el cron solo corre lun-vie, hay fin de semana
+const HORAS_TASA_DESACTUALIZADA = 96; // el cron corre a diario; 96 h cubre caídas de fuentes externas
 const LATENCIA_BD_LENTA_MS = 800;
 const MEMORIA_LIMITE_MB = Number(process.env.MEMORIA_LIMITE_MB) || 512; // plan free de Render
 

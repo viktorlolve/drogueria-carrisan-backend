@@ -202,11 +202,11 @@ app.use('/internal/jobs', internalJobsRoutes);
 // flag, y el panel lo muestra neutro (no es una alerta).
 // ---------------------------------------------------------------
 registrarJob('actualizarTasa', {
-  cron: '0 18 * * 1-5',
-  descripcion: 'Tasa de cambio (lun-vie 18:00 Vzla)',
+  cron: '0 21 * * *',
+  descripcion: 'Tasa de cambio (diario 21:00 Vzla)',
 });
 const correrActualizarTasa = envolverJob('actualizarTasa', actualizarTasa);
-cron.schedule('0 18 * * 1-5', () => {
+cron.schedule('0 21 * * *', () => {
   correrActualizarTasa();
 }, { timezone: 'America/Caracas' });
 

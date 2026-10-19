@@ -7,12 +7,14 @@ import {
   claveDiaLocalVnz,
   ejecucionPendiente,
 } from '../src/services/planificador.js';
+import { flagDeJobActivada } from '../src/services/flags.js';
 
 // --- allowlist de nombres -------------------------------------------------
 
-test('nombreJobValido acepta los dos jobs registrados', () => {
+test('nombreJobValido acepta los tres jobs registrados', () => {
   assert.equal(nombreJobValido('revisar-vencimientos'), true);
   assert.equal(nombreJobValido('limpieza-notificaciones'), true);
+  assert.equal(nombreJobValido('actualizarTasa'), true);
 });
 
 test('nombreJobValido rechaza nombres desconocidos', () => {
@@ -107,4 +109,30 @@ test('JOBS declara flag y funcion para cada job', () => {
   assert.equal(JOBS['revisar-vencimientos'].flag, 'CRON_REVISAR_VENCIMIENTOS');
   assert.equal(JOBS['limpieza-notificaciones'].flag, 'CRON_LIMPIEZA_NOTIFICACIONES');
   assert.equal(typeof JOBS['revisar-vencimientos'].ejecutar, 'function');
+});
+
+// --- job sin flag (tasa de cambio) ---------------------------------------
+
+test('JOBS.actualizarTasa no está gateada (sin flag)', () => {
+  assert.equal(JOBS.actualizarTasa.flag, undefined);
+  assert.equal(typeof JOBS.actualizarTasa.ejecutar, 'function');
+});
+
+// --- flagDeJobActivada (flag ausente = encendido) ------------------------
+
+test('flagDeJobActivada: job sin flag = encendido', () => {
+  assert.equal(flagDeJobActivada({ descripcion: 'x' }), true);
+  assert.equal(flagDeJobActivada(JOBS.actualizarTasa), true);
+});
+
+test('flagDeJobActivada: job con flag sigue su env var', () => {
+  const prev = process.env.CRON_TEST_FLAG;
+  process.env.CRON_TEST_FLAG = 'true';
+  assert.equal(flagDeJobActivada({ flag: 'CRON_TEST_FLAG' }), true);
+  process.env.CRON_TEST_FLAG = 'false';
+  assert.equal(flagDeJobActivada({ flag: 'CRON_TEST_FLAG' }), false);
+  delete process.env.CRON_TEST_FLAG;
+  assert.equal(flagDeJobActivada({ flag: 'CRON_TEST_FLAG' }), false);
+  if (prev === undefined) delete process.env.CRON_TEST_FLAG;
+  else process.env.CRON_TEST_FLAG = prev;
 });

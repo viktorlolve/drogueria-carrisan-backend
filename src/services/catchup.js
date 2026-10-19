@@ -1,4 +1,5 @@
 import { JOBS, ejecucionPendiente } from './planificador.js';
+import { flagDeJobActivada } from './flags.js';
 import { registrarEjecucion, leerEjecucion } from './registrarEjecucion.js';
 
 // Red de seguridad: si el scheduler externo fallo (cron-job.org caido, red, un
@@ -15,7 +16,7 @@ import { registrarEjecucion, leerEjecucion } from './registrarEjecucion.js';
 export async function correrCatchup({ umbralHoras = 24 } = {}) {
   for (const [nombre, job] of Object.entries(JOBS)) {
     // Flag OFF: nada que recuperar, y no se toca nada.
-    if (process.env[job.flag] !== 'true') continue;
+    if (!flagDeJobActivada(job)) continue;
 
     try {
       const previa = await leerEjecucion(nombre);

@@ -1,4 +1,5 @@
 import { JOBS, nombreJobValido } from '../services/planificador.js';
+import { flagDeJobActivada } from '../services/flags.js';
 import { registrarEjecucion } from '../services/registrarEjecucion.js';
 
 // Ping al dead-man's switch (healthchecks.io). Fire-and-forget: si el ping
@@ -27,7 +28,7 @@ export async function ejecutarJobInterno(req, res) {
   }
 
   const job = JOBS[nombre];
-  const flagOn = process.env[job.flag] === 'true';
+  const flagOn = flagDeJobActivada(job);
 
   // Flag OFF: 200 y NO se ejecuta. Un unico switch (la env var) gobierna
   // tanto el cron interno como este endpoint, y el scheduler no se marca como
