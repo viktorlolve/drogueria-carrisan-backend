@@ -306,9 +306,50 @@ export async function solicitarAmpliacion(req, res) {
       return res.status(404).json({ error: 'Cliente no encontrado' });
     }
 
+    // Verificar cooldown y anti-repetición del mínimo desde la última auto-ampliación
+    const { data: ultimaAmpliacion, error: errorUltima } = await supabase
+      .from('ampliaciones_credito')
+      .select('created_at, porcentaje_aplicado, staff_id')
+      .eq('usuario_id', usuario_id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (errorUltima && errorUltima.code !== 'PGRST116') {
+      throw errorUltima;
+    }
+
+    const COOLDOWN_DIAS = 30;
+    const ahora = new Date();
+
+    if (ultimaAmpliacion && ultimaAmpliacion.staff_id === null) {
+      const fechaUltima = new Date(ultimaAmpliacion.created_at);
+      const diasTranscurridos = (ahora - fechaUltima) / (1000 * 60 * 60 * 24);
+
+      if (diasTranscurridos < COOLDOWN_DIAS) {
+        const proximaFecha = new Date(fechaUltima);
+        proximaFecha.setDate(proximaFecha.getDate() + COOLDOWN_DIAS);
+        return res.status(400).json({
+          error: `Ya solicitaste una ampliación recientemente. Podrás volver a solicitarla el ${proximaFecha.toISOString().split('T')[0]}.`,
+        });
+      }
+
+      // Anti-repetición del mínimo: si la última auto-ampliación fue +15% y la actual también sería +15%
+      if (ultimaAmpliacion.porcentaje_aplicado === 15) {
+        const linea_actual_temp = Number(cliente.linea_credito || 0);
+        const { promedio_mensual } = await calcularComprasTrimestre(usuario_id);
+        const nivelTemp = UMBRALES_AMPLIACION.find((u) => promedio_mensual >= linea_actual_temp * u.factor);
+        if (nivelTemp && nivelTemp.porcentaje === 15) {
+          return res.status(400).json({
+            error: 'Tu promedio de compras se mantiene en el nivel mínimo. Para ampliar nuevamente con este porcentaje, necesitas incrementar tus compras o esperar 30 días.',
+          });
+        }
+      }
+    }
+
     const linea_actual = Number(cliente.linea_credito || 0);
     const { promedio_mensual } = await calcularComprasTrimestre(usuario_id);
-    const nivel = UMBRALES_AMPLIACION.find(u => promedio_mensual >= linea_actual * u.factor);
+    const nivel = UMBRALES_AMPLIACION.find((u) => promedio_mensual >= linea_actual * u.factor);
 
     if (!nivel) {
       return res.status(400).json({ error: 'No calificas para una ampliación en este momento' });
