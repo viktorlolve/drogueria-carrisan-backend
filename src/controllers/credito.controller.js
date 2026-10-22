@@ -287,14 +287,31 @@ export async function setLineaCredito(req, res) {
 
     if (errU) throw errU;
 
-    // Registro histórico de la modificación
-    await supabase.from('ampliaciones_credito').insert({
+    // Registro histórico de la modificación (tabla `ampliaciones_credito`, migración 048).
+    // El INSERT NO puede fallar en silencio: si falla, el ajuste queda aplicado sin
+    // rastro de QUIÉN lo hizo. Se revierte con rollback compensatorio y se avisa.
+    const { error: errHistorial } = await supabase.from('ampliaciones_credito').insert({
       usuario_id,
       linea_anterior,
       linea_nueva: monto,
       motivo: motivo || null,
       staff_id: req.staff?.id || null,
     });
+
+    if (errHistorial) {
+      console.error('Error al registrar el ajuste de línea de crédito:', errHistorial);
+      // Rollback compensatorio: se devuelve la línea de crédito a su valor anterior.
+      const { error: errRollback } = await supabase
+        .from('users')
+        .update({ linea_credito: linea_anterior })
+        .eq('id', usuario_id);
+
+      if (errRollback) {
+        console.error('Error revirtiendo el ajuste de línea de crédito:', errRollback);
+      }
+
+      return res.status(500).json({ error: 'Error del servidor' });
+    }
 
     // Notificar al cliente (tipos ya admitidos por notificaciones_tipo_check)
     if (monto > 0) {

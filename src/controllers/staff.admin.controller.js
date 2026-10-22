@@ -31,7 +31,7 @@ const REFERENCIAS_HISTORIAL = [
   ['reportes_pago', 'verificado_por_staff'],
   ['movimientos_caja', 'staff_id'],
   ['cobranza_notas', 'staff_id'],
-  ['ampliaciones_credito', 'staff_id'], // migración 032_ampliaciones_credito.sql (confirmado)
+  ['ampliaciones_credito', 'staff_id'], // migración 048_ampliaciones_credito_staff_id.sql (APLICADA 2026-10-21)
   ['mensajes_chat', 'staff_id'],
   ['cotizaciones', 'staff_id'],
   ['solicitudes_documentos', 'staff_id'],

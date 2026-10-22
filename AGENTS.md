@@ -30,7 +30,7 @@ src/
 ├── middleware/                 # auth.js, Ratelimit.js, soloAdmin.middleware.js, staffAuth.js (JWT staff interno)
 ├── services/                  # push.service.js (web-push), monitoreo.service.js, proveedores/ (importarProveedor, parsers)
 ├── jobs/                      # Tareas cron (actualizarTasa, limpiezaNotificaciones, revisarVencimientos)
-├── migrations/                # SQL de migraciones (010-047) + scripts de import
+├── migrations/                # SQL de migraciones (010-048) + scripts de import
 ```
 
 ## Arquitectura
@@ -171,7 +171,7 @@ Login aparte para trabajadores de la empresa (vendedores, despachadores, almacen
   - `POST /staff/admin-bridge` — staff admin/director recibe un JWT de CLIENTE válido para entrar al panel `/admin` (empareja por email con cuenta `users` `es_admin=true`).
   - **`/staff/almacen`** (`almacenista/administrador/director/admin`): `GET /revisar` (cola `pedido_creado` con items y stock), `GET /preparar` (cola `preparando`, sin filtro de pago — el pago pendiente de contado se lee de `estado_pago`); `PATCH /:id/aprobar` (ajusta cantidades, anula items agotados con nota, recalcula `total_usd` y pasa directo a `preparando`; contado queda con `estado_pago='esperando'`, crédito con `fecha_vencimiento`); `PATCH /:id/cancelar` (solo `pedido_creado`/`preparando`); `PATCH /:id/enviado` (solo `delivery`/`envio_nacional` en `preparando` + pago autorizado); `PATCH /:id/listo-para-retiro` (solo `retiro` en `preparando` + pago autorizado). Usa `validarTransicion`/`aplicarCambioEstado` de `ordenes.controller.js` (contexto: `tipo_envio`, `forma_pago`, `estado_pago`). OJO: NO existe `PATCH /:id/preparando` — pasar a `preparando` ya lo hace la aprobación; `procesando→preparando` legacy queda exclusivo de la verificación de pago de contabilidad.
   - **`/staff/contabilidad`** (`contabilidad/administrador/director/admin`): `GET /clientes` (resumen), **`GET /clientes/buscar`** (buscador de clientes para Facturación — **reutiliza `listarClientes` de `staff.clientes.controller.js`** [buscar + paginación + línea/deuda/saldo batch]; agregado 2026-10-15 para que el rol `contabilidad` no dependa de `ROLES_VENTAS` de Comercial; **DEBE ir ANTES de `/clientes/:id`**, ya está), `GET /clientes/:id` (detalle), `GET /clientes/:id/comparativa`, `GET /clientes/:id/sin-facturar`; `GET|POST /pagos`, `DELETE /pagos/:id`; `GET|POST /facturas` (POST acepta `tipo`/`factura_referencia_id`/`motivo` para notas con la migración 012), `PATCH|DELETE /facturas/:id`; `GET /reportes-pago`, `PATCH /reportes-pago/:id/verificar`, `PATCH /reportes-pago/:id/rechazar`. Duplica la lógica de `/admin` (facturas/pagos/estadocuenta/reportes) pero con sesión staff; **`created_by` = `req.staff.id`** (en pagos/facturas/reportes). No toca los controllers de `/admin`. Las páginas de Finanzas del frontend (Ventas, Cuentas por cobrar, Órdenes por cancelar, Crédito) consumen estos endpoints SIN cambios de ruta. `verificarReportePago` SOLO confirma el pago — NO genera factura (la emite el módulo Facturación aparte, regla 2026-09-14).
-  - **`/staff/credito`** (`contabilidad/administrador/director/admin`): crédito y cobranza — aging report, notas de cobranza, recordatorios push, freeze de crédito (manual + auto-freeze en `revisarVencimientos.js`). Migración `026_credito_cobranza.sql` (+ ampliaciones `032_ampliaciones_credito.sql`). Ver AGENTS raíz.
+  - **`/staff/credito`** (`contabilidad/administrador/director/admin`): crédito y cobranza — aging report, notas de cobranza, recordatorios push, freeze de crédito (manual + auto-freeze en `revisarVencimientos.js`). Migración `026_credito_cobranza.sql` (+ ampliaciones `032_ampliaciones_credito.sql` / `048_ampliaciones_credito_staff_id.sql` — ver la sección "Ampliaciones de crédito"). Ver AGENTS raíz.
   - **`/staff/tesoreria`** (`contabilidad/administrador/director/admin`): ingresos consolidados (read-only desde `pagos`), egresos manuales + salidas internas (`movimientos_caja`), por tercero, export PDF/CSV. Migraciones `027_tesoreria_movimientos_caja.sql` + `028_tesoreria_ampliada.sql`.
   - **`/staff/reportes`** (`contabilidad/administrador/director/admin`): `GET /resumen?desde=&hasta=` — informe financiero consolidado (6 bloques: ventas, crédito aprobado, crédito vencido con aging, cobros, facturado_vs_cobrado, egresos).
   - **`/staff/logistica`** (`almacenista/administrador/director/admin`, agencias solo admin): retiros (`GET/PATCH /retiros`), incidencias (`GET/PATCH /incidencias`), verificar paquete (`/verificar-paquete`, `/reintentar`), completadas (`/completadas`), agencias CRUD (`/agencias*`). Migración `029_logistica.sql`.
@@ -201,9 +201,32 @@ CRUD de las cuentas del **personal interno** (tabla `staff`) para la sección **
 
 **Protecciones** (`puedeDesactivar`/`puedeCambiarRol`/`puedeCambiarEmail`/`puedeEliminar`, todas 409): **nunca la propia cuenta** (email del objetivo = email del actor; el id del token cliente admin no es el id de `staff`, se compara por email), y **nunca dejar 0 admins activos** (`contarAdminsActivos()` = `staff` con `rol='admin' AND activo=true`; cubre desactivar, degradar el rol de un admin y eliminarlo). La **whitelist** de `armarCambiosStaff`/`armarNuevoStaff` es la barrera anti mass-assignment — **nunca `{ ...req.body }`**; sin campos → **400**; el email se sanea (trim + lowercase + regex); `activo` se coacciona a booleano; `password` min 8 con ≥1 letra y ≥1 número. `ROLES_TODOS_STAFF` (`vendedor, despachador, almacenista, contabilidad, administrador, director, admin`) es la **fuente única** (mismo CHECK que `009_roles_staff.sql`).
 
-**Tabla de referencias de historial** (`REFERENCIAS_HISTORIAL`, pares `[tabla, columna]` con FK a `staff(id)` `ON DELETE SET NULL`): `ordenes.creado_por_staff_id`, `presupuestos.creado_por_staff_id`, `facturas.created_by_staff`, `facturas.anulada_por`, `pagos.created_by_staff`, `reportes_pago.verificado_por_staff`, `movimientos_caja.staff_id`, `cobranza_notas.staff_id`, `ampliaciones_credito.staff_id`, `mensajes_chat.staff_id`, `cotizaciones.staff_id`, `solicitudes_documentos.staff_id`, `requerimientos.staff_id`, `promociones_plantillas.staff_id`, `promociones_plantillas_eliminadas.staff_id`, `cupones_descuento.creado_por_staff_id`, `vitrina_config.updated_by`. **EXCLUIDAS a propósito** `notificaciones.staff_id` y `push_subscriptions.staff_id` (migración 041): son `ON DELETE CASCADE` y son filas PERSONALES de esa persona (sus notificaciones/suscripciones push), no historial de escritura — bloquear el borrado por una notificación no tiene sentido.
+**Tabla de referencias de historial** (`REFERENCIAS_HISTORIAL`, pares `[tabla, columna]` con FK a `staff(id)` `ON DELETE SET NULL`): `ordenes.creado_por_staff_id`, `presupuestos.creado_por_staff_id`, `facturas.created_by_staff`, `facturas.anulada_por`, `pagos.created_by_staff`, `reportes_pago.verificado_por_staff`, `movimientos_caja.staff_id`, `cobranza_notas.staff_id`, `ampliaciones_credito.staff_id` (migración **048**), `mensajes_chat.staff_id`, `cotizaciones.staff_id`, `solicitudes_documentos.staff_id`, `requerimientos.staff_id`, `promociones_plantillas.staff_id`, `promociones_plantillas_eliminadas.staff_id`, `cupones_descuento.creado_por_staff_id`, `vitrina_config.updated_by`. **EXCLUIDAS a propósito** `notificaciones.staff_id` y `push_subscriptions.staff_id` (migración 041): son `ON DELETE CASCADE` y son filas PERSONALES de esa persona (sus notificaciones/suscripciones push), no historial de escritura — bloquear el borrado por una notificación no tiene sentido.
 
 **Regla de fail-closed** (`tieneHistorial`): si una de las queries de historial da **error, lanza** → `eliminarStaff` responde **500** en vez de silenciar el error y borrar la cuenta. Se implementa con un **HEAD count** (`.select('*', { count: 'exact', head: true })`), **NO** con `.select('id')`: no toda tabla de la lista tiene columna `id` (p. ej. `vitrina_config` tiene PK `bloque`), y pedir una columna inexistente haría fallar PostgREST → **500 en TODO DELETE**. `contarAdminsActivos()` también lanza (no se continúa con un conteo erroneo). El orden de `eliminarStaff` es: `contarAdminsActivos()` → `tieneHistorial` (puede lanzar) → `puedeEliminar`.
+
+> **El fail-closed es una espada de doble filo (bug real, 2026-10-21)**: `tieneHistorial` recorre las 17 tablas de `REFERENCIAS_HISTORIAL` y **una sola columna inexistente tumba TODOS los DELETE**. Por eso `ampliaciones_credito.staff_id` (que la BD real NO tenía) producía **500 en cada borrado de personal** en vez de un 409 legible. Al agregar una tabla a `REFERENCIAS_HISTORIAL`, **verificar que la columna existe en la BD real** antes (query directo `pg` o `information_schema`), no asumir que la migración del repo se aplicó.
+
+### Ampliaciones de crédito (`ampliaciones_credito`) — desalineación de schema corregida (2026-10-21)
+
+**SÍNTOMA**: 3 endpoints rotos en producción (todos 500, no 4xx de negocio):
+1. `POST /clientes/:id/estado-cuenta/ampliacion-solicitar` → el SELECT pedía `staff_id` → PostgREST **42703** ("column ampliaciones_credito.staff_id does not exist") → el controller relanza el error → 500 en TODAS las solicitudes de ampliación del cliente.
+2. `DELETE /admin/staff/:id` → `tieneHistorial` filtraba `ampliaciones_credito.staff_id` → la query fallaba → fail-closed → **500 en TODO borrado de personal**.
+3. `PATCH /staff/credito/linea/clientes/:id` → el INSERT escribía `motivo` + `staff_id` (inexistentes) y **el resultado NO se revisaba** → el fallo pasaba en silencio → el historial de línea de crédito del staff nunca se registró.
+
+**CAUSA RAÍZ**: la tabla real en producción se creó a mano (SQL del commit `619e289`) con SOLO `id, usuario_id, linea_anterior, linea_nueva, porcentaje_aplicado, promedio_mensual_usado, created_at`. El archivo `032_ampliaciones_credito.sql` declara `motivo` y `staff_id`, pero usa **`CREATE TABLE IF NOT EXISTS`** → al aplicarse sobre la tabla YA existente **es un NO-OP**: no agregó esas columnas. La tabla real además tiene `porcentaje_aplicado`/`promedio_mensual_usado` (columnas que el archivo 032 NO tiene) y ambos **NOT NULL**, lo que hacía fallar también el INSERT del staff (que no manda porcentaje ni promedio).
+
+**FIX (migración `048_ampliaciones_credito_staff_id.sql`, APLICADA en BD el 2026-10-21 con conexión directa `pg` con `SUPABASE_DB_*`)**: agrega `motivo text NULL` y `staff_id uuid NULL` (+ FK a `staff(id)` `ON DELETE SET NULL`), **relaja el NOT NULL de `porcentaje_aplicado` y `promedio_mensual_usado`** (solo tienen sentido en la auto-ampliación del cliente; el ajuste manual del staff no tiene % ni promedio) y crea 2 índices (`staff_id`, `(usuario_id, created_at DESC)`). Idempotente. Además el archivo `032` se corrigió para que una BD **nueva** nazca con la forma correcta (verificada: la forma de 032 coincide columna por columna con la real tras la 048).
+
+**Semántica de `staff_id` (origen de la distinción auto vs manual)**:
+- `staff_id IS NULL` → **auto-ampliación del cliente** (`solicitarAmpliacion`): trae `porcentaje_aplicado` + `promedio_mensual_usado`.
+- `staff_id = <uuid>` → **ajuste manual del staff** (`setLineaCredito`): trae `motivo`, sin % ni promedio.
+
+**Cooldown de 30 días** (`estadocuenta.controller.js` `solicitarAmpliacion`): mide desde la **última auto-ampliación** del cliente, por eso el SELECT filtra `.is('staff_id', null)`. Antes filtraba en memoria con `ultimaAmpliacion.staff_id === null` sobre la fila más reciente de CUALQUIER tipo → un ajuste manual del staff reiniciaba (o bloqueaba) el cooldown del cliente. **El filtro va en la QUERY, no en el código**: si se hace en memoria, la fila del staff "tapa" la auto-ampliación y el cooldown se mide desde el ajuste manual.
+
+**Regla general (aplicada)**: los 2 INSERT en `ampliaciones_credito` **revisan el error y hacen rollback compensatorio** (devuelven `users.linea_credito` a su valor anterior) si el historial no se puede escribir — la línea de crédito del cliente NUNCA queda ampliada sin registro, ni ajustada sin rastro de quién lo hizo. Patrón el mismo que `construirOrden` / `createPago`.
+
+**Aplicar una migración con conexión directa**: patrón `src/migrations/importar_sql.js` (`pg` + `SUPABASE_DB_HOST/PORT/NAME/USER/PASSWORD` del `.env`). El script debe estar **dentro de `drogueria-carrisan-backend/`** para que resuelva `pg` y el `.env` (si se ejecuta desde `C:\...\Temp` → `ERR_MODULE_NOT_FOUND`; si lee el `.env` con prefijo de carpeta → `ENOENT`).
 
 **Migración Admin → Staff (IMPLEMENTADA — 2026-09-07)** — funcionalidades del panel `/admin` migradas a módulos staff con endpoints **NUEVOS** `/staff/*` (sesión staff). Las rutas están en `routes/staff.{modulo}.routes.js` y se montan en `server.js` ANTES del `/staff` base, usando `verifyStaffJWT` + `checkRolStaff([...])`. NO se reutilizan ni modifican los controllers/endpoints de `/admin`:
 
@@ -375,7 +398,7 @@ Proteccion anti-bot del registro: `authLimiter` (10 req/15 min por IP) cubre TOD
 
 ## Migraciones SQL
 
-Ubicacion: `src/migrations/` (010-047)
+Ubicacion: `src/migrations/` (010-048)
 
 Las migraciones son SQL plano. NO hay sistema de migraciones automatico — se ejecutan manualmente en Supabase SQL Editor. Varios números quedaron duplicados (025, 026, 032) porque se crearon en paralelo — verificar por nombre de archivo.
 
@@ -405,7 +428,7 @@ Las migraciones son SQL plano. NO hay sistema de migraciones automatico — se e
 | 029_logistica.sql | Logística unificada: columnas `ordenes.paquete_verificado` + `ordenes.incidencia_motivo`, tabla `agencias_envio` |
 | 030_pagos_reporte_staff.sql | Pagos/verificación staff: `pagos.created_by_staff` y `reportes_pago.verificado_por_staff` (uuid FK `staff(id)`) — `pagos.created_by`/`reportes_pago.verificado_por` son FK integer a `users(id)`, el staff (uuid) NUNCA se escribe ahí |
 | 031_mensajes_chat_staff.sql | Chat staff: `mensajes_chat.remitente_id` nullable + `mensajes_chat.staff_id uuid REFERENCES staff(id) ON DELETE SET NULL` (auditoría de quién respondió) |
-| 032_ampliaciones_credito.sql | Crédito: ampliaciones/solicitudes de línea de crédito |
+| 032_ampliaciones_credito.sql | Crédito: tabla de historial de ampliaciones/línea de crédito. **Corregida el 2026-10-21** para que cree la forma REAL (con `porcentaje_aplicado`, `promedio_mensual_usado`, `motivo`, `staff_id`); ver la sección "Ampliaciones de crédito" — para una BD existente hay que aplicar la 048 |
 | 032_categorias_tienda.sql | Categorías de tienda (mismo número 032 — archivos paralelos) |
 | 032_perfiles_institucional_documentos.sql | Perfiles institucional (documentos) |
 | 033_ordenes_sub_usuario.sql | Órdenes de sub-usuarios |
@@ -423,6 +446,7 @@ Las migraciones son SQL plano. NO hay sistema de migraciones automatico — se e
 | 045_inventario_opciones_rpc.sql | Consola de Inventario: RPC de agregados de `GET /staff/inventario/opciones` (datalists + contadores de cola; sin esto los `select` se truncaban a 1.000 de 2.612 filas) |
 | 046_buscar_productos.sql | Buscador del catálogo con tolerancia a typos + expansión bidireccional marca↔molécula (tiers por `word_similarity`/expansión) |
 | 047_notificaciones_url.sql | "Avísame" unificado: columna `notificaciones.url text NULL` (deep-link de notificación, p.ej. `/producto/:id` para "Ya llegó"). APLICADA 2026-10-06 |
+| 048_ampliaciones_credito_staff_id.sql | Alinea la tabla REAL `ampliaciones_credito` con lo que el código usa: agrega `motivo` + `staff_id` (uuid FK a `staff(id)` `ON DELETE SET NULL`), **relaja el NOT NULL de `porcentaje_aplicado`/`promedio_mensual_usado`** y crea 2 índices. **APLICADA en BD el 2026-10-21** (conexión directa `pg`) |
 
 **NOTA**: Las migraciones 002-009 ya NO existen como archivos (fueron consolidadas/aplicadas directamente en Supabase). La tabla principal `users` tampoco esta en estas migraciones — fue creada directamente en Supabase. Si necesitas ver su schema, busca las queries en los controllers (especialmente auth.controller.js y users.controller.js).
 
@@ -464,6 +488,12 @@ Reglas:
 - Orden correcto ante una filtracion: **rotar primero, purgar el historial despues**. Purgar sin rotar deja la clave viva y publica.
 - Generar un par: `node -e "console.log(require('web-push').generateVAPIDKeys())"`.
 - Al rotar, las suscripciones existentes quedan invalidas (estan atadas a la `applicationServerKey`). `usePush.js` (frontend) las detecta comparando `subscription.options.applicationServerKey` contra la clave actual y se re-suscribe solo, sin pedir permiso de nuevo. Las filas muertas en `push_subscriptions` se limpian solas: `push.service.js` borra la suscripcion al recibir 404/410.
+
+**TRAMPA — la clave VAPID llega al frontend por DOS caminos distintos (2026-10-21)**:
+- **Frontend**: `usePush.js` usa `import.meta.env.VITE_VAPID_PUBLIC_KEY` → la clave se **hornea en el build de Vercel** → rotarla en Render NO cambia la del frontend → **cada push del backend es rechazado con 401 por las suscripciones atadas al par viejo** (fallo silencioso: el `sendNotification` devuelve 401 y nada llega al dispositivo).
+- **Backend**: `GET /push/public-key` (PÚBLICO, sin auth) devuelve `{ publicKey, vapid }` donde `vapid` es el diagnóstico del par (`estadoVapid()` en `src/services/vapidEstado.js`): **solo booleanos** (`publicaPresente`, `privadaLimpia`, `parConsistente`…), **nunca material de clave**. Es una sonda de despliegue: permite verificar desde afuera que el par del deploy está sano.
+
+**`GET /push/public-key` NO tiene ningún consumidor en el frontend** (grep de `public-key`/`publicKey` en `frontend/src/` → 0 resultados). Es una herramienta de diagnóstico manual, no el canal real del frontend. Consecuencia: nada impide que Render y Vercel se desincronicen — de hecho pasó (Render con el par nuevo `BAc2xs88…C803c`, Vercel sin redeploy con el par viejo → push muerto). **Decisión pendiente del dueño**: (a) que el frontend consuma `/push/public-key` en runtime → rotar el par sería solo un cambio en Render (sin redeploy de Vercel) y se acaban las desincronizaciones; o (b) mantener el build-time env var y documentar que **rotar el par exige redeploy de Vercel SIEMPRE**.
 
 
 ## CORS

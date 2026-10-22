@@ -306,11 +306,16 @@ export async function solicitarAmpliacion(req, res) {
       return res.status(404).json({ error: 'Cliente no encontrado' });
     }
 
-    // Verificar cooldown y anti-repetición del mínimo desde la última auto-ampliación
+    // Verificar cooldown y anti-repetición del mínimo desde la última AUTO-ampliación.
+    // El filtro `.is('staff_id', null)` es lo que hace que el cooldown mida desde la
+    // última ampliación del CLIENTE (staff_id IS NULL) y no desde el último ajuste
+    // manual del staff (staff_id = <uuid>) — si el staff le movió la línea al cliente,
+    // eso NO debe reiniciar ni bloquear el cooldown de 30 días del cliente.
     const { data: ultimaAmpliacion, error: errorUltima } = await supabase
       .from('ampliaciones_credito')
-      .select('created_at, porcentaje_aplicado, staff_id')
+      .select('created_at, porcentaje_aplicado')
       .eq('usuario_id', usuario_id)
+      .is('staff_id', null)
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
@@ -322,7 +327,7 @@ export async function solicitarAmpliacion(req, res) {
     const COOLDOWN_DIAS = 30;
     const ahora = new Date();
 
-    if (ultimaAmpliacion && ultimaAmpliacion.staff_id === null) {
+    if (ultimaAmpliacion) {
       const fechaUltima = new Date(ultimaAmpliacion.created_at);
       const diasTranscurridos = (ahora - fechaUltima) / (1000 * 60 * 60 * 24);
 
@@ -366,15 +371,35 @@ export async function solicitarAmpliacion(req, res) {
 
     if (errorUpdate) throw errorUpdate;
 
-    // Registro histórico de la ampliación — requiere la tabla ampliaciones_credito
-    // (ver SQL abajo). Si prefieres omitir el historial por ahora, borra este insert.
-    await supabase.from('ampliaciones_credito').insert({
-      usuario_id,
-      linea_anterior: linea_actual,
-      linea_nueva: nueva_linea,
-      porcentaje_aplicado: nivel.porcentaje,
-      promedio_mensual_usado: promedio_mensual,
-    });
+    // Registro histórico de la ampliación (tabla `ampliaciones_credito`, migración 048).
+    // El INSERT NO puede fallar en silencio: si falla, la línea de crédito del cliente
+    // quedaría ampliada SIN registro. Se revierte con rollback compensatorio
+    // (mismo patrón que `construirOrden` y `createPago`).
+    const { error: errorHistorial } = await supabase
+      .from('ampliaciones_credito')
+      .insert({
+        usuario_id,
+        linea_anterior: linea_actual,
+        linea_nueva: nueva_linea,
+        porcentaje_aplicado: nivel.porcentaje,
+        promedio_mensual_usado: promedio_mensual,
+        staff_id: null,
+      });
+
+    if (errorHistorial) {
+      console.error('Error al registrar la ampliación de crédito:', errorHistorial);
+      // Rollback compensatorio: se devuelve la línea de crédito a su valor anterior.
+      const { error: errorRollback } = await supabase
+        .from('users')
+        .update({ linea_credito: linea_actual })
+        .eq('id', usuario_id);
+
+      if (errorRollback) {
+        console.error('Error revirtiendo la ampliación de crédito:', errorRollback);
+      }
+
+      return res.status(500).json({ error: 'Error del servidor' });
+    }
 
     res.json({ linea_anterior: linea_actual, linea_nueva: actualizado.linea_credito, porcentaje_aplicado: nivel.porcentaje });
   } catch (err) {
