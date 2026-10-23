@@ -2,13 +2,22 @@ name: Shorts previews - generar
 
 on:
   schedule:
-    # Aproximado a cada 48h (cron no tiene unidad nativa de "cada 2 días" limpia).
-    - cron: '0 3 */2 * *'
+    # Diario. El costo lo pone el tope de 24 clips por corrida, no la frecuencia;
+    # con cada 48h la cola de videos nuevos se acumulaba mas rapido de lo que se
+    # drenaba. Además el script corta solo si detecta bloqueo por IP.
+    - cron: '0 3 * * *'
   workflow_dispatch: {}
+
+# Una sola corrida a la vez: dos procesos compitiendo por los mismos pendientes
+# duplican descargas y subidas al mismo objeto de Storage.
+concurrency:
+  group: shorts-previews
+  cancel-in-progress: false
 
 jobs:
   generar:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
