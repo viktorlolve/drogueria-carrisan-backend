@@ -2,7 +2,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import supabase from '../config/supabase.js';
+import { supabase } from '../config/supabase.js';
 import importarProveedor from '../services/proveedores/importarProveedor.js';
 import { alPublicarPrecio } from './alertasDisponibilidad.controller.js';
 import PROVEEDORES from '../config/proveedores.js';
