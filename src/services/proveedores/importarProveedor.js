@@ -175,20 +175,27 @@ export async function importarProveedor({ buffer, nombre = 'archivo', proveedor 
     const numeroFmt = PROVEEDORES[proveedor].formatoNumero;
     const filas = [];
     const costoPorProducto = new Map(); // producto_id -> costo de ESTA corrida
-    let cuentas = { matched: 0, sinMatch: 0, noFarmaco: 0, sinPrecio: 0 };
+    const sinEnlazar = [];
+    let cuentas = { matched: 0, sinMatch: 0, noFarmaco: 0, sinPrecio: 0, puestosEnCero: 0 };
 
     for (const f of filasArchivo) {
       const costo = normalizarNumero(f.costoRaw, numeroFmt);
+      const desc = (f.descripcion || f.desc || '').trim();
       const base = {
         proveedor,
-        desc: (f.descripcion || f.desc || '').trim(),
+        desc,
         codigo: proveedor === 'drovencentro' ? f.ean : f.codigo,
         aux: proveedor === 'drovencentro' ? (f.laboratorio || '') : f.aux,
         costo: costo != null ? +costo.toFixed(2) : null,
+        laboratorio: proveedor === 'drovencentro' ? (f.laboratorio || '') : (f.laboratorio || ''),
       };
 
-      if (!base.desc) { filas.push({ ...base, estado: 'sin_match', motivo: 'descripcion vacia' }); cuentas.sinMatch++; continue; }
+      if (!desc) { filas.push({ ...base, estado: 'sin_match', motivo: 'descripcion vacia' }); cuentas.sinMatch++; continue; }
       if (costo == null) { filas.push({ ...base, estado: 'sin_match', motivo: 'sin costo valido' }); cuentas.sinPrecio++; continue; }
+      if (Number(costo) === 0) {
+        cuentas.puestosEnCero++;
+        // No se aplica como costo válido al MIN, pero se registra
+      }
 
       const enlazado = proveedor === 'cobeca'
         ? enlazarCOBECA(f, productos, idx)
@@ -210,13 +217,21 @@ export async function importarProveedor({ buffer, nombre = 'archivo', proveedor 
           estado: 'matched',
           motivo: `score=${(+enlazado.score).toFixed(3)}`,
         });
-        // Gastar el costo más barato de esta corrida por producto (dedupe por EAN/desc)
-        const prev = costoPorProducto.get(enlazado.producto.id);
-        if (prev == null || base.costo < prev) costoPorProducto.set(enlazado.producto.id, base.costo);
+        // Solo aplicar costo > 0 al MIN; costo 0 se excluye
+        if (Number(costo) > 0) {
+          const prev = costoPorProducto.get(enlazado.producto.id);
+          if (prev == null || base.costo < prev) costoPorProducto.set(enlazado.producto.id, base.costo);
+        }
         cuentas.matched++;
       } else {
         filas.push({ ...base, estado: 'sin_match', motivo: enlazado.motivo || 'sin_candidato' });
         cuentas.sinMatch++;
+        sinEnlazar.push({
+          descripcion: desc,
+          laboratorio: base.laboratorio || null,
+          costo_usd: base.costo,
+          pack: null,
+        });
       }
     }
 
@@ -234,46 +249,66 @@ export async function importarProveedor({ buffer, nombre = 'archivo', proveedor 
       }
     }
 
-    // 5. Recalcular productos.costo_usd = MIN, precio_usd = costo/0.6, y publicar
-    //    (solo para los productos de esta corrida, sin romper precios de los demás).
+    // 5. Recalcular productos.costo_usd = MIN(costo_usd > 0), precio_usd = costo/0.6 si hay costo
+    //    Si no queda ningún costo > 0, conservar precio_usd anterior. disponible solo se degrada sin costo válido.
     const ids = costosArray.map(([id]) => id);
     let actualizados = 0;
     let publicados = 0;
+    let subieron = 0;
+    let bajaron = 0;
+    let iguales = 0;
     const productosPublicados = [];
     for (let i = 0; i < ids.length; i += CHUNK) {
       const loteIds = ids.slice(i, i + CHUNK);
-      // Valor previo de precio para contar "publicados por primera vez"
+      // Valor previo para comparar y contar "publicados por primera vez"
       const { rows: prev } = await client.query(
-        `SELECT id, precio_usd FROM public.productos WHERE id = ANY($1)`,
+        `SELECT id, precio_usd, costo_usd FROM public.productos WHERE id = ANY($1)`,
         [loteIds]
       );
       const prevPrecio = new Map(prev.map((p) => [p.id, p.precio_usd]));
+      const prevCosto = new Map(prev.map((p) => [p.id, p.costo_usd]));
 
       const { rows: res } = await client.query(`
         UPDATE public.productos p
         SET costo_usd = sub.minc,
-            precio_usd = CASE WHEN sub.minc > 0 THEN round(sub.minc / $1::numeric, 2)
+            precio_usd = CASE WHEN sub.minc IS NOT NULL AND sub.minc > 0 THEN round(sub.minc / $1::numeric, 2)
                               ELSE p.precio_usd END,
-            disponible = CASE WHEN sub.minc > 0 THEN true ELSE p.disponible END,
+            disponible = CASE WHEN sub.minc IS NOT NULL AND sub.minc > 0 AND (CASE WHEN sub.minc IS NOT NULL AND sub.minc > 0 THEN round(sub.minc / $1::numeric, 2) ELSE p.precio_usd END) IS NOT NULL AND (CASE WHEN sub.minc IS NOT NULL AND sub.minc > 0 THEN round(sub.minc / $1::numeric, 2) ELSE p.precio_usd END) > 0 THEN true
+                              WHEN sub.minc IS NOT NULL AND sub.minc > 0 AND (CASE WHEN sub.minc IS NOT NULL AND sub.minc > 0 THEN round(sub.minc / $1::numeric, 2) ELSE p.precio_usd END) IS NOT NULL AND (CASE WHEN sub.minc IS NOT NULL AND sub.minc > 0 THEN round(sub.minc / $1::numeric, 2) ELSE p.precio_usd END) > 0 IS FALSE THEN false
+                              ELSE p.disponible END,
             updated_at = now()
         FROM (
           SELECT producto_id, MIN(costo_usd) AS minc
           FROM public.producto_costos
           WHERE producto_id = ANY($2::int[])
+            AND costo_usd > 0
           GROUP BY producto_id
         ) sub
         WHERE sub.producto_id = p.id
-        RETURNING p.id, p.precio_usd, p.nombre_comercial
+        RETURNING p.id, p.precio_usd, p.nombre_comercial, p.costo_usd
       `, [MARGEN, loteIds]);
 
       for (const r of res) {
         actualizados++;
-        if (r.precio_usd != null && Number(r.precio_usd) > 0 && (prevPrecio.get(r.id) == null || Number(prevPrecio.get(r.id)) <= 0)) {
+        const pPrev = prevPrecio.get(r.id);
+        const cPrev = prevCosto.get(r.id);
+        const cNew = r.costo_usd;
+        if (cPrev != null && cNew != null) {
+          if (Number(cNew) > Number(cPrev)) subieron++;
+          else if (Number(cNew) < Number(cPrev)) bajaron++;
+          else iguales++;
+        } else if (cPrev == null && cNew != null) subieron++;
+        else if (cPrev != null && cNew == null) bajaron++;
+        else iguales++;
+        if (r.precio_usd != null && Number(r.precio_usd) > 0 && (pPrev == null || Number(pPrev) <= 0)) {
           publicados++;
           productosPublicados.push({ id: r.id, nombre_comercial: r.nombre_comercial });
         }
       }
     }
+
+    // Productos con costo escrito pero quedaron sin minc > 0? (todos con 0) -> asegurar que no se degraden por este UPDATE
+    // Los que quedaron con costo_usd NULL mantienen precio/disponible como estaban.
 
     // 6. CSV
     const csv = escribirCsvTexto(filas);
@@ -287,11 +322,16 @@ export async function importarProveedor({ buffer, nombre = 'archivo', proveedor 
         sinMatch: filas.length - cuentas.matched,
         actualizados,
         publicados,
+        subieron,
+        bajaron,
+        iguales,
+        puestosEnCero: cuentas.puestosEnCero,
+        sin_enlazar: sinEnlazar.length,
       },
       csv,
-      // Productos que cruzaron de "sin precio" a "con precio" en esta corrida.
-      // El controller los pasa por alPublicarPrecio (importar publicaba sin avisar).
       productosPublicados,
+      sinEnlazar,
+      filas,
     };
   } catch (err) {
     console.error('Error en importarProveedor:', err);

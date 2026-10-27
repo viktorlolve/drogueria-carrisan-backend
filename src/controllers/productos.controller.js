@@ -89,8 +89,9 @@ async function enriquecerPrecioProducto(producto, etiqueta) {
 
 // Columnas del buscador público. Sin precio ni foto: con sesión (`req.user`)
 // se agregan más abajo, para que los buscadores del navbar/móvil/presupuesto
-// no cambien de aspecto.
-const COLUMNAS_BUSQUEDA = 'id, nombre_comercial, sku, laboratorio, linea';
+// no cambien de aspecto. `forma` viaja siempre porque el constructor de
+// presupuestos filtra por forma farmacéutica.
+const COLUMNAS_BUSQUEDA = 'id, nombre_comercial, sku, laboratorio, linea, forma';
 const COLUMNAS_BUSQUEDA_CON_SESION = `${COLUMNAS_BUSQUEDA}, foto_url, precio_usd`;
 
 // El término va interpolado en un filtro `.or()` de PostgREST, donde la coma
