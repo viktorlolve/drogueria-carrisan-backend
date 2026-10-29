@@ -1,20 +1,35 @@
 import { supabase } from '../config/supabase.js';
 
 // GET /prices → tasa actual
+// Devuelve además la tasa anterior (si existe) para que el panel interno del
+// staff pueda mostrar la variación. `tasa_cambio` guarda una fila por cada
+// actualización, así que basta con traer las 2 más recientes: no hace falta
+// endpoint ni tabla nueva. Los campos extra son aditivos (Home, Carrito,
+// Catálogo y TasaCambio siguen leyendo `usd_a_ves`/`updated_at` igual).
 export async function getTasaCambio(req, res) {
   try {
     const { data, error } = await supabase
       .from('tasa_cambio')
       .select('*')
       .order('updated_at', { ascending: false })
-      .limit(1)
-      .single();
+      .limit(2);
 
-    if (error || !data) {
+    if (error) {
+      console.error('Error al obtener tasa:', error);
+      return res.status(500).json({ error: 'Error al obtener la tasa de cambio' });
+    }
+
+    if (!data || data.length === 0) {
       return res.status(404).json({ error: 'No hay tasa de cambio configurada' });
     }
 
-    res.json(data);
+    const [actual, anterior] = data;
+
+    res.json({
+      ...actual,
+      anterior_usd_a_ves: anterior?.usd_a_ves ?? null,
+      anterior_updated_at: anterior?.updated_at ?? null,
+    });
   } catch (err) {
     console.error('Error al obtener tasa:', err);
     res.status(500).json({ error: 'Error del servidor' });
