@@ -418,8 +418,11 @@ export async function subirFotoProducto(req, res) {
   try {
     // Re-codificar a JPEG descarta metadata y neutraliza payloads escondidos en el
     // archivo del cliente: no se sirve el binario original.
+    // `flatten` es OBLIGATORIO: los PNG llegan con canal alfa y JPEG no lo soporta.
+    // Sin esto, la transparencia se hornea como NEGRO y la foto queda con fondo negro.
     const buffer = await sharp(req.file.buffer)
       .rotate()
+      .flatten({ background: '#ffffff' })
       .resize({
         width: FOTO_MAX_PX,
         height: FOTO_MAX_PX,

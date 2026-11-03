@@ -304,7 +304,13 @@ export async function register(req, res) {
         autorizacion_director_url: perfil.autorizacion_director_url || null,
         direccion_fiscal: perfil.direccion_fiscal,
         telefono_institucional: perfil.telefono_institucional,
-        correo_institucional: perfil.correo_institucional,
+        // `perfiles_institucional.correo_institucional` es NOT NULL en la BD y
+        // el formulario de registro no pide ese dato (solo el email de la
+        // cuenta). Sin este fallback el insert del perfil viola el NOT NULL
+        // (23502), se revierte el usuario y el registro responde 500.
+        // El email de la cuenta ES el correo institucional; el staff lo puede
+        // editar después si la institución usa otro.
+        correo_institucional: perfil.correo_institucional || emailNormalizado,
         horario_recepcion: perfil.horario_recepcion || null,
         nombre_representante: perfil.nombre_representante,
         telefono_representante: perfil.telefono_representante

@@ -163,8 +163,13 @@ async function capasMarca(variante, { left, top, width, height, opacity }) {
 
 async function componerMarca(fotoBuf, variante) {
   // Sin marca: solo re-encode. No toca los logos (ni depende de ellos).
+  // `flatten` es OBLIGATORIO: el buffer base puede conservar alfa (PNG) y JPEG no
+  // lo soporta → sin esto la transparencia se hornea como NEGRO.
   if (variante === VARIANTE_SIN_MARCA) {
-    return sharp(fotoBuf).jpeg({ quality: CALIDAD_JPEG, mozjpeg: true }).toBuffer();
+    return sharp(fotoBuf)
+      .flatten({ background: '#ffffff' })
+      .jpeg({ quality: CALIDAD_JPEG, mozjpeg: true })
+      .toBuffer();
   }
   const m = await sharp(fotoBuf).metadata();
   const L = await cargarLogos();
@@ -174,7 +179,11 @@ async function componerMarca(fotoBuf, variante) {
     proporcion: L[LOGO_VARIANTES[variante]].proporcion,
   });
   const capas = await capasMarca(variante, caja);
-  return sharp(fotoBuf).composite(capas).jpeg({ quality: CALIDAD_JPEG, mozjpeg: true }).toBuffer();
+  return sharp(fotoBuf)
+    .flatten({ background: '#ffffff' })
+    .composite(capas)
+    .jpeg({ quality: CALIDAD_JPEG, mozjpeg: true })
+    .toBuffer();
 }
 
 // --- red ---------------------------------------------------------------------
@@ -352,7 +361,10 @@ async function modoMuestras() {
     const buf = await descargar(f.foto_url);
     const base = await sharp(buf).rotate().resize({ width: ANCHO_MAX, withoutEnlargement: true }).png().toBuffer();
     const basePath = path.join(DIR_MUESTRAS, `_base_${f.etiqueta}.jpg`);
-    await sharp(base).jpeg({ quality: CALIDAD_JPEG, mozjpeg: true }).toFile(basePath);
+    await sharp(base)
+      .flatten({ background: '#ffffff' })
+      .jpeg({ quality: CALIDAD_JPEG, mozjpeg: true })
+      .toFile(basePath);
 
     for (const v of VARIANTES) {
       const jpeg = await componerMarca(base, v.clave);
