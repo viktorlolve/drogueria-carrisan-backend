@@ -61,7 +61,7 @@ export async function createUser(req, res) {
         email: emailNormalizado,
         password_hash,
         nombre,
-        etiqueta: etiqueta || 'distribuidor',
+        etiqueta: etiqueta || null,
         rif_cedula: rif_cedula || null,
         direccion_fiscal: direccion_fiscal || null,
         direccion_entrega: direccion_entrega || null,

@@ -21,7 +21,7 @@ import {
   getOrdenesDeCliente,
   getCotizacionesDeCliente,
   getRequerimientosDeCliente,
-  updateClienteEtiqueta,
+  updateClienteEtiquetas,
 } from '../controllers/staff.clientes.controller.js';
 import { listarProductosStaff } from '../controllers/staff.productos.controller.js';
 import { verifyStaffJWT, checkRolStaff } from '../middleware/staffAuth.js';
@@ -39,7 +39,7 @@ router.get('/me', verifyStaffJWT, getMiPerfil);
 router.get('/despacho', verifyStaffJWT, checkRolStaff(ROLES_DESPACHO), getColaDespacho);
 router.patch('/despacho/:id/entregar', verifyStaffJWT, checkRolStaff(ROLES_DESPACHO), marcarEntregado);
 router.get('/clientes', verifyStaffJWT, checkRolStaff(ROLES_VENTAS), listarClientes);
-router.patch('/clientes/:id', verifyStaffJWT, checkRolStaff(ROLES_VENTAS), updateClienteEtiqueta);
+router.patch('/clientes/:id', verifyStaffJWT, checkRolStaff(ROLES_VENTAS), updateClienteEtiquetas);
 router.get('/productos', verifyStaffJWT, checkRolStaff(ROLES_VENTAS), listarProductosStaff);
 router.get('/clientes/:id/detalle', verifyStaffJWT, checkRolStaff(ROLES_VENTAS), getClienteDetalle);
 router.get('/clientes/:id/ordenes', verifyStaffJWT, checkRolStaff(ROLES_VENTAS), getOrdenesDeCliente);

@@ -1,5 +1,10 @@
 import jwt from 'jsonwebtoken';
 import { supabase } from '../config/supabase.js';
+import { ranurasDeUsuario } from '../services/etiquetasClientes.js';
+
+// Columnas de `users` que necesita la sesión en cada request: lo de siempre +
+// las 3 ranuras de etiqueta (el precio se calcula con la suma de las 3).
+const COLUMNAS_SESION = 'token_version, activo, etiqueta_registro, etiqueta_pago, etiqueta_comportamiento';
 
 export async function verifyJWT(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -15,7 +20,7 @@ export async function verifyJWT(req, res, next) {
 
     const { data: user, error } = await supabase
       .from('users')
-      .select('token_version, activo, es_admin')
+      .select(`es_admin, ${COLUMNAS_SESION}`)
       .eq('id', decoded.id)
       .single();
 
@@ -34,7 +39,9 @@ export async function verifyJWT(req, res, next) {
     // Refrescar es_admin desde la BD, NO confiar en el rol congelado en el token:
     // si al usuario le quitan el admin, sus tokens vigentes seguían sirviendo como
     // admin hasta expirar. Mismo criterio que verifyStaffJWT (el rol no sale del JWT).
-    req.user = { ...decoded, es_admin: !!user.es_admin };
+    // Las 3 ranuras de etiqueta también se refrescan: el precio del catálogo y el
+    // total de la orden se calculan con la suma de las 3 (design 2026-10-15).
+    req.user = { ...decoded, es_admin: !!user.es_admin, etiquetas: ranurasDeUsuario(user) };
     next();
   } catch (error) {
     return res.status(401).json({ error: 'Token inválido o expirado' });
@@ -65,7 +72,7 @@ export async function verifyJWTOptional(req, res, next) {
 
     const { data: user, error } = await supabase
       .from('users')
-      .select('token_version, activo, etiqueta')
+      .select(COLUMNAS_SESION)
       .eq('id', decoded.id)
       .single();
 
@@ -73,7 +80,7 @@ export async function verifyJWTOptional(req, res, next) {
       return next();
     }
 
-    req.user = { ...decoded, etiqueta: user.etiqueta };
+    req.user = { ...decoded, etiquetas: ranurasDeUsuario(user) };
     next();
   } catch (error) {
     next();

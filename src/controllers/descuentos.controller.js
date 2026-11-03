@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase.js'
+import { RANURAS_ETIQUETA, sumarPorcentajes } from '../services/etiquetasClientes.js'
 
 // ===================================================================
 // Helpers de negocio (exportados para usarlos en productosController)
@@ -135,19 +136,25 @@ export function precioConEtiqueta(precioBase, porcentajeEtiqueta) {
 }
 
 /**
- * Devuelve el porcentaje activo de una etiqueta (0 si no existe / está inactiva).
+ * Devuelve el porcentaje TOTAL del cliente: la suma de las 3 ranuras
+ * (registro + pago + comportamiento). Una ranura vacía o con una etiqueta
+ * inactiva/inexistente aporta 0, igual que antes con una sola etiqueta.
+ * `claves` = { registro, pago, comportamiento } (ver `req.user.etiquetas`).
  */
-export async function getPorcentajeEtiqueta(etiqueta) {
-  if (!etiqueta) return 0
+export async function getPorcentajeEtiquetas(claves) {
+  const valores = RANURAS_ETIQUETA
+    .map(({ ranura }) => claves?.[ranura])
+    .filter(Boolean)
+  if (!valores.length) return 0
+
   const { data, error } = await supabase
     .from('etiquetas_precio')
-    .select('porcentaje')
-    .eq('etiqueta', etiqueta)
+    .select('etiqueta, porcentaje')
+    .in('etiqueta', valores)
     .eq('activo', true)
-    .maybeSingle()
+
   if (error || !data) return 0
-  const pct = Number(data.porcentaje)
-  return Number.isNaN(pct) ? 0 : pct
+  return sumarPorcentajes(claves, data)
 }
 
 /**

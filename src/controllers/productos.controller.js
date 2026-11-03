@@ -3,7 +3,7 @@ import {
   aplicarDescuentosAProductos,
   aplicarDescuentoAProducto,
   aplicarPrecioCliente,
-  getPorcentajeEtiqueta,
+  getPorcentajeEtiquetas,
   getDescuentosVigentes,
   resolverPrecioCliente,
 } from './descuentos.controller.js';
@@ -69,19 +69,17 @@ export function omitirCostos(valor) {
   return resto;
 }
 
-// Aplica etiqueta + promos a una lista de productos. Sin etiqueta (o con
-// etiqueta sin porcentaje) se queda en base + promos, como siempre.
-async function enriquecerPrecios(productos, etiqueta) {
-  if (!etiqueta) return aplicarDescuentosAProductos(productos);
-  const pct = await getPorcentajeEtiqueta(etiqueta);
+// Aplica la etiqueta del cliente (suma de sus 3 ranuras) + promos a una lista
+// de productos. Sin ranuras (o con total 0%) se queda en base + promos.
+async function enriquecerPrecios(productos, etiquetas) {
+  const pct = await getPorcentajeEtiquetas(etiquetas);
   if (!pct) return aplicarDescuentosAProductos(productos);
   return aplicarPrecioCliente(productos, pct);
 }
 
 // Igual que enriquecerPrecios pero para un solo producto (detalle).
-async function enriquecerPrecioProducto(producto, etiqueta) {
-  if (!etiqueta) return aplicarDescuentoAProducto(producto);
-  const pct = await getPorcentajeEtiqueta(etiqueta);
+async function enriquecerPrecioProducto(producto, etiquetas) {
+  const pct = await getPorcentajeEtiquetas(etiquetas);
   if (!pct) return aplicarDescuentoAProducto(producto);
   const vigentes = await getDescuentosVigentes();
   return resolverPrecioCliente(producto, pct, vigentes);
@@ -260,7 +258,7 @@ export async function getProductos(req, res) {
 
         const productos = await fetchProductosPorIds(idsPagina, '*, marcas(id, nombre)');
         const productosOrdenados = ordenarPorIds(productos, idsPagina);
-        const productosConDescuento = await enriquecerPrecios(productosOrdenados, req.user?.etiqueta);
+        const productosConDescuento = await enriquecerPrecios(productosOrdenados, req.user?.etiquetas);
 
         if (!usarPaginacion) {
           const productosConRating = await enriquecerConValoraciones(productosConDescuento);
@@ -381,7 +379,7 @@ export async function getProductos(req, res) {
 
     if (error) throw error;
 
-    const productosConDescuento = await enriquecerPrecios(data, req.user?.etiqueta);
+    const productosConDescuento = await enriquecerPrecios(data, req.user?.etiquetas);
     const productosConRating = usarPaginacion
       ? productosConDescuento
       : await enriquecerConValoraciones(productosConDescuento);
@@ -522,8 +520,8 @@ export async function getProductoById(req, res) {
       return res.status(404).json({ error: 'Producto no encontrado' });
     }
 
-    // Precio con etiqueta del cliente si trae sesión (silencioso) + promos encima
-    const productoConDescuento = await enriquecerPrecioProducto(data, req.user?.etiqueta);
+    // Precio con etiqueta del cliente (3 ranuras, silencioso) + promos encima
+    const productoConDescuento = await enriquecerPrecioProducto(data, req.user?.etiquetas);
 
     // Enriquecer con rating_promedio y rating_total
     const [productoConRating] = await enriquecerConValoraciones([productoConDescuento]);

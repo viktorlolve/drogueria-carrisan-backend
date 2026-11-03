@@ -1,5 +1,10 @@
 // staff.clientes.controller.js
 import { supabase } from '../config/supabase.js';
+import {
+  RANURAS_ETIQUETA,
+  ranurasDeUsuario,
+  sumarPorcentajes,
+} from '../services/etiquetasClientes.js';
 
 // =====================================================================
 // Clientes — Staff (Comercial)
@@ -40,42 +45,52 @@ async function calcularDeudasPorUsuarioIds(ids) {
   return deudas;
 }
 
-// Etiquetas de precio activas (etiqueta + porcentaje) para los selectores.
+// Etiquetas de precio activas (etiqueta + categoría + nombre visible + porcentaje)
+// para los selectores de las 3 ranuras.
 async function listarEtiquetasDisponibles() {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('etiquetas_precio')
-    .select('etiqueta, porcentaje')
+    .select('etiqueta, categoria, nombre_visible, porcentaje, dias_credito, activo')
     .eq('activo', true)
-    .order('etiqueta', { ascending: true });
+    .order('categoria', { ascending: true })
+    .order('porcentaje', { ascending: false });
+  if (error) throw error;
   return data || [];
 }
 
 // -----------------------------------------------------------------
-// GET /staff/clientes?buscar=&tipo=&etiqueta=&pagina=&por_pagina=
+// GET /staff/clientes?buscar=&tipo=&etiqueta_registro=&etiqueta_pago=
+//                   &etiqueta_comportamiento=&pagina=&por_pagina=
 //
 // Listado paginado con búsqueda OR (nombre/email/rif/telefono),
-// filtros por tipo_usuario y etiqueta. Cada cliente incluye
-// deuda_actual + deuda_vencida + saldo_disponible (batch).
+// filtros por tipo_usuario y por cualquiera de las 3 ranuras de etiqueta.
+// Cada cliente incluye deuda_actual + deuda_vencida + saldo_disponible
+// (batch) y el pct_total de sus 3 etiquetas.
 //
-// Respuesta: { clientes, total, pagina, por_pagina, total_paginas }
+// Respuesta: { clientes, total, pagina, por_pagina, total_paginas, etiquetas }
 // -----------------------------------------------------------------
 export async function listarClientes(req, res) {
-  const { buscar, tipo, etiqueta } = req.query;
+  const { buscar, tipo } = req.query;
   const pagina = Math.max(1, parseInt(req.query.pagina) || 1);
   const porPagina = Math.min(Math.max(parseInt(req.query.por_pagina) || POR_PAGINA_DEFAULT, 1), POR_PAGINA_MAX);
   const offset = (pagina - 1) * porPagina;
 
   try {
+    const columnasRanuras = RANURAS_ETIQUETA.map((r) => r.columna).join(', ');
     let q = supabase
       .from('users')
-      .select('id, nombre, email, telefono, rif_cedula, tipo_usuario, etiqueta, activo, linea_credito, credito_bloqueado', { count: 'exact' });
+      .select(`id, nombre, email, telefono, rif_cedula, tipo_usuario, ${columnasRanuras}, activo, linea_credito, credito_bloqueado`, { count: 'exact' });
 
     if (buscar && buscar.trim().length >= 2) {
       const t = buscar.trim();
       q = q.or(`nombre.ilike.%${t}%,email.ilike.%${t}%,rif_cedula.ilike.%${t}%,telefono.ilike.%${t}%`);
     }
     if (tipo) q = q.eq('tipo_usuario', tipo);
-    if (etiqueta) q = q.eq('etiqueta', etiqueta);
+    // Un filtro opcional por ranura (p. ej. etiqueta_pago=credito_7d).
+    for (const { columna } of RANURAS_ETIQUETA) {
+      const valor = req.query[columna];
+      if (valor) q = q.eq(columna, valor);
+    }
 
     q = q.order('nombre', { ascending: true }).range(offset, offset + porPagina - 1);
 
@@ -84,6 +99,7 @@ export async function listarClientes(req, res) {
 
     const ids = (page || []).map((c) => c.id);
     const deudas = await calcularDeudasPorUsuarioIds(ids);
+    const etiquetas = await listarEtiquetasDisponibles();
 
     const clientes = (page || []).map((c) => {
       const d = deudas[c.id] || { deuda: 0, vencida: 0 };
@@ -95,7 +111,10 @@ export async function listarClientes(req, res) {
         telefono: c.telefono,
         rif_cedula: c.rif_cedula,
         tipo_usuario: c.tipo_usuario,
-        etiqueta: c.etiqueta,
+        etiqueta_registro: c.etiqueta_registro || null,
+        etiqueta_pago: c.etiqueta_pago || null,
+        etiqueta_comportamiento: c.etiqueta_comportamiento || null,
+        pct_total: sumarPorcentajes(ranurasDeUsuario(c), etiquetas),
         activo: c.activo,
         linea_credito: linea,
         credito_bloqueado: c.credito_bloqueado || false,
@@ -106,7 +125,6 @@ export async function listarClientes(req, res) {
     });
 
     const totalPaginas = Math.max(1, Math.ceil((count || 0) / porPagina));
-    const etiquetas = await listarEtiquetasDisponibles();
     res.json({ clientes, total: count || 0, pagina, por_pagina: porPagina, total_paginas: totalPaginas, etiquetas });
   } catch (err) {
     console.error('Error al listar clientes:', err);
@@ -117,18 +135,20 @@ export async function listarClientes(req, res) {
 // -----------------------------------------------------------------
 // GET /staff/clientes/:id/detalle
 //
-// Devuelve { cliente, perfil, credito }:
-//   - cliente: datos base + es_admin + created_at
+// Devuelve { cliente, perfil, credito, etiquetas }:
+//   - cliente: datos base + es_admin + created_at + las 3 ranuras + pct_total
 //   - perfil: fila de perfiles_{tipo} según tipo_usuario (o null)
 //   - credito: read-only (línea, deuda, saldo, bloqueado)
+//   - etiquetas: catálogo activo de etiquetas_precio (para los selectores)
 // -----------------------------------------------------------------
 export async function getClienteDetalle(req, res) {
   const usuario_id = Number(req.params.id);
 
   try {
+    const columnasRanuras = RANURAS_ETIQUETA.map((r) => r.columna).join(', ');
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, nombre, email, telefono, rif_cedula, tipo_usuario, etiqueta, activo, es_admin, created_at, linea_credito, credito_bloqueado, credito_bloqueado_motivo')
+      .select(`id, nombre, email, telefono, rif_cedula, tipo_usuario, ${columnasRanuras}, activo, es_admin, created_at, linea_credito, credito_bloqueado, credito_bloqueado_motivo`)
       .eq('id', usuario_id)
       .single();
 
@@ -153,6 +173,7 @@ export async function getClienteDetalle(req, res) {
     const deudas = await calcularDeudasPorUsuarioIds([usuario_id]);
     const d = deudas[usuario_id] || { deuda: 0, vencida: 0 };
     const linea = Number(user.linea_credito || 0);
+    const etiquetas = await listarEtiquetasDisponibles();
 
     const credito = {
       linea_credito: linea,
@@ -163,7 +184,18 @@ export async function getClienteDetalle(req, res) {
       credito_bloqueado_motivo: user.credito_bloqueado_motivo || null,
     };
 
-    res.json({ cliente: { ...user, linea_credito: undefined, credito_bloqueado: undefined, credito_bloqueado_motivo: undefined }, perfil, credito, etiquetas: await listarEtiquetasDisponibles() });
+    res.json({
+      cliente: {
+        ...user,
+        linea_credito: undefined,
+        credito_bloqueado: undefined,
+        credito_bloqueado_motivo: undefined,
+        pct_total: sumarPorcentajes(ranurasDeUsuario(user), etiquetas),
+      },
+      perfil,
+      credito,
+      etiquetas,
+    });
   } catch (err) {
     console.error('Error al obtener detalle de cliente:', err);
     res.status(500).json({ error: 'Error del servidor' });
@@ -173,44 +205,67 @@ export async function getClienteDetalle(req, res) {
 // -----------------------------------------------------------------
 // PATCH /staff/clientes/:id
 //
-// Asigna la etiqueta de precio del cliente (etiqueta fija por cliente).
-// Valida contra etiquetas_precio activas; un string vacío la limpia.
+// Asigna hasta las 3 ranuras de etiqueta de precio del cliente:
+//   { etiqueta_registro?, etiqueta_pago?, etiqueta_comportamiento? }
+// Cada valor vacío ('') o null LIMPIA esa ranura; un valor no vacío se
+// valida contra `etiquetas_precio` activas de la categoría CORRECTA
+// (una etiqueta de otra categoría → 400). Sin ninguna de las 3 llaves → 400.
+// Respuesta: { cliente: {id, nombre, <3 ranuras>, pct_total}, etiquetas }.
 // -----------------------------------------------------------------
-export async function updateClienteEtiqueta(req, res) {
+export async function updateClienteEtiquetas(req, res) {
   const usuario_id = Number(req.params.id);
-  const { etiqueta } = req.body || {};
+  const body = req.body || {};
 
   try {
-    if (typeof etiqueta !== 'string') {
-      return res.status(400).json({ error: 'etiqueta es requerida' });
+    const etiquetas = await listarEtiquetasDisponibles();
+    const cambios = {};
+
+    for (const { ranura, columna } of RANURAS_ETIQUETA) {
+      // Única llave aceptada es la columna de `users`.
+      if (!Object.prototype.hasOwnProperty.call(body, columna)) continue;
+
+      const valor = body[columna];
+      if (valor !== null && valor !== undefined && typeof valor !== 'string') {
+        return res.status(400).json({ error: `${columna} debe ser texto o null` });
+      }
+
+      const limpio = typeof valor === 'string' ? valor.trim() : '';
+      if (!limpio) {
+        cambios[columna] = null;
+        continue;
+      }
+
+      const fila = etiquetas.find((e) => e.etiqueta === limpio && e.categoria === ranura);
+      if (!fila) {
+        return res.status(400).json({
+          error: `Etiqueta no válida para la ranura ${ranura}: ${limpio}`,
+        });
+      }
+      cambios[columna] = limpio;
     }
 
-    const etiquetaFinal = etiqueta.trim();
-
-    if (etiquetaFinal) {
-      const { data: etq, error: errEtq } = await supabase
-        .from('etiquetas_precio')
-        .select('etiqueta')
-        .eq('etiqueta', etiquetaFinal)
-        .eq('activo', true)
-        .maybeSingle();
-      if (errEtq) throw errEtq;
-      if (!etq) return res.status(400).json({ error: 'Etiqueta no válida o inactiva' });
+    if (!Object.keys(cambios).length) {
+      return res.status(400).json({
+        error: 'Debes enviar etiqueta_registro, etiqueta_pago o etiqueta_comportamiento',
+      });
     }
 
     const { data: user, error } = await supabase
       .from('users')
-      .update({ etiqueta: etiquetaFinal || null })
+      .update(cambios)
       .eq('id', usuario_id)
-      .select('id, nombre, etiqueta')
+      .select(`id, nombre, ${RANURAS_ETIQUETA.map((r) => r.columna).join(', ')}`)
       .maybeSingle();
 
     if (error) throw error;
     if (!user) return res.status(404).json({ error: 'Cliente no encontrado' });
 
-    res.json({ cliente: user, etiquetas: await listarEtiquetasDisponibles() });
+    res.json({
+      cliente: { ...user, pct_total: sumarPorcentajes(ranurasDeUsuario(user), etiquetas) },
+      etiquetas,
+    });
   } catch (err) {
-    console.error('Error al actualizar etiqueta del cliente:', err);
+    console.error('Error al actualizar etiquetas del cliente:', err);
     res.status(500).json({ error: 'Error del servidor' });
   }
 }

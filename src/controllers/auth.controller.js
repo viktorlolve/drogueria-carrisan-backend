@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { supabase } from '../config/supabase.js';
 import { JWT_EXPIRES_CLIENT } from '../config/jwt.js';
+import { etiquetasPorDefecto } from '../services/etiquetasClientes.js';
 
 export async function checkEmail(req, res) {
   const { email } = req.body;
@@ -272,7 +273,7 @@ export async function register(req, res) {
         password_hash,
         nombre: nombreUsuario,
         tipo_usuario,
-        etiqueta: tipo_usuario, // mantiene etiqueta poblada por compatibilidad con código legado
+        ...etiquetasPorDefecto(tipo_usuario),
         estado: estado || null,
         ciudad: ciudad || null,
         telefono: telefono || null,

@@ -2,7 +2,8 @@ import { supabase } from '../config/supabase.js';
 import { crearNotificacion } from './notificaciones.controller.js';
 import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
 import { buscarCuponValido, calcularDescuento, consumirCupon, liberarCupon } from './cupones.controller.js';
-import { getDescuentosVigentes, getPorcentajeEtiqueta, resolverPrecioCliente } from './descuentos.controller.js';
+import { getDescuentosVigentes, getPorcentajeEtiquetas, resolverPrecioCliente } from './descuentos.controller.js';
+import { diasCreditoDeEtiqueta, ranurasDeUsuario } from '../services/etiquetasClientes.js';
 
 // ---------------------------------------------------------
 // Pipeline de estados de una orden. REGLA CENTRAL (ver AGENTS.md):
@@ -208,18 +209,19 @@ export async function construirOrden(usuario_id, datos, opciones = {}) {
     }
   }
 
-  // Etiqueta del cliente (siempre, no solo crédito): precio con etiqueta +
-  // promos encima. La construcción del total DEBE reflejar lo que el cliente
-  // ve en el catálogo, no el precio base. Se aprovecha el mismo fetch para el
-  // bloque de crédito (linea_credito / credito_bloqueado).
+  // Etiquetas del cliente (siempre, no solo crédito): la suma de sus 3 ranuras
+  // ajusta el precio y encima van las promos. La construcción del total DEBE
+  // reflejar lo que el cliente ve en el catálogo, no el precio base. Se
+  // aprovecha el mismo fetch para el bloque de crédito (linea_credito /
+  // credito_bloqueado).
   const { data: usuario, error: errorUsuario } = await supabase
     .from('users')
-    .select('etiqueta, linea_credito, credito_bloqueado')
+    .select('etiqueta_registro, etiqueta_pago, etiqueta_comportamiento, linea_credito, credito_bloqueado')
     .eq('id', usuario_id)
     .single();
   if (errorUsuario || !usuario) throw errorUsuario || new ErrorOrden(404, 'Usuario no encontrado');
 
-  const porcentajeEtiqueta = await getPorcentajeEtiqueta(usuario.etiqueta);
+  const porcentajeEtiqueta = await getPorcentajeEtiquetas(ranurasDeUsuario(usuario));
   const descuentosVigentes = await getDescuentosVigentes();
 
   let total_usd = 0;
@@ -467,19 +469,32 @@ function mensajeParaTransicion(estado, ordenId) {
 }
 
 // Calcula fecha_vencimiento para órdenes a crédito al entrar a
-// 'preparando': hoy + dias_credito del cliente. Si el cliente no tiene
-// dias_credito configurado, no se setea (el admin la gestiona a mano).
+// 'preparando': hoy + los días de la ETIQUETA DE PAGO del cliente
+// (credito_7d → 7, credito_15d → 15). Contado (sin días) no setea fecha;
+// `users.dias_credito` quedó huérfana y ya no se lee (design 2026-10-15 §4.4).
 async function calcularFechaVencimiento(usuario_id) {
   const { data: cliente, error } = await supabase
     .from('users')
-    .select('dias_credito')
+    .select('etiqueta_pago')
     .eq('id', usuario_id)
     .single();
 
-  if (error || !cliente || !cliente.dias_credito) return null;
+  if (error || !cliente || !cliente.etiqueta_pago) return null;
+
+  const { data: etiqueta, error: errorEtiqueta } = await supabase
+    .from('etiquetas_precio')
+    .select('dias_credito, activo')
+    .eq('etiqueta', cliente.etiqueta_pago)
+    .eq('activo', true)
+    .maybeSingle();
+
+  if (errorEtiqueta) return null;
+
+  const dias = diasCreditoDeEtiqueta(etiqueta);
+  if (!dias) return null;
 
   const fecha = new Date();
-  fecha.setDate(fecha.getDate() + Number(cliente.dias_credito));
+  fecha.setDate(fecha.getDate() + dias);
   return fecha.toISOString();
 }
 
