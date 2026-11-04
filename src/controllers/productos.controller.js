@@ -71,14 +71,21 @@ export function omitirCostos(valor) {
 
 // Aplica la etiqueta del cliente (suma de sus 3 ranuras) + promos a una lista
 // de productos. Sin ranuras (o con total 0%) se queda en base + promos.
-async function enriquecerPrecios(productos, etiquetas) {
+// Exportado: `moleculas.controller.js` lo usa en los carruseles del detalle
+// para que no muestren el precio base mientras el resto de la página muestra
+// el precio con etiqueta.
+export async function enriquecerPrecios(productos, etiquetas) {
   const pct = await getPorcentajeEtiquetas(etiquetas);
   if (!pct) return aplicarDescuentosAProductos(productos);
   return aplicarPrecioCliente(productos, pct);
 }
 
 // Igual que enriquecerPrecios pero para un solo producto (detalle).
-async function enriquecerPrecioProducto(producto, etiquetas) {
+// Exportado: lo usa `getProductoCompleto` de moleculas.controller.js — es la
+// MISMA cadena de precio (etiquetas + promos) que la lista y el detalle de
+// /products. Si el detalle aplicara solo promos, el cliente con etiqueta vería
+// otro precio que en el catálogo.
+export async function enriquecerPrecioProducto(producto, etiquetas) {
   const pct = await getPorcentajeEtiquetas(etiquetas);
   if (!pct) return aplicarDescuentoAProducto(producto);
   const vigentes = await getDescuentosVigentes();

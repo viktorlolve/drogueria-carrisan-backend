@@ -1,6 +1,10 @@
 import { supabase } from '../config/supabase.js';
-import { aplicarDescuentoAProducto } from './descuentos.controller.js';
-import { enriquecerConValoraciones, omitirCostos } from './productos.controller.js';
+import {
+  enriquecerConValoraciones,
+  enriquecerPrecioProducto,
+  enriquecerPrecios,
+  omitirCostos
+} from './productos.controller.js';
 
 // =================================================================
 // ATC CLASIFICACIONES
@@ -564,7 +568,11 @@ export async function getProductosRelacionadosPorMolecula(req, res) {
       productos.push(p);
     }
 
-    res.json(omitirCostos(productos));
+    // Misma cadena de precio que el catálogo/portada: el carrusel no puede
+    // mostrar el precio base mientras el detalle muestra el precio con
+    // etiqueta del cliente.
+    const conPrecio = await enriquecerPrecios(productos, req.user?.etiquetas);
+    res.json(omitirCostos(conPrecio));
   } catch (err) {
     console.error('Error al obtener productos relacionados por molécula:', err);
     res.status(500).json({ error: 'Error del servidor' });
@@ -589,9 +597,10 @@ export async function getProductoCompleto(req, res) {
       return res.status(404).json({ error: 'Producto no encontrado' });
     }
 
-    // Aplicar descuento activo + rating/valoraciones para que la página de
-    // detalle muestre el precio con oferta y las estrellas de reseñas.
-    const productoConDescuento = await aplicarDescuentoAProducto(producto);
+    // Aplicar etiqueta del cliente (3 ranuras) + descuento activo + rating para
+    // que la página de detalle muestre el MISMO precio que el catálogo y la
+    // portada, con su oferta y las estrellas de reseñas.
+    const productoConDescuento = await enriquecerPrecioProducto(producto, req.user?.etiquetas);
     const [productoFinal] = await enriquecerConValoraciones([productoConDescuento]);
 
     // Detalles: puede no existir todavía (producto sin ficha técnica cargada aún)
