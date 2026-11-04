@@ -96,8 +96,12 @@ export async function enriquecerPrecioProducto(producto, etiquetas) {
 // se agregan más abajo, para que los buscadores del navbar/móvil/presupuesto
 // no cambien de aspecto. `forma` viaja siempre porque el constructor de
 // presupuestos filtra por forma farmacéutica.
+// `marca_id` y `molecula` solo hacen falta con sesión: son los campos que
+// `descuentoAplica` mira para las promos de alcance marca/molécula, y sin
+// ellos la sugerencia del navbar se saltaría esas promos aunque el catálogo
+// sí las aplique. Sin sesión no hay precio que enriquecer, así que no viajan.
 const COLUMNAS_BUSQUEDA = 'id, nombre_comercial, sku, laboratorio, linea, forma';
-const COLUMNAS_BUSQUEDA_CON_SESION = `${COLUMNAS_BUSQUEDA}, foto_url, precio_usd`;
+const COLUMNAS_BUSQUEDA_CON_SESION = `${COLUMNAS_BUSQUEDA}, foto_url, precio_usd, marca_id, molecula`;
 
 // El término va interpolado en un filtro `.or()` de PostgREST, donde la coma
 // separa condiciones y `*` es el comodín del ilike. Se limpian ambos.
@@ -144,9 +148,19 @@ async function fetchProductosPorIds(ids, columnas) {
   return filas;
 }
 
+// Con sesión, las sugerencias del buscador deben mostrar el MISMO precio que
+// el catálogo/Home: la cadena compartida (etiqueta del cliente + promos). Sin
+// sesión las columnas del buscador no traen precio, así que no hay nada que
+// enriquecer (y el anónimo no debe recibirlo).
+async function enriquecerSiHaySesion(filas, usuario) {
+  if (!usuario) return filas || [];
+  return enriquecerPrecios(filas || [], usuario.etiquetas);
+}
+
 // GET /products/buscar?q=&limit= — PÚBLICO, solo para los buscadores del sitio.
 // Devuelve un array plano con el shape mínimo; con sesión válida agrega
-// foto_url y precio_usd. NO usar el price-descubierto: no trae nombres.
+// foto_url y precio_usd (ya con etiqueta + promos, igual que el catálogo).
+// NO usar el price-descubierto: no trae nombres.
 // Primero intenta la RPC buscar_productos (tolerancia a typos + expansión
 // marca<->molécula); si no existe en la BD, cae al ILIKE legacy.
 export async function buscarProductos(req, res) {
@@ -168,7 +182,8 @@ export async function buscarProductos(req, res) {
       const ids = (filasRpc || []).map((f) => f.producto_id);
       if (ids.length === 0) return res.json([]);
       const productos = await fetchProductosPorIds(ids, columnas);
-      return res.json(ordenarPorIds(productos, ids));
+      const ordenados = ordenarPorIds(productos, ids);
+      return res.json(await enriquecerSiHaySesion(ordenados, req.user));
     }
 
     advertirRpcBuscarProductosFaltante(errorRpc);
@@ -186,7 +201,7 @@ export async function buscarProductos(req, res) {
       .limit(limite);
 
     if (error) throw error;
-    res.json(data || []);
+    res.json(await enriquecerSiHaySesion(data, req.user));
   } catch (err) {
     console.error('Error al buscar productos:', err);
     res.status(500).json({ error: 'Error del servidor' });
