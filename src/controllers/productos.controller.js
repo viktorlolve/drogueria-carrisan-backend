@@ -14,6 +14,7 @@ import {
   esErrorRpcInexistente,
   ordenarPorIds,
 } from '../services/buscarProductos.service.js';
+import { barajar } from '../services/ordenAleatorio.js';
 
 // Slugs cortos → valor real de `productos.linea` en la BD (la columna guarda
 // 'Linea Farmacia', 'Linea Hospitalaria', 'Material Medico' — ver
@@ -148,6 +149,49 @@ async function fetchProductosPorIds(ids, columnas) {
   return filas;
 }
 
+// ── Orden aleatorio del catálogo ────────────────────────────────────────────
+// PostgREST no puede ordenar por una expresión, así que el barajado se hace
+// en memoria sobre los ids del conjunto. Se lee SOLO `id` (en lotes de 1000,
+// el máximo de PostgREST) y se ordena por `id` antes del `range`: sin ese
+// orden los chunks podrían solaparse o dejar filas fuera.
+async function leerIdsDelConjunto(aplicarFiltros) {
+  const TAMANIO = 1000;
+  const ids = [];
+  for (let desde = 0; ; desde += TAMANIO) {
+    const { data, error } = await aplicarFiltros(supabase.from('productos').select('id'))
+      .order('id', { ascending: true })
+      .range(desde, desde + TAMANIO - 1);
+    if (error) throw error;
+    for (const fila of data || []) ids.push(fila.id);
+    if (!data || data.length < TAMANIO) break;
+  }
+  return ids;
+}
+
+// El scroll infinito repite la MISMA consulta (filtros + seed) en cada
+// página. Sin cache, cada página volvería a leer los ~2.6k ids del catálogo.
+// TTL corto a propósito: un producto nuevo puede tardar hasta 2 min en salir
+// en el orden aleatorio (el resto de los órdenes no pasa por aquí).
+const CACHE_IDS_TTL_MS = 2 * 60 * 1000;
+const CACHE_IDS_MAX = 100;
+const cacheIdsCatalogo = new Map();
+
+async function idsDelConjuntoConCache(firma, aplicarFiltros) {
+  const ahora = Date.now();
+  const entrada = cacheIdsCatalogo.get(firma);
+  if (entrada && ahora - entrada.en < CACHE_IDS_TTL_MS) return entrada.ids;
+
+  const ids = await leerIdsDelConjunto(aplicarFiltros);
+
+  // FIFO simple: el Map conserva el orden de inserción.
+  if (cacheIdsCatalogo.size >= CACHE_IDS_MAX) {
+    const masVieja = cacheIdsCatalogo.keys().next().value;
+    cacheIdsCatalogo.delete(masVieja);
+  }
+  cacheIdsCatalogo.set(firma, { ids, en: ahora });
+  return ids;
+}
+
 // Con sesión, las sugerencias del buscador deben mostrar el MISMO precio que
 // el catálogo/Home: la cadena compartida (etiqueta del cliente + promos). Sin
 // sesión las columnas del buscador no traen precio, así que no hay nada que
@@ -208,8 +252,11 @@ export async function buscarProductos(req, res) {
   }
 }
 
-// GET /products?search=&marca_id=&sort=&molecula=&categoria=&linea=&laboratorio=&forma=&disponible=&sin_precio=&precio_min=&precio_max=&page=&limit=
+// GET /products?search=&marca_id=&sort=&molecula=&categoria=&linea=&laboratorio=&forma=&disponible=&sin_precio=&precio_min=&precio_max=&page=&limit=&seed=
 // `categoria` filtra por categoría de la tienda (categorias_tienda/producto_categorias).
+// `sort`: nombre_asc | nombre_desc | precio_asc | precio_desc | relevancia
+//         (con `search`) | aleatorio (solo sin `search`, barajado determinista
+//         con `seed`; ver barajar() en services/ordenAleatorio.js).
 // Sin `page` retorna un ARRAY plano (usado por Home, carruseles, buscadores, etc.)
 // Con `page` retorna { productos, total, hasMore, page } (usado por Catalogo).
 export async function getProductos(req, res) {
@@ -350,46 +397,109 @@ export async function getProductos(req, res) {
       }
     }
 
-    let query = supabase
-      .from('productos')
-      .select('*, marcas(id, nombre)', usarPaginacion ? { count: 'exact' } : undefined)
-      .eq('activo', true);
+    // Los filtros viven en una función reutilizable: el orden aleatorio
+    // necesita leer SOLO los ids del conjunto con EXACTAMENTE los mismos
+    // filtros que la consulta normal (PostgREST no ordena por expresiones).
+    const aplicarFiltros = (queryBase) => {
+      let q = queryBase.eq('activo', true);
 
-    if (search) query = query.ilike('nombre_comercial', `%${search}%`);
-    if (marca_id) query = query.eq('marca_id', marca_id);
-    if (linea) query = query.eq('linea', NORMALIZAR_LINEA[String(linea).toLowerCase()] || linea);
-    // `laboratorio` acepta dos formas:
-    //   - un solo valor sin coma  → coincidencia parcial (ilike %valor%) — robusto a
-    //     variantes de nombre (ej. "calox" > "CALOX INTERNATIONAL C.A.")
-    //   - varios valores separados por coma → coincidencia EXACTA múltiple (.in) —
-    //     comportamiento legacy del catálogo (laboratorios marcados con checkbox)
-    if (laboratorio) {
-      const labs = laboratorio.split(',');
-      query = labs.length === 1
-        ? query.ilike('laboratorio', `%${laboratorio}%`)
-        : query.in('laboratorio', labs);
-    }
-    // `ids` (modo lista manual de la vitrina): comma-separated de integers.
-    // Exige que cada valor sea un entero positivo; si llega vacío → respuesta vacía.
-    if (ids !== undefined) {
-      const idList = String(ids).split(',').map((s) => s.trim()).filter(Boolean);
-      const idNumericos = idList.map(Number);
-      if (idList.length === 0 || idNumericos.some((n) => !Number.isInteger(n) || n <= 0)) {
+      if (search) q = q.ilike('nombre_comercial', `%${search}%`);
+      if (marca_id) q = q.eq('marca_id', marca_id);
+      if (linea) q = q.eq('linea', NORMALIZAR_LINEA[String(linea).toLowerCase()] || linea);
+      // `laboratorio` acepta dos formas:
+      //   - un solo valor sin coma  → coincidencia parcial (ilike %valor%) — robusto a
+      //     variantes de nombre (ej. "calox" > "CALOX INTERNATIONAL C.A.")
+      //   - varios valores separados por coma → coincidencia EXACTA múltiple (.in) —
+      //     comportamiento legacy del catálogo (laboratorios marcados con checkbox)
+      if (laboratorio) {
+        const labs = laboratorio.split(',');
+        q = labs.length === 1
+          ? q.ilike('laboratorio', `%${laboratorio}%`)
+          : q.in('laboratorio', labs);
+      }
+      // `ids` (modo lista manual de la vitrina): comma-separated de integers.
+      // Exige que cada valor sea un entero positivo; si llega vacío → respuesta vacía.
+      if (ids !== undefined) {
+        const idList = String(ids).split(',').map((s) => s.trim()).filter(Boolean);
+        const idNumericos = idList.map(Number);
+        if (idList.length === 0 || idNumericos.some((n) => !Number.isInteger(n) || n <= 0)) {
+          return null;
+        }
+        q = q.in('id', idNumericos);
+      }
+      if (forma) q = q.in('forma', forma.split(','));
+      if (disponible === 'true') q = q.eq('disponible', true);
+      if (disponible === 'false') q = q.is('disponible', false);
+      // Sin precio = "consultar precio": NULL o 0 (filtro de gestión de precios)
+      if (sin_precio === 'true') q = q.or('precio_usd.is.null,precio_usd.eq.0');
+      if (precio_min) q = q.gte('precio_usd', precio_min);
+      if (precio_max) q = q.lte('precio_usd', precio_max);
+      if (productoIdsPorMolecula) q = q.in('id', productoIdsPorMolecula);
+      if (productoIdsPorCategoria) q = q.in('id', productoIdsPorCategoria);
+      return q;
+    };
+
+    // ── Orden aleatorio por sesión (solo catálogo sin búsqueda) ────────────
+    // La seed la genera el frontend una vez por sesión y la repite en cada
+    // página: el barajado es estable, así el scroll infinito no repite ni
+    // salta productos, y cada sesión ve un surtido distinto. Con `search` se
+    // ignora (ahí manda la relevancia de la RPC).
+    if (sort === 'aleatorio' && !search) {
+      const seed = String(req.query.seed ?? '').slice(0, 64) || 'catalogo';
+      const firma = JSON.stringify({
+        seed,
+        marca_id: marca_id || '',
+        linea: linea || '',
+        categoria: categoria || '',
+        laboratorio: laboratorio || '',
+        forma: forma || '',
+        disponible: disponible || '',
+        sin_precio: sin_precio || '',
+        precio_min: precio_min || '',
+        precio_max: precio_max || '',
+        molecula: molecula || '',
+        ids: ids ?? '',
+      });
+
+      const idsConjunto = await idsDelConjuntoConCache(firma, aplicarFiltros);
+      const barajados = barajar(idsConjunto, seed);
+      const total = barajados.length;
+      const idsPagina = usarPaginacion ? barajados.slice(from, to + 1) : barajados;
+
+      if (idsPagina.length === 0) {
         return usarPaginacion
-          ? res.json({ productos: [], total: 0, hasMore: false, page: pageNum })
+          ? res.json({ productos: [], total, hasMore: false, page: pageNum })
           : res.json([]);
       }
-      query = query.in('id', idNumericos);
+
+      const productos = await fetchProductosPorIds(idsPagina, '*, marcas(id, nombre)');
+      const productosOrdenados = ordenarPorIds(productos, idsPagina);
+      const productosConDescuento = await enriquecerPrecios(productosOrdenados, req.user?.etiquetas);
+
+      if (!usarPaginacion) {
+        const productosConRating = await enriquecerConValoraciones(productosConDescuento);
+        return res.json(omitirCostos(productosConRating));
+      }
+
+      return res.json({
+        productos: omitirCostos(productosConDescuento),
+        total,
+        hasMore: total > to + 1,
+        page: pageNum,
+      });
     }
-    if (forma) query = query.in('forma', forma.split(','));
-    if (disponible === 'true') query = query.eq('disponible', true);
-    if (disponible === 'false') query = query.is('disponible', false);
-    // Sin precio = "consultar precio": NULL o 0 (filtro de gestión de precios)
-    if (sin_precio === 'true') query = query.or('precio_usd.is.null,precio_usd.eq.0');
-    if (precio_min) query = query.gte('precio_usd', precio_min);
-    if (precio_max) query = query.lte('precio_usd', precio_max);
-    if (productoIdsPorMolecula) query = query.in('id', productoIdsPorMolecula);
-    if (productoIdsPorCategoria) query = query.in('id', productoIdsPorCategoria);
+
+    let query = aplicarFiltros(
+      supabase
+        .from('productos')
+        .select('*, marcas(id, nombre)', usarPaginacion ? { count: 'exact' } : undefined)
+    );
+
+    if (!query) {
+      return usarPaginacion
+        ? res.json({ productos: [], total: 0, hasMore: false, page: pageNum })
+        : res.json([]);
+    }
 
     query = query.order(orden.column, { ascending: orden.ascending });
 
