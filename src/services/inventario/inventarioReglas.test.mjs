@@ -15,6 +15,7 @@ import {
   sanearPrecio,
   armarCambiosPrecio,
   armarCambiosProducto,
+  armarNuevoProducto,
 } from './inventarioReglas.js';
 
 const soloClaves = (o) => Object.keys(o).sort();
@@ -325,4 +326,119 @@ test('armarCambiosProducto: la molécula vacía queda en null', () => {
 
 test('armarCambiosProducto: campos de texto larguísimos se rechazan', () => {
   assert.match(armarCambiosProducto({ nombre_comercial: 'a'.repeat(600) }).error, /supera/i);
+});
+
+// --- armarNuevoProducto -------------------------------------------------------
+
+test('armarNuevoProducto IGNORA campos no previstos (no hay mass-assignment)', () => {
+  const r = armarNuevoProducto({
+    nombre_comercial: 'IBUPROFENO',
+    precio_usd: 10,
+    laboratorio: 'LAB X',
+    precio_usd_2: 999,
+    sku: 'HACKEADO',
+    id: 999,
+    disponible: true,
+    foto_url: 'https://x/a.jpg',
+    pais_origen: 'USA',
+    costo_usd: 0.01,
+  });
+  assert.ok(r.campos);
+  assert.equal(r.campos.nombre_comercial, 'IBUPROFENO');
+  assert.equal(r.campos.precio_usd, 10);
+  assert.equal(r.campos.laboratorio, 'LAB X');
+  assert.equal(r.campos.activo, true);
+  assert.equal(r.campos.visible_catalogo, true);
+  assert.equal(r.campos.disponible, false);
+  assert.equal(r.campos.precio_usd_2, undefined);
+  assert.equal(r.campos.sku, undefined);
+  assert.equal(r.campos.id, undefined);
+  assert.equal(r.campos.disponible, false);
+  assert.equal(r.campos.foto_url, undefined);
+  assert.equal(r.campos.pais_origen, undefined);
+  assert.equal(r.campos.costo_usd, undefined);
+});
+
+test('armarNuevoProducto: crea con solo los 3 requeridos', () => {
+  const r = armarNuevoProducto({
+    nombre_comercial: 'IBUPROFENO 400',
+    precio_usd: '10.50',
+    laboratorio: 'Laboratorio S.A.',
+  });
+  assert.ok(r.campos);
+  assert.equal(r.campos.nombre_comercial, 'IBUPROFENO 400');
+  assert.equal(r.campos.precio_usd, 10.5);
+  assert.equal(r.campos.laboratorio, 'Laboratorio S.A.');
+  assert.equal(r.campos.descripcion, undefined);
+  assert.equal(r.campos.molecula, undefined);
+  assert.equal(r.campos.linea, undefined);
+  assert.equal(r.campos.forma, undefined);
+});
+
+test('armarNuevoProducto: acepta los campos opcionales (descripcion, molecula, linea, forma)', () => {
+  const r = armarNuevoProducto({
+    nombre_comercial: 'IBUPROFENO',
+    precio_usd: 10,
+    laboratorio: 'LAB X',
+    descripcion: 'Antiinflamatorio',
+    molecula: 'Ibuprofeno',
+    linea: 'Linea Farmacia',
+    forma: 'TABLETAS',
+  });
+  assert.equal(r.campos.descripcion, 'Antiinflamatorio');
+  assert.equal(r.campos.molecula, 'Ibuprofeno');
+  assert.equal(r.campos.linea, 'Linea Farmacia');
+  assert.equal(r.campos.forma, 'TABLETAS');
+});
+
+test('armarNuevoProducto: laboratorio pierde comas y comillas dobles', () => {
+  const r = armarNuevoProducto({
+    nombre_comercial: 'X',
+    precio_usd: 5,
+    laboratorio: 'CASA DE REPRESENTACION DISTRILAB, C.A.',
+  });
+  assert.equal(r.campos.laboratorio, 'CASA DE REPRESENTACION DISTRILAB C.A.');
+});
+
+test('armarNuevoProducto: rechaza nombre vacío', () => {
+  const r = armarNuevoProducto({ nombre_comercial: '   ', precio_usd: 10, laboratorio: 'LAB' });
+  assert.match(r.error, /obligatorio/);
+  const r2 = armarNuevoProducto({ nombre_comercial: '', precio_usd: 10, laboratorio: 'LAB' });
+  assert.match(r2.error, /obligatorio/);
+});
+
+test('armarNuevoProducto: rechaza precio faltante / 0 / negativo / no numérico', () => {
+  const base = { nombre_comercial: 'X', laboratorio: 'LAB' };
+  assert.match(armarNuevoProducto({ ...base }).error, /obligatorio/); // sin precio
+  assert.match(armarNuevoProducto({ ...base, precio_usd: 0 }).error, /mayor a 0/);
+  assert.match(armarNuevoProducto({ ...base, precio_usd: -5 }).error, /mayor a 0/);
+  assert.match(armarNuevoProducto({ ...base, precio_usd: 'abc' }).error, /mayor a 0/);
+  assert.match(armarNuevoProducto({ ...base, precio_usd: null }).error, /mayor a 0/);
+  assert.match(armarNuevoProducto({ ...base, precio_usd: '' }).error, /mayor a 0/);
+});
+
+test('armarNuevoProducto: precio válido > 0 pasa', () => {
+  const r = armarNuevoProducto({ nombre_comercial: 'X', precio_usd: '0.01', laboratorio: 'LAB' });
+  assert.ok(r.campos);
+  assert.equal(r.campos.precio_usd, 0.01);
+});
+
+test('armarNuevoProducto: rechaza laboratorio vacío', () => {
+  const r = armarNuevoProducto({ nombre_comercial: 'X', precio_usd: 10, laboratorio: '   ' });
+  assert.match(r.error, /obligatorio/);
+});
+
+test('armarNuevoProducto: body vacío/null es error', () => {
+  assert.match(armarNuevoProducto({}).error, /obligatorio/);
+  assert.match(armarNuevoProducto(null).error, /obligatorio/);
+});
+
+test('armarNuevoProducto: texto opcional muy largo se rechaza', () => {
+  const r = armarNuevoProducto({
+    nombre_comercial: 'X',
+    precio_usd: 10,
+    laboratorio: 'LAB',
+    descripcion: 'a'.repeat(3000),
+  });
+  assert.match(r.error, /supera/i);
 });

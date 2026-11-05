@@ -314,6 +314,76 @@ export function armarCambiosProducto(body) {
   return { cambios: { ...cambios, updated_at: new Date() } };
 }
 
+// --- creación de producto ------------------------------------------------------
+
+// Campos opcionales (además de los 3 requeridos) que la alta permite completar.
+// `activo`/`visible_catalogo` se dejan en sus defaults (true) y `disponible`
+// solo se activa al aplicar un precio > 0 por la RPC — una marca sin precio no
+// es comprable (regla del proyecto, 2026-09-05).
+export const CAMPOS_NUEVO_PRODUCTO = ['descripcion', 'molecula', 'linea', 'forma'];
+
+/**
+ * Arma el payload de creación de un producto para `POST /staff/inventario`.
+ *
+ * Requiere (y solo requiere): nombre_comercial, precio_usd y laboratorio.
+ * El precio pasa por `sanearPrecio` con `> 0` obligatorio: `0` es válido para
+ * quitar precio en un PATCH, pero no para crear (un producto sin precio nunca
+ * se dispara como disponible).
+ *
+ * Los campos opcionales se sanitizan igual que `armarCambiosProducto` (topes +
+ * vacío→null) para que no entren basura ni `pais_origen` fantasma.
+ *
+ * @returns {{ campos: object } | { error: string }}
+ */
+export function armarNuevoProducto(body) {
+  const b = body && typeof body === 'object' ? body : {};
+
+  let nombre;
+  try {
+    nombre = sanearTexto(b.nombre_comercial, NOMBRE_MAX);
+    if (!nombre) return { error: 'El nombre comercial es obligatorio' };
+  } catch (e) {
+    return { error: e.message };
+  }
+
+  const precio = sanearPrecio(b.precio_usd);
+  if (precio === null || precio <= 0) {
+    return {
+      error: 'El precio es obligatorio y debe ser mayor a 0',
+    };
+  }
+
+  let laboratorio;
+  try {
+    laboratorio = sanearLaboratorio(b.laboratorio);
+    if (!laboratorio) return { error: 'El laboratorio es obligatorio' };
+  } catch (e) {
+    return { error: e.message };
+  }
+
+  const campos = {
+    nombre_comercial: nombre,
+    precio_usd: precio,
+    laboratorio,
+    activo: true,
+    visible_catalogo: true,
+    disponible: false,
+  };
+
+  for (const campo of CAMPOS_NUEVO_PRODUCTO) {
+    if (campo in b) {
+      try {
+        const valor = sanearTexto(b[campo], TEXTO_MAX);
+        campos[campo] = valor;
+      } catch (e) {
+        return { error: e.message };
+      }
+    }
+  }
+
+  return { campos };
+}
+
 // --- foto_editable / helpers de lectura --------------------------------------
 
 /** Nombre corto del estado, para logs y para el ledger. */

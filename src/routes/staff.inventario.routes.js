@@ -15,6 +15,7 @@ import {
   eliminarFotoProducto,
   actualizarPrecioProducto,
   actualizarDatosProducto,
+  crearProducto,
 } from '../controllers/staff.inventario.controller.js';
 import { verifyStaffJWT, checkRolStaff } from '../middleware/staffAuth.js';
 import { uploadsCatalogoLimiter } from '../middleware/Ratelimit.js';
@@ -63,6 +64,15 @@ router.get(
   verifyStaffJWT,
   checkRolStaff(ROLES_INVENTARIO_VER),
   getOpcionesInventario,
+);
+
+// Crear producto: solo gerencia (misma terna que datos/precio). Va antes de
+// `/:id` para que Express no intente leer "crear" como un id.
+router.post(
+  '/',
+  verifyStaffJWT,
+  checkRolStaff(ROLES_INVENTARIO_DATOS),
+  crearProducto,
 );
 
 router.get('/', verifyStaffJWT, checkRolStaff(ROLES_INVENTARIO_VER), listarInventario);

@@ -31,6 +31,7 @@ import {
   errorCoherenciaFoto,
   armarCambiosPrecio,
   armarCambiosProducto,
+  armarNuevoProducto,
   sanearFotoEstado,
   puedeEditarPrecio,
   puedeEditarDatos,
@@ -659,6 +660,78 @@ export async function actualizarDatosProducto(req, res) {
     res.json(data);
   } catch (err) {
     console.error('Error al actualizar datos de producto:', err);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+}
+
+// --- POST /staff/inventario -------------------------------------------------------
+//
+// Crea un producto con solo nombre_comercial, precio y laboratorio. El precio
+// se escribe por la RPC `aplicar_precio_inventario` (migración 043): el precio
+// manda, costo = round(precio * 0.6, 2), y disponible se activa solo cuando el
+// precio es > 0.
+//
+// Campos que nunca viajan aquí (tienen su propia ruta o lógica): sku,
+// precio_usd/costo_usd (la RPC), foto_url (subida aparte), pais_origen/pais_id
+// (no es columna de productos), foto_estado (solo se toca con una foto real).
+//
+// Se salta `alPublicarPrecio`: un id de producto totalmente nuevo no puede tener
+// alertas de "avísame" ni items de requerimiento vinculados, así que no hay a
+// quién notificar. Si en el futuro se vinculan alertas previas, ese es el lugar.
+
+export async function crearProducto(req, res) {
+  const armado = armarNuevoProducto(req.body);
+  if (armado.error) {
+    return res.status(400).json({ error: armado.error });
+  }
+
+  const { campos } = armado;
+  const precio = campos.precio_usd;
+  delete campos.precio_usd; // la RPC lo escribe; no va directo al INSERT
+
+  try {
+    const { data, error } = await supabase
+      .from('productos')
+      .insert(campos)
+      .select(
+        'id, nombre_comercial, descripcion, laboratorio, molecula, linea, forma, activo, visible_catalogo, disponible, precio_usd, costo_usd, foto_url, foto_estado, updated_at',
+      )
+      .single();
+    if (error || !data) {
+      console.error('Error al crear producto:', error);
+      return res.status(400).json({ error: 'No se pudo crear el producto' });
+    }
+
+    // Aplicar el precio por la RPC atómica. Es el único camino que escribe
+    // precio_usd/costo_usd/disponible de forma consistente.
+    let rpc;
+    try {
+      const { data: rpcData, error: rpcError } = await supabase.rpc('aplicar_precio_inventario', {
+        p_producto_id: Number(data.id),
+        p_precio: precio,
+      });
+      if (rpcError) throw rpcError;
+      rpc = rpcData;
+    } catch (err) {
+      const noExiste = /no encontrado/i.test(err.message || '');
+      // Si falla la RPC, el producto ya existe pero sin precio: se deja
+      // disponible=false y se devuelve el 400 para que la UI lo explique.
+      console.error('Error al aplicar precio de producto nuevo:', err);
+      return res
+        .status(noExiste ? 404 : 400)
+        .json({ error: noExiste ? 'Producto no encontrado' : 'No se pudo aplicar el precio' });
+    }
+
+    const producto = {
+      ...data,
+      precio_usd: rpc?.producto?.precio_usd == null ? null : Number(rpc.producto.precio_usd),
+      costo_usd: rpc?.producto?.costo_usd == null ? null : Number(rpc.producto.costo_usd),
+      disponible: rpc?.producto?.disponible ?? data.disponible,
+    };
+
+    res.status(201).json(producto);
+  } catch (err) {
+    console.error('Error al crear producto:', err);
     res.status(500).json({ error: 'Error del servidor' });
   }
 }
