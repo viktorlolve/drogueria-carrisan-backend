@@ -157,11 +157,13 @@ export async function getPendientes(req, res) {
     if (tipo === 'sin_proveedor') {
       const { data: conCosto } = await supabase.from('producto_costos').select('producto_id');
       const conCostoSet = new Set((conCosto || []).map(r => r.producto_id));
-      let q = supabase.from('productos').select('id, nombre_comercial, laboratorio, precio_usd, sku', { count: 'exact' }).eq('activo', true).range(desde, desde+porPagina-1);
+      let q = supabase.from('productos').select('id, nombre_comercial, laboratorio, precio_usd, sku').eq('activo', true);
       if (buscar) q = q.ilike('nombre_comercial', `%${buscar}%`);
-      const { data, count } = await q;
-      const filas = (data || []).filter(p => !conCostoSet.has(p.id));
-      res.json({ filas, total: filas.length });
+      const { data } = await q;
+      const filasSinProveedor = (data || []).filter(p => !conCostoSet.has(p.id));
+      const total = filasSinProveedor.length;
+      const filas = filasSinProveedor.slice(desde, desde + porPagina);
+      res.json({ filas, total });
       return;
     }
     if (tipo === 'precios_viejos') {
@@ -191,12 +193,83 @@ export async function getPendientes(req, res) {
 
 export async function getPendientesCsv(req, res) {
   try {
-    const { tipo = 'sin_enlazar', proveedor } = req.query;
-    // simplificado: reutiliza lógica básica
-    res.setHeader('Content-Type', 'text/csv');
+    const { tipo = 'sin_enlazar', proveedor, buscar = '' } = req.query;
+    let filas = [];
+    let header = '';
+
+    if (tipo === 'sin_enlazar') {
+      let subidasQ = supabase.from('subidas_proveedor').select('id, proveedor, created_at').order('created_at', { ascending: false });
+      if (proveedor) subidasQ = subidasQ.eq('proveedor', proveedor);
+      const { data: subidas } = await subidasQ;
+      const ultimas = [];
+      const vistos = new Set();
+      for (const s of subidas || []) {
+        if (proveedor) { ultimas.push(s.id); break; }
+        if (!vistos.has(s.proveedor)) { vistos.add(s.proveedor); ultimas.push(s.id); }
+      }
+      if (ultimas.length > 0) {
+        let q = supabase.from('subidas_sin_enlazar').select('*, subidas_proveedor(proveedor, created_at, archivo)').in('subida_id', ultimas);
+        if (buscar) q = q.ilike('descripcion', `%${buscar}%`);
+        const { data } = await q;
+        filas = (data || []).map(f => ({
+          proveedor: f.subidas_proveedor?.proveedor || '-',
+          archivo: f.subidas_proveedor?.archivo || '-',
+          descripcion: f.descripcion || '',
+          laboratorio: f.laboratorio || '',
+          costo_usd: f.costo_usd != null ? f.costo_usd : '',
+          pack: f.pack != null ? f.pack : '',
+        }));
+      }
+      header = 'proveedor,archivo,descripcion,laboratorio,costo_usd,pack';
+    } else if (tipo === 'sin_proveedor') {
+      const { data: conCosto } = await supabase.from('producto_costos').select('producto_id');
+      const conCostoSet = new Set((conCosto || []).map(r => r.producto_id));
+      let q = supabase.from('productos').select('id, nombre_comercial, laboratorio, precio_usd, sku').eq('activo', true);
+      if (buscar) q = q.ilike('nombre_comercial', `%${buscar}%`);
+      const { data } = await q;
+      filas = (data || [])
+        .filter(p => !conCostoSet.has(p.id))
+        .map(p => ({
+          producto_id: p.id,
+          nombre_comercial: p.nombre_comercial || '',
+          laboratorio: p.laboratorio || '',
+          precio_usd: p.precio_usd != null ? p.precio_usd : '',
+          sku: p.sku || '',
+        }));
+      header = 'producto_id,nombre_comercial,laboratorio,precio_usd,sku';
+    } else if (tipo === 'precios_viejos') {
+      const corte = new Date(Date.now() - DIAS_VIEJO * 86400000).toISOString();
+      let q = supabase.from('producto_costos').select('producto_id, proveedor, costo_usd, fecha').lt('fecha', corte);
+      if (proveedor) q = q.eq('proveedor', proveedor);
+      const { data } = await q;
+      const ids = (data || []).map(r => r.producto_id);
+      const { data: prods } = ids.length ? await supabase.from('productos').select('id, nombre_comercial, laboratorio, precio_usd').in('id', ids) : { data: [] };
+      const map = Object.fromEntries((prods || []).map(p => [p.id, p]));
+      filas = (data || []).map(r => ({
+        producto_id: r.producto_id,
+        nombre_comercial: map[r.producto_id]?.nombre_comercial || '',
+        laboratorio: map[r.producto_id]?.laboratorio || '',
+        proveedor: r.proveedor,
+        costo_usd: r.costo_usd != null ? r.costo_usd : '',
+        fecha: r.fecha || '',
+        dias: diasDesde(r.fecha),
+      }));
+      header = 'producto_id,nombre_comercial,laboratorio,proveedor,costo_usd,fecha,dias';
+    }
+
+    function esc(v) {
+      const s = String(v ?? '');
+      if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    }
+    const lineas = [header, ...filas.map(f => Object.values(f).map(esc).join(','))];
+    const csv = lineas.join('\n') + '\n';
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="pendientes-${tipo}.csv"`);
-    res.send('tipo,descripcion\n');
+    res.send(csv);
   } catch (e) {
+    console.error('getPendientesCsv', e);
     res.status(500).json({ mensaje: 'Error al generar CSV' });
   }
 }
@@ -217,10 +290,11 @@ export async function costoManual(req, res) {
     const minc = mins && mins.length ? Math.min(...mins.map(m=>Number(m.costo_usd))) : null;
     if (minc != null && minc > 0) {
       const precio = Math.round((minc / 0.6) * 100) / 100;
-      await supabase.from('productos').update({ costo_usd: minc, precio_usd: precio, disponible: precio > 0, updated_at: new Date().toISOString() }).eq('id', Number(producto_id));
+      const { data: prod } = await supabase.from('productos').update({ costo_usd: minc, precio_usd: precio, disponible: precio > 0, updated_at: new Date().toISOString() }).eq('id', Number(producto_id)).select('id, nombre_comercial').single();
+      if (prod) await alPublicarPrecio(prod).catch(() => {});
     } else {
-      // mantener precio
-      await supabase.from('productos').update({ costo_usd: null, updated_at: new Date().toISOString() }).eq('id', Number(producto_id));
+      const { data: prod } = await supabase.from('productos').update({ costo_usd: null, updated_at: new Date().toISOString() }).eq('id', Number(producto_id)).select('id, nombre_comercial').single();
+      // si se quita el costo, el producto puede quedar sin precio; alPublicarPrecio solo se llama al publicar, no al quitar
     }
     res.json({ ok: true });
   } catch (e) {

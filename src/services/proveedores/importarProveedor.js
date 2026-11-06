@@ -22,11 +22,15 @@ import {
   tieneAncla,
   construirIndice,
   candidatosPara,
+  scoreNombreComercial,
 } from '../../../scripts/lib/cobecaParser.mjs';
 import {
   construirIndiceLaboratorio,
   matchDrovencentro,
 } from './drovencentroParser.js';
+import { leerBioglass } from '../../../scripts/lib/nuevosProveedores/bioglass.mjs';
+import { leerBcGroup } from '../../../scripts/lib/nuevosProveedores/bcGroup.mjs';
+import { leerMedImportados } from '../../../scripts/lib/nuevosProveedores/medImportados.mjs';
 
 export const MARGEN = 0.6;       // precio_usd = costo_usd / MARGEN (40% sobre venta)
 const CHUNK = 500;               // updates en lotes
@@ -96,9 +100,41 @@ export function leerFilasDrovencentro(buffer) {
   return filas;
 }
 
+// ---- Lectura de los 3 proveedores nuevos (workbook, no buffer) ----
+
+// Convierte la fila normalizada del adaptador al shape interno del motor:
+// { desc, costoRaw, codigo, aux, laboratorio }.
+function filaInterna(f) {
+  return {
+    desc: f.nombre_crudo || '',
+    costoRaw: f.costo_usd,
+    codigo: f.codigo_proveedor != null ? String(f.codigo_proveedor) : '',
+    aux: f.ean != null ? String(f.ean) : '',
+    laboratorio: f.laboratorio_fijo || '',
+  };
+}
+
+export function leerFilasBioglass(buffer) {
+  const wb = XLSX.read(buffer, { type: 'buffer' });
+  return leerBioglass(wb, 'bioglass.xlsx').map(filaInterna);
+}
+
+export function leerFilasBcGroup(buffer) {
+  const wb = XLSX.read(buffer, { type: 'buffer' });
+  return leerBcGroup(wb, 'bc-group.xlsx').map(filaInterna);
+}
+
+export function leerFilasMedImportados(buffer) {
+  const wb = XLSX.read(buffer, { type: 'buffer' });
+  return leerMedImportados(wb, 'med-importados.xlsx').map(filaInterna);
+}
+
 function leerFilas(proveedor, buffer) {
   if (proveedor === 'cobeca') return leerFilasCOBECA(buffer);
   if (proveedor === 'drovencentro') return leerFilasDrovencentro(buffer);
+  if (proveedor === 'bioglass') return leerFilasBioglass(buffer);
+  if (proveedor === 'bc-group') return leerFilasBcGroup(buffer);
+  if (proveedor === 'med-importados') return leerFilasMedImportados(buffer);
   throw new Error(`Proveedor desconocido: ${proveedor}`);
 }
 
@@ -138,6 +174,28 @@ export function enlazarDrovencentro(fila, idxLab) {
   return { estado: 'sin_match', motivo: 'sin_candidato' };
 }
 
+// ---- Enlazado para los 3 proveedores nuevos ----
+
+// Los 3 proveedores nuevos traen `laboratorio_fijo` (texto EXACTO de
+// productos.laboratorio) y un nombre crudo. El enlazado es: filtrar productos
+// de ese laboratorio y hacer match por nombre contra nombre_comercial/molecula.
+// No usa el parser farmacéutico de COBECA.
+export function enlazarLaboratorioNombre(fila, productos, laboratorioFijo) {
+  const parsed = parsearDescripcion(fila.desc);
+  const umbral = 0.6;
+  let best = null;
+  let bestScore = umbral;
+  for (const p of productos) {
+    if (String(p.laboratorio || '').trim() !== laboratorioFijo) continue;
+    const s = scoreNombreComercial(parsed, p.nombre_comercial || '');
+    if (s > bestScore) { bestScore = s; best = p; }
+  }
+  if (best && bestScore >= umbral) {
+    return { estado: 'matched', producto: best, score: bestScore };
+  }
+  return { estado: 'sin_match', motivo: 'sin_candidato' };
+}
+
 // ---- Orquestador ----
 
 export async function importarProveedor({ buffer, nombre = 'archivo', proveedor }) {
@@ -157,11 +215,11 @@ export async function importarProveedor({ buffer, nombre = 'archivo', proveedor 
 
     // 1. Leer filas del archivo
     const filasArchivo = leerFilas(proveedor, buffer);
-    // 2. Cargar productos de la BD (INHRR en tienda)
+    // 2. Cargar productos de la BD (todos los activos de la tienda, sin filtro
+    //    de fuente_inhrr_ef: los 3 proveedores nuevos crean productos sin ef).
     const { rows: productos } = await client.query(`
       SELECT id, nombre_comercial, molecula, forma, laboratorio, precio_usd, costo_usd
       FROM public.productos
-      WHERE fuente_inhrr_ef IS NOT NULL
       ORDER BY id
     `);
 
@@ -169,7 +227,7 @@ export async function importarProveedor({ buffer, nombre = 'archivo', proveedor 
     let idx;
     let idxLab;
     if (proveedor === 'cobeca') idx = construirIndice(productos);
-    else idxLab = construirIndiceLaboratorio(productos);
+    else if (proveedor === 'drovencentro') idxLab = construirIndiceLaboratorio(productos);
 
     // 3. Enlazar cada fila
     const numeroFmt = PROVEEDORES[proveedor].formatoNumero;
@@ -197,9 +255,10 @@ export async function importarProveedor({ buffer, nombre = 'archivo', proveedor 
         // No se aplica como costo válido al MIN, pero se registra
       }
 
-      const enlazado = proveedor === 'cobeca'
-        ? enlazarCOBECA(f, productos, idx)
-        : enlazarDrovencentro(f, idxLab);
+      let enlazado;
+      if (proveedor === 'cobeca') enlazado = enlazarCOBECA(f, productos, idx);
+      else if (proveedor === 'drovencentro') enlazado = enlazarDrovencentro(f, idxLab);
+      else enlazado = enlazarLaboratorioNombre(f, productos, f.laboratorio);
 
       if (enlazado.estado === 'no_farmaco') {
         filas.push({ ...base, estado: 'sin_match', motivo: 'no farmaco' });

@@ -6,7 +6,7 @@ export const PROVEEDORES = {
   cobeca: {
     id: 'cobeca',
     nombre: 'COBECA',
-    ext: ['.xlsx'],
+    ext: ['.xlsx', '.csv'],
     formatoNumero: 'puntoDecimal',
     // Lectura por xlsx: hoja 0, cabecera en fila 1
     hoja: 0,
@@ -32,6 +32,28 @@ export const PROVEEDORES = {
       ean: 1,
     },
     enlazarPor: 'drovencentroParser',
+  },
+  bioglass: {
+    id: 'bioglass',
+    nombre: 'BIOGLASS',
+    ext: ['.xlsx'],
+    formatoNumero: 'puntoDecimal',
+    // Enlazado por laboratorio_fijo (texto exacto de productos.laboratorio) + nombre
+    enlazarPor: 'laboratorioNombre',
+  },
+  'bc-group': {
+    id: 'bc-group',
+    nombre: 'BC GROUP',
+    ext: ['.xlsx'],
+    formatoNumero: 'puntoDecimal',
+    enlazarPor: 'laboratorioNombre',
+  },
+  'med-importados': {
+    id: 'med-importados',
+    nombre: 'MED IMPORTADOS',
+    ext: ['.xlsx'],
+    formatoNumero: 'puntoDecimal',
+    enlazarPor: 'laboratorioNombre',
   },
 };
 
