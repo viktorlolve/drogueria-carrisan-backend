@@ -26,6 +26,41 @@ export async function getDirecciones(req, res) {
   }
 }
 
+// GET /direcciones/usuario/:id?tipo=delivery|envio_nacional — SOLO admin.
+// getDirecciones devuelve las del usuario logueado; el panel /admin necesita
+// las de OTRO cliente para crearle una orden con envío (el costo del delivery
+// se calcula con la ciudad de la dirección elegida).
+export async function getDireccionesDeUsuario(req, res) {
+  try {
+    const { id } = req.params;
+    const { tipo } = req.query;
+
+    // `users.id` es integer: un id no numérico llegaría a PostgREST como texto
+    // y devolvería un 500 en vez de un 400 legible.
+    if (!/^\d+$/.test(String(id))) {
+      return res.status(400).json({ error: 'ID de usuario inválido' });
+    }
+
+    let query = supabase
+      .from('direcciones_envio')
+      .select('*')
+      .eq('usuario_id', id)
+      .eq('activo', true);
+
+    if (tipo) {
+      query = query.eq('tipo_direccion', tipo);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json(data || []);
+  } catch (err) {
+    console.error('Error al obtener direcciones del usuario:', err);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+}
+
 // POST /direcciones
 export async function createDireccion(req, res) {
   try {

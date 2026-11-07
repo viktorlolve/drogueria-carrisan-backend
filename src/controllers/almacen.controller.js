@@ -117,10 +117,14 @@ export async function aprobarOrden(req, res) {
     if (errorItems) throw errorItems;
 
     const totalAnterior = Number(orden.total_usd);
-    const nuevoTotal = itemsFinales.reduce(
+    // El envío ya cobrado en la orden se conserva: acá solo se ajustan
+    // cantidades y se anulan items, nunca la tarifa de delivery.
+    const envio = Number(orden.costo_envio_usd || 0);
+    const totalItems = itemsFinales.reduce(
       (sum, i) => (i.anulado ? sum : sum + Number(i.precio_unitario) * i.cantidad),
       0
     );
+    const nuevoTotal = Math.round((totalItems + envio) * 100) / 100;
     const totalCambio = Math.abs(nuevoTotal - totalAnterior) > 0.0001;
 
     const { error: errorTotal } = await supabase

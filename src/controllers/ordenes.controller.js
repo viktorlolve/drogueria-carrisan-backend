@@ -147,6 +147,44 @@ export async function createOrden(req, res) {
 }
 
 // ---------------------------------------------------------
+// Costo de envío (delivery).
+//
+// La orden SIEMPRE cobra el envío que el cliente vio en el carrito, y se
+// calcula acá con la tarifa de la ciudad de la dirección de entrega: el
+// frontend solo lo muestra, nunca lo manda. La regla es idéntica a
+// `costoEnvioParaCiudad` de src/utils/costoEnvio.js del frontend (la usa el
+// carrito en EnvioContext): coincidencia exacta de ciudad → primera tarifa
+// activa (getTarifasActivas las devuelve por ciudad asc) → 8.00.
+//
+// Si se cambia acá, hay que cambiarlo también en el frontend: si no, el
+// cliente ve un total en el carrito y la orden queda con otro.
+// ---------------------------------------------------------
+export const COSTO_ENVIO_POR_DEFECTO = 8;
+
+export function costoEnvioParaCiudad(tarifas, ciudad) {
+  const lista = (Array.isArray(tarifas) ? tarifas : []).filter((t) => t && typeof t === 'object');
+  const exacta = ciudad ? lista.find((t) => t.ciudad === ciudad) : null;
+  const elegida = exacta || lista[0];
+  const costo = elegida && elegida.costo != null ? Number(elegida.costo) : COSTO_ENVIO_POR_DEFECTO;
+  if (!Number.isFinite(costo) || costo < 0) return 0;
+  return Math.round(costo * 100) / 100;
+}
+
+// Tarifas activas, en el mismo orden que GET /delivery-tarifas/activas
+// (ciudad asc): el fallback "primera tarifa" tiene que ser el mismo en ambos
+// lados.
+async function tarifasDeliveryActivas() {
+  const { data, error } = await supabase
+    .from('tarifas_delivery')
+    .select('ciudad, costo')
+    .eq('activo', true)
+    .order('ciudad', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
+// ---------------------------------------------------------
 // construirOrden: lógica de negocio pura para crear una orden,
 // reutilizable tanto por el checkout normal (createOrden) como por
 // staff.controller.js (crearOrdenParaCliente). No conoce req/res —
@@ -216,7 +254,7 @@ export async function construirOrden(usuario_id, datos, opciones = {}) {
   // credito_bloqueado).
   const { data: usuario, error: errorUsuario } = await supabase
     .from('users')
-    .select('etiqueta_registro, etiqueta_pago, etiqueta_comportamiento, linea_credito, credito_bloqueado')
+    .select('etiqueta_registro, etiqueta_pago, etiqueta_comportamiento, linea_credito, credito_bloqueado, delivery_gratis')
     .eq('id', usuario_id)
     .single();
   if (errorUsuario || !usuario) throw errorUsuario || new ErrorOrden(404, 'Usuario no encontrado');
@@ -255,7 +293,38 @@ export async function construirOrden(usuario_id, datos, opciones = {}) {
     cuponId = cupon.id;
     descuentoCupon = calcularDescuento(cupon, total_usd);
   }
-  const totalFinal = Math.round((total_usd - descuentoCupon) * 100) / 100;
+  const totalProductos = Math.round((total_usd - descuentoCupon) * 100) / 100;
+
+  // -----------------------------------------------------------------
+  // Costo de envío: SOLO delivery, calculado en el servidor con la
+  // ciudad de la dirección de entrega (el carrito solo lo muestra).
+  // retiro y envio_nacional no se cobran acá (el nacional es pago en
+  // destino). El resultado se suma al total de la orden para que el
+  // monto que el cliente ve y el que se le cobra sean el mismo.
+  // -----------------------------------------------------------------
+  let costoEnvio = 0;
+  if (tipo_envio === 'delivery' && !usuario.delivery_gratis) {
+    if (!direccion_envio_id) {
+      throw new ErrorOrden(400, 'Debes indicar la dirección de entrega para el delivery');
+    }
+
+    // La dirección tiene que ser del dueño de la orden (en el flujo staff el
+    // dueño es el cliente, no el staff que la crea).
+    const { data: direccion, error: errorDireccion } = await supabase
+      .from('direcciones_envio')
+      .select('ciudad')
+      .eq('id', direccion_envio_id)
+      .eq('usuario_id', usuario_id)
+      .maybeSingle();
+
+    if (errorDireccion) throw errorDireccion;
+    if (!direccion) throw new ErrorOrden(400, 'La dirección de entrega no es válida');
+
+    costoEnvio = costoEnvioParaCiudad(await tarifasDeliveryActivas(), direccion.ciudad);
+  }
+
+  // El cupón descuenta SOLO productos: el envío se suma después.
+  const totalFinal = Math.round((totalProductos + costoEnvio) * 100) / 100;
 
   // -----------------------------------------------------------------
   // Validación de crédito: NUNCA confiar en lo que mande el frontend.
@@ -306,7 +375,11 @@ export async function construirOrden(usuario_id, datos, opciones = {}) {
     usuario_id,
     estado: 'pedido_creado',
     total_usd: totalFinal,
-    forma_pago: forma_pago_final
+    forma_pago: forma_pago_final,
+    // Envío cobrado en el total (0 en retiro / envío nacional). El detalle y
+    // el PDF lo muestran como línea aparte, así que la columna es la fuente
+    // de verdad del desglose.
+    costo_envio_usd: costoEnvio
   };
   if (tipo_envio) nuevaOrden.tipo_envio = tipo_envio;
   if (direccion_envio_id) nuevaOrden.direccion_envio_id = direccion_envio_id;
@@ -578,7 +651,8 @@ export async function getOrdenesPendientesPago(req, res) {
 // GET /orders/delivery-pendientes — cola para el panel de delivery:
 // órdenes tipo_envio='delivery' en 'preparando' con pago autorizado
 // (crédito o estado_pago='verificado'), las más antiguas primero
-// (orden de despacho). Además devuelve los últimos 'enviado'.
+// (orden de despacho). Además devuelve los últimos 'enviado' DE DELIVERY
+// (incluye los legacy sin tipo_envio; los envíos por agencia NO aparecen acá).
 // Mismo criterio que getColaDespacho en staff.controller.js.
 export async function getDeliveryPendientes(req, res) {
   try {
@@ -596,6 +670,10 @@ export async function getDeliveryPendientes(req, res) {
         .from('ordenes')
         .select(selectArms)
         .eq('estado', 'enviado')
+        // El panel es de DELIVERY: sin este filtro se colaban los envíos por
+        // agencia en "Enviados Recientes". NULL-inclusive para las órdenes
+        // legacy sin tipo_envio (mismo criterio que StaffDelivery).
+        .or('tipo_envio.eq.delivery,tipo_envio.is.null')
         .order('created_at', { ascending: false })
         .limit(10),
     ]);
@@ -635,7 +713,7 @@ export async function updateItemsOrden(req, res) {
   try {
     const { data: ordenActual, error: errorOrden } = await supabase
       .from('ordenes')
-      .select('id, ordenes_items(id, producto_id, cantidad, precio_unitario)')
+      .select('id, costo_envio_usd, ordenes_items(id, producto_id, cantidad, precio_unitario)')
       .eq('id', id)
       .single();
 
@@ -668,10 +746,14 @@ export async function updateItemsOrden(req, res) {
 
     if (errorItems) throw errorItems;
 
-    const nuevoTotal = itemsFinales.reduce(
+    // El envío NO se recalcula: es un monto ya cobrado en la orden original
+    // y solo cambian las cantidades de productos.
+    const envio = Number(ordenActual.costo_envio_usd || 0);
+    const totalItems = itemsFinales.reduce(
       (sum, i) => sum + Number(i.precio_unitario) * i.cantidad,
       0
     );
+    const nuevoTotal = Math.round((totalItems + envio) * 100) / 100;
 
     const { data: ordenActualizada, error: errorTotal } = await supabase
       .from('ordenes')

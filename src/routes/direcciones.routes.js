@@ -1,12 +1,22 @@
 // backend/src/routes/direcciones.routes.js
 import { Router } from 'express';
-import { getDirecciones, createDireccion, updateDireccion, deleteDireccion } from '../controllers/direcciones.controller.js';
-import { verifyJWT } from '../middleware/auth.js';
+import {
+  getDirecciones,
+  getDireccionesDeUsuario,
+  createDireccion,
+  updateDireccion,
+  deleteDireccion,
+} from '../controllers/direcciones.controller.js';
+import { verifyJWT, verifyAdmin } from '../middleware/auth.js';
 
 const router = Router();
 
-// Todas las rutas requieren autenticación
+// Todas las rutas requieren autenticaciÃ³n
 router.use(verifyJWT);
+
+// Antes de cualquier `/:id`: es la única ruta con id de OTRO usuario y va
+// restringida al dueño (panel /admin).
+router.get('/usuario/:id', verifyAdmin, getDireccionesDeUsuario);
 
 router.get('/', getDirecciones);
 router.post('/', createDireccion);
