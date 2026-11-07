@@ -294,10 +294,20 @@ let cacheOpciones = null;
  * era el de la muestra. Ver `idsSinProveedor()` para el mismo problema.
  */
 async function calcularOpciones() {
-  const { data, error } = await supabase.rpc('inventario_opciones', {
-    p_moleculas_maximo: MAX_MOLECULAS_OPCIONES,
-  });
+  const [
+    { data, error },
+    { data: marcas, error: errorMarcas },
+    { data: paises, error: errorPaises },
+  ] = await Promise.all([
+    supabase.rpc('inventario_opciones', {
+      p_moleculas_maximo: MAX_MOLECULAS_OPCIONES,
+    }),
+    supabase.from('marcas').select('id, nombre').order('nombre', { ascending: true }),
+    supabase.from('paises').select('id, nombre, codigo_iso').order('nombre', { ascending: true }),
+  ]);
   if (error) throw error;
+  if (errorMarcas) throw errorMarcas;
+  if (errorPaises) throw errorPaises;
   if (!data) throw new Error('inventario_opciones devolvió vacío');
 
   if (Number(data.moleculas_total) > (data.moleculas || []).length) {
@@ -314,6 +324,9 @@ async function calcularOpciones() {
     lineas: data.lineas || [],
     moleculas: data.moleculas || [],
     moleculas_total: Number(data.moleculas_total) || 0,
+    // Listas de las FK editables (marca y país): vienen de sus propias tablas.
+    marcas: marcas || [],
+    paises: paises || [],
     conteos: data.conteos || {},
     generado_en: data.generado_en,
   };
@@ -640,17 +653,29 @@ export async function actualizarDatosProducto(req, res) {
       .from('productos')
       .update(armado.cambios)
       .eq('id', id)
-      .select('id, nombre_comercial, descripcion, laboratorio, molecula, linea, forma, activo, visible_catalogo, updated_at')
+      .select(
+        'id, nombre_comercial, descripcion, sku, marca_id, pais_id, presentacion, ' +
+          'unidades_por_presentacion, laboratorio, molecula, linea, forma, activo, ' +
+          'visible_catalogo, disponible, updated_at',
+      )
       .single();
     if (error) {
       // Distinguir "no existe" (PGRST116: `single()` no encontró la fila) de un
       // error real (columna inexistente, constraint, etc.). Antes TODO se devolvía
       // como 404 "Producto no encontrado", y un typo en la whitelist se disfrazaba
       // de "no encontrado" (así se coló `pais_origen`, que no existe en `productos`).
-      const noExiste = error.code === 'PGRST116';
       console.error('Error al actualizar datos de producto:', id, error);
-      if (noExiste) {
+      if (error.code === 'PGRST116') {
         return res.status(404).json({ error: 'Producto no encontrado' });
+      }
+      // 23505 = unique_violation: el SKU es único entre productos (índice parcial
+      // `productos_sku_key`). Sin este mensaje, el usuario veía un 400 genérico.
+      if (error.code === '23505') {
+        return res.status(409).json({ error: 'Ese SKU ya está en uso por otro producto' });
+      }
+      // 23503 = foreign_key_violation: marca_id/pais_id que no existen.
+      if (error.code === '23503') {
+        return res.status(400).json({ error: 'La marca o el país seleccionado no existe' });
       }
       return res.status(400).json({ error: 'No se pudieron guardar los datos del producto' });
     }

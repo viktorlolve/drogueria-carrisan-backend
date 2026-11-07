@@ -242,19 +242,20 @@ test('armarCambiosProducto IGNORA campos no previstos (no hay mass-assignment)',
     nombre_comercial: 'IBUPROFENO',
     precio_usd: 1,
     costo_usd: 0.01,
-    sku: 'HACKEADO',
     foto_url: 'https://x/a.jpg',
+    foto_estado: 'ok',
+    fuente_inhrr_ef: 'E.F.1',
+    requiere_cotizacion: true,
     id: 999,
-    disponible: false,
     updated_at: '1999-01-01',
   });
   assert.ok(r.cambios);
   assert.deepEqual(soloClaves(r.cambios), ['nombre_comercial', 'updated_at']);
   assert.equal(r.cambios.precio_usd, undefined);
   assert.equal(r.cambios.costo_usd, undefined);
-  assert.equal(r.cambios.sku, undefined);
   assert.equal(r.cambios.foto_url, undefined);
-  assert.equal(r.cambios.disponible, undefined);
+  assert.equal(r.cambios.foto_estado, undefined);
+  assert.equal(r.cambios.fuente_inhrr_ef, undefined);
   // `updated_at` lo pone el servidor, nunca el body.
   assert.notEqual(String(r.cambios.updated_at), '1999-01-01');
 });
@@ -326,6 +327,68 @@ test('armarCambiosProducto: la molécula vacía queda en null', () => {
 
 test('armarCambiosProducto: campos de texto larguísimos se rechazan', () => {
   assert.match(armarCambiosProducto({ nombre_comercial: 'a'.repeat(600) }).error, /supera/i);
+});
+
+// --- campos comerciales nuevos (SKU, marca, país, presentación, unidades) ----
+
+test('armarCambiosProducto: acepta SKU, marca, país, presentación, unidades y disponible', () => {
+  const r = armarCambiosProducto({
+    sku: ' ME123/2 ',
+    marca_id: '4',
+    pais_id: '2',
+    presentacion: ' X 10 TABLETAS ',
+    unidades_por_presentacion: '10',
+    disponible: 'true',
+  });
+  assert.deepEqual(soloClaves(r.cambios), [
+    'disponible',
+    'marca_id',
+    'pais_id',
+    'presentacion',
+    'sku',
+    'unidades_por_presentacion',
+    'updated_at',
+  ]);
+  assert.equal(r.cambios.sku, 'ME123/2');
+  assert.equal(r.cambios.marca_id, 4);
+  assert.equal(r.cambios.pais_id, 2);
+  assert.equal(r.cambios.presentacion, 'X 10 TABLETAS');
+  assert.equal(r.cambios.unidades_por_presentacion, 10);
+  assert.equal(r.cambios.disponible, true);
+});
+
+test('armarCambiosProducto: SKU vacío queda en null y uno larguísimo se rechaza', () => {
+  assert.equal(armarCambiosProducto({ sku: '   ' }).cambios.sku, null);
+  assert.equal(armarCambiosProducto({ sku: null }).cambios.sku, null);
+  assert.match(armarCambiosProducto({ sku: 'a'.repeat(150) }).error, /supera/i);
+});
+
+test('armarCambiosProducto: marca/país vacíos limpian la relación (null)', () => {
+  assert.equal(armarCambiosProducto({ marca_id: '' }).cambios.marca_id, null);
+  assert.equal(armarCambiosProducto({ marca_id: null }).cambios.marca_id, null);
+  assert.equal(armarCambiosProducto({ pais_id: '' }).cambios.pais_id, null);
+});
+
+test('armarCambiosProducto: ids de marca/país inválidos son error', () => {
+  assert.match(armarCambiosProducto({ marca_id: 'abc' }).error, /id válido/);
+  assert.match(armarCambiosProducto({ marca_id: 0 }).error, /id válido/);
+  assert.match(armarCambiosProducto({ marca_id: 1.5 }).error, /id válido/);
+  assert.match(armarCambiosProducto({ pais_id: -2 }).error, /id válido/);
+});
+
+test('armarCambiosProducto: unidades por presentación debe ser entero >= 0', () => {
+  assert.equal(armarCambiosProducto({ unidades_por_presentacion: 0 }).cambios.unidades_por_presentacion, 0);
+  assert.equal(armarCambiosProducto({ unidades_por_presentacion: '30' }).cambios.unidades_por_presentacion, 30);
+  assert.equal(armarCambiosProducto({ unidades_por_presentacion: '' }).cambios.unidades_por_presentacion, null);
+  assert.match(armarCambiosProducto({ unidades_por_presentacion: -1 }).error, /entero entre 0/);
+  assert.match(armarCambiosProducto({ unidades_por_presentacion: 2.5 }).error, /entero entre 0/);
+  assert.match(armarCambiosProducto({ unidades_por_presentacion: 'diez' }).error, /entero entre 0/);
+});
+
+test('armarCambiosProducto: disponible acepta booleanos y sus formas de texto', () => {
+  assert.equal(armarCambiosProducto({ disponible: false }).cambios.disponible, false);
+  assert.equal(armarCambiosProducto({ disponible: 'true' }).cambios.disponible, true);
+  assert.match(armarCambiosProducto({ disponible: 'si' }).error, /true o false/);
 });
 
 // --- armarNuevoProducto -------------------------------------------------------

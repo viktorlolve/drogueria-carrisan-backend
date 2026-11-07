@@ -197,27 +197,44 @@ export function armarCambiosPrecio(body) {
 // --- datos del producto ------------------------------------------------------
 //
 // Segundo camino de escritura de la consola: además de la foto y el precio, la
-// gerencia puede corregir los datos de texto del producto (nombre, laboratorio,
-// línea, forma, molécula…). Nada de esto toca `precio_usd`/`costo_usd`/`sku`/
-// `foto_url`: cada uno tiene su propio endpoint.
+// gerencia puede corregir TODOS los datos comerciales del producto (nombre,
+// SKU, marca, país, presentación, unidades, laboratorio, línea, forma, molécula,
+// descripción, estado y disponibilidad). El precio/costo y la foto quedan
+// afuera porque cada uno tiene su propio endpoint con reglas propias.
 
 // Los campos que este PATCH puede escribir. Cualquier otra cosa que venga en el
 // body se IGNORA — la whitelist es la barrera anti mass-assignment.
 //
 // OJO con `pais_origen`: NO es una columna de `productos` (el país es
-// `productos.pais_id`, FK a `paises`, que hoy está en NULL para el 100% de las
-// filas). Si se agrega un nombre que no existe, PostgREST rechaza el UPDATE
-// entero y el error se confunde con "producto no encontrado" (le pasó a esta
-// lista: incluía `pais_origen` y rompía todo guardado). Solo campos reales.
+// `productos.pais_id`, FK a `paises`). Si se agrega un nombre que no existe,
+// PostgREST rechaza el UPDATE entero y el error se confunde con "producto no
+// encontrado" (le pasó a esta lista: incluía `pais_origen` y rompía todo
+// guardado). Solo campos reales, verificados contra la tabla.
+//
+// FUERA a propósito:
+// - `precio_usd`/`costo_usd`: se escriben por la RPC de precio (el precio manda
+//   y el costo se deriva).
+// - `foto_url`/`foto_estado`: los maneja la ruta de foto (incluida la coherencia
+//   URL/estado).
+// - `fuente_inhrr_ef`: identidad de importación del INHRR (editarla rompe el
+//   dedupe de la próxima importación).
+// - `id`, `created_at`, `updated_at`: técnicos.
+// - `requiere_cotizacion`/`es_cotizacion`: flags legacy que ningún flujo lee.
 export const CAMPOS_PRODUCTO_EDITABLES = [
   'nombre_comercial',
   'descripcion',
+  'sku',
+  'marca_id',
+  'pais_id',
+  'presentacion',
+  'unidades_por_presentacion',
   'laboratorio',
   'molecula',
   'linea',
   'forma',
   'activo',
   'visible_catalogo',
+  'disponible',
 ];
 
 // Topes de largo. `text` en Postgres no tiene límite; esto solo evita que un
@@ -225,6 +242,8 @@ export const CAMPOS_PRODUCTO_EDITABLES = [
 // ronda los 45 caracteres).
 export const NOMBRE_MAX = 500;
 export const TEXTO_MAX = 2000;
+export const SKU_MAX = 120;
+export const UNIDADES_MAX = 100000;
 
 /**
  * Recorta un texto y trata el vacío como `null`.
@@ -270,6 +289,36 @@ function sanearBool(valor) {
 }
 
 /**
+ * Id de una FK opcional (`marca_id`, `pais_id`). `null`/`''` limpia la
+ * relación; cualquier otra cosa debe ser un entero positivo.
+ * @returns {number|null}
+ * @throws {Error} si no es un entero positivo
+ */
+function sanearIdPositivo(valor, campo) {
+  if (valor === null || valor === undefined || valor === '') return null;
+  const n = Number(valor);
+  if (!Number.isInteger(n) || n <= 0) {
+    throw new Error(`"${campo}" debe ser un id válido o null`);
+  }
+  return n;
+}
+
+/**
+ * Unidades por presentación: entero entre 0 y `UNIDADES_MAX`.
+ * `null`/`''` = sin dato (la presentación no tiene pack definido).
+ * @returns {number|null}
+ * @throws {Error} si no es un entero válido
+ */
+function sanearUnidades(valor) {
+  if (valor === null || valor === undefined || valor === '') return null;
+  const n = Number(valor);
+  if (!Number.isInteger(n) || n < 0 || n > UNIDADES_MAX) {
+    throw new Error(`"unidades_por_presentacion" debe ser un entero entre 0 y ${UNIDADES_MAX}`);
+  }
+  return n;
+}
+
+/**
  * Arma el objeto de cambios de un PATCH de datos del producto.
  *
  * Solo escribe los campos de `CAMPOS_PRODUCTO_EDITABLES` que vengan en el body
@@ -292,12 +341,19 @@ export function armarCambiosProducto(body) {
       cambios.nombre_comercial = nombre;
     }
     if ('descripcion' in b) cambios.descripcion = sanearTexto(b.descripcion, TEXTO_MAX);
+    if ('sku' in b) cambios.sku = sanearTexto(b.sku, SKU_MAX);
+    if ('marca_id' in b) cambios.marca_id = sanearIdPositivo(b.marca_id, 'marca_id');
+    if ('pais_id' in b) cambios.pais_id = sanearIdPositivo(b.pais_id, 'pais_id');
+    if ('presentacion' in b) cambios.presentacion = sanearTexto(b.presentacion, TEXTO_MAX);
+    if ('unidades_por_presentacion' in b) {
+      cambios.unidades_por_presentacion = sanearUnidades(b.unidades_por_presentacion);
+    }
     if ('laboratorio' in b) cambios.laboratorio = sanearLaboratorio(b.laboratorio);
     if ('molecula' in b) cambios.molecula = sanearTexto(b.molecula, TEXTO_MAX);
     if ('linea' in b) cambios.linea = sanearTexto(b.linea, TEXTO_MAX);
     if ('forma' in b) cambios.forma = sanearTexto(b.forma, TEXTO_MAX);
 
-    for (const campo of ['activo', 'visible_catalogo']) {
+    for (const campo of ['activo', 'visible_catalogo', 'disponible']) {
       if (campo in b) {
         const bool = sanearBool(b[campo]);
         if (bool === null) return { error: `"${campo}" debe ser true o false` };
