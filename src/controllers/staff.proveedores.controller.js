@@ -302,3 +302,71 @@ export async function costoManual(req, res) {
     res.status(500).json({ mensaje: 'Error al asignar costo' });
   }
 }
+
+/**
+ * POST /staff/proveedores/enlazar
+ * Body: { proveedor, producto_id, costo_usd, subida_id?, descripcion? }
+ * Enlaza una fila sin-enlazar de una subida de proveedor con un producto del
+ * catálogo: guarda el costo en producto_costos, recalcula costo/precio del
+ * producto (MIN entre proveedores) y publica si es la primera vez que tiene precio.
+ */
+export async function enlazarProducto(req, res) {
+  try {
+    const { proveedor, producto_id, costo_usd, subida_id, descripcion } = req.body;
+    if (!proveedor || !PROVEEDORES[proveedor]) return res.status(400).json({ mensaje: 'Proveedor inválido' });
+    if (!producto_id) return res.status(400).json({ mensaje: 'producto_id es requerido' });
+    if (costo_usd == null || Number(costo_usd) < 0) return res.status(400).json({ mensaje: 'costo_usd inválido' });
+
+    const pid = Number(producto_id);
+    const costo = Number(costo_usd);
+
+    // 1. Guardar/actualizar costo por proveedor
+    const { error } = await supabase.from('producto_costos').upsert({
+      proveedor,
+      producto_id: pid,
+      costo_usd: costo,
+      fecha: new Date().toISOString(),
+    }, { onConflict: 'proveedor,producto_id' });
+    if (error) throw error;
+
+    // 2. Recalcular costo_usd (MIN > 0) + precio_usd = costo/0.6 + disponible
+    await recalcularCostoProducto(pid);
+
+    // 3. Marcar como enlazado: borrar de subidas_sin_enlazar si se paso subida_id
+    if (subida_id) {
+      await supabase.from('subidas_sin_enlazar').delete().eq('subida_id', subida_id);
+    }
+
+    res.json({ ok: true, proveedor, producto_id: pid, costo_usd: costo });
+  } catch (e) {
+    console.error('enlazarProducto', e);
+    res.status(500).json({ mensaje: 'Error al enlazar producto' });
+  }
+}
+
+/**
+ * Recalcula costo_usd (MIN de costo_usd > 0 entre proveedores), precio_usd =
+ * costo/0.6 y disponible para un producto. Si pasa de sin-precio a con-precio,
+ * dispara alPublicarPrecio para notificar "Ya llegó" y resolver requerimientos.
+ */
+async function recalcularCostoProducto(productoId) {
+  const { data: costos } = await supabase
+    .from('producto_costos')
+    .select('costo_usd')
+    .eq('producto_id', productoId)
+    .gt('costo_usd', 0);
+  const minc = costos && costos.length ? Math.min(...costos.map(c => Number(c.costo_usd))) : null;
+
+  if (minc != null && minc > 0) {
+    const precio = Math.round((minc / 0.6) * 100) / 100;
+    const { data: prod } = await supabase
+      .from('productos')
+      .update({ costo_usd: minc, precio_usd: precio, disponible: true, updated_at: new Date().toISOString() })
+      .eq('id', productoId)
+      .select('id, nombre_comercial')
+      .single();
+    if (prod) await alPublicarPrecio(prod).catch(() => {});
+  } else {
+    await supabase.from('productos').update({ costo_usd: null, updated_at: new Date().toISOString() }).eq('id', productoId);
+  }
+}

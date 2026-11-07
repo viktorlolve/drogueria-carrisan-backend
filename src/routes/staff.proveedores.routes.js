@@ -2,7 +2,7 @@
 import express from 'express';
 import multer from 'multer';
 import { verifyStaffJWT, checkRolStaff } from '../middleware/staffAuth.js';
-import { getResumen, importar, getSubidas, getPendientes, getPendientesCsv, costoManual } from '../controllers/staff.proveedores.controller.js';
+import { getResumen, importar, getSubidas, getPendientes, getPendientesCsv, costoManual, enlazarProducto } from '../controllers/staff.proveedores.controller.js';
 
 const router = express.Router();
 const upload = multer({
@@ -25,5 +25,6 @@ router.get('/subidas', getSubidas);
 router.get('/pendientes', getPendientes);
 router.get('/pendientes.csv', getPendientesCsv);
 router.post('/costo-manual', costoManual);
+router.post('/enlazar', enlazarProducto);
 
 export default router;
