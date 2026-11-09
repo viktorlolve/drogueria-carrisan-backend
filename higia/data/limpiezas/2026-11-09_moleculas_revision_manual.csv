@@ -1,0 +1,10 @@
+id,sku,nombre_comercial,laboratorio,molecula_texto,molecula_puente,motivo
+37335,ME43512,ACICLOVIR CREMA 5 %,JIANGXI SYNERGY PHARMACEUTICAL CO. LTD,Aciclovir - Parafina Blanda - Sodio Hidrogeno Carbonato,Aciclovir - Hidrogenofosfato De Sodio Dodecahidrato - Parafina Blanda - Parafina Liquida - Sodio Hidrogeno Carbonato,ACICLOVIR CREMA: puente/texto con Parafina y Sodio Hidrogeno Carbonato (excipientes)
+37577,ME41747,BIOCOR AMLO 20 MG - 5 MG X 30 TABLETAS RECUBIERTAS,CALOX INTERNATIONAL C.A.,Olmesartan Medoxomilo,Amlodipino,BIOCOR AMLO 20/5: al texto le falta Amlodipino y al puente le falta Olmesartan
+37578,ME41748,BIOCOR AMLO 40 MG - 5 MG X 30 TABLETAS RECUBIERTAS,CALOX INTERNATIONAL C.A.,Olmesartan Medoxomilo,Amlodipino,BIOCOR AMLO 40/5: al texto le falta Amlodipino y al puente le falta Olmesartan
+37579,ME41691,BIOCOR 40 MG X 30 TABLETAS RECUBIERTAS,CALOX INTERNATIONAL C.A.,Olmesartan Medoxomilo,Bisoprolol,BIOCOR 40 MG: el puente apunta a Bisoprolol (erroneo)
+38640,ME43713,PASIM PLUS 10 MG - 500 MG X 10 COMPRIMIDOS RECUBIERTOS,MEGALABS S.A.,(+)-tetrabenazina - Acetaminofen,Acetaminofen - Butilescopolamina Bromuro,PASIM PLUS: el texto trae (+)-tetrabenazina (basura) y el puente Butilescopolamina
+38988,ME44211,PRAMIPEXOL 1 MG X 28 TABLETAS,JIANGXI SYNERGY PHARMACEUTICAL CO. LTD,Citrato Magnesio - Manitol - Povidona - Pramipexol,Manitol - Povidona - Pramipexol,PRAMIPEXOL: el puente incluye Manitol y Povidona (excipientes)
+39507,ME31488,DOLOGINEX 125 MG - 10 MG X 10 COMPRIMIDOS RECUBIERTOS,MEGALABS S.A.,Clonixino Lisina,Clonixinato De Lisina - Propinox,DOLOGINEX: el texto esta incompleto (falta Propinox)
+39614,,ALIVET DIA X 6 SOBRES GRANULADOS,LABORATORIOS LETI S.A.V.,"Acetaminofen, Cafeina, Clorfeniramina",Dexametasona,ALIVET DIA: el puente apunta a Dexametasona (erroneo)
+39684,,CITRATO CA VIT D3 TABLETAS,PHARMATECH USA CORP,Citrato Ca Vit D3,Colecalciferol,CITRATO CA VIT D3: el puente solo tiene Colecalciferol (falta Citrato de Calcio)
