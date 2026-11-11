@@ -166,6 +166,7 @@ export async function listarInventario(req, res) {
     foto_estado,
     sin_precio,
     sin_proveedor,
+    visible_catalogo,
     sort,
     pagina: paginaRaw,
     por_pagina: porPaginaRaw,
@@ -238,6 +239,14 @@ export async function listarInventario(req, res) {
         });
       }
       query = query.in('id', ids);
+    }
+
+    // Visibilidad en el catálogo público. Se envía 'true' o 'false'; cualquier
+    // otro valor (incl. vacío) no filtra.
+    if (visible_catalogo === 'true') {
+      query = query.eq('visible_catalogo', true);
+    } else if (visible_catalogo === 'false') {
+      query = query.eq('visible_catalogo', false);
     }
 
     const orden = ORDENES[sort] || ORDENES.nombre_asc;

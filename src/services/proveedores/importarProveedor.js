@@ -22,7 +22,6 @@ import {
   tieneAncla,
   construirIndice,
   candidatosPara,
-  scoreNombreComercial,
 } from '../../../scripts/lib/cobecaParser.mjs';
 import {
   construirIndiceLaboratorio,
@@ -31,6 +30,7 @@ import {
 import { leerBioglass } from '../../../scripts/lib/nuevosProveedores/bioglass.mjs';
 import { leerBcGroup } from '../../../scripts/lib/nuevosProveedores/bcGroup.mjs';
 import { leerMedImportados } from '../../../scripts/lib/nuevosProveedores/medImportados.mjs';
+import { enlazarLaboratorioNombre } from './enlazarNombreGates.mjs';
 
 export const MARGEN = 0.6;       // precio_usd = costo_usd / MARGEN (40% sobre venta)
 const CHUNK = 500;               // updates en lotes
@@ -176,25 +176,14 @@ export function enlazarDrovencentro(fila, idxLab) {
 
 // ---- Enlazado para los 3 proveedores nuevos ----
 
-// Los 3 proveedores nuevos traen `laboratorio_fijo` (texto EXACTO de
-// productos.laboratorio) y un nombre crudo. El enlazado es: filtrar productos
-// de ese laboratorio y hacer match por nombre contra nombre_comercial/molecula.
-// No usa el parser farmacéutico de COBECA.
-export function enlazarLaboratorioNombre(fila, productos, laboratorioFijo) {
-  const parsed = parsearDescripcion(fila.desc);
-  const umbral = 0.6;
-  let best = null;
-  let bestScore = umbral;
-  for (const p of productos) {
-    if (String(p.laboratorio || '').trim() !== laboratorioFijo) continue;
-    const s = scoreNombreComercial(parsed, p.nombre_comercial || '');
-    if (s > bestScore) { bestScore = s; best = p; }
-  }
-  if (best && bestScore >= umbral) {
-    return { estado: 'matched', producto: best, score: bestScore };
-  }
-  return { estado: 'sin_match', motivo: 'sin_candidato' };
-}
+// El matcher por nombre contra `laboratorio_fijo` vive en ./enlazarNombreGates.mjs
+// (variante V9b: gates PER-CANDIDATO — dosis comparables, cobertura de molécula,
+// ancla — + desempate por presentación; medido contra el GT de octubre: bioglass
+// 16→0 FP, med 22→3 FP, 0 regresiones). Mantiene el contrato V0
+// ({ estado:'matched', producto, score } | { estado:'sin_match', motivo:'sin_candidato' })
+// y NO muta fila.desc — el reporte CSV / subidas_sin_enlazar sigue usando la
+// descripción original. Re-exportado para conservar la superficie pública.
+export { enlazarLaboratorioNombre };
 
 // ---- Orquestador ----
 
@@ -222,6 +211,10 @@ export async function importarProveedor({ buffer, nombre = 'archivo', proveedor 
       FROM public.productos
       ORDER BY id
     `);
+
+    // Preparación de productos para el matcher por laboratorio fijo (cache lazy
+    // por id: 1 preparación por producto en TODA la corrida, no por fila).
+    const prepProductos = new Map();
 
     // Índice según proveedor
     let idx;
@@ -258,7 +251,7 @@ export async function importarProveedor({ buffer, nombre = 'archivo', proveedor 
       let enlazado;
       if (proveedor === 'cobeca') enlazado = enlazarCOBECA(f, productos, idx);
       else if (proveedor === 'drovencentro') enlazado = enlazarDrovencentro(f, idxLab);
-      else enlazado = enlazarLaboratorioNombre(f, productos, f.laboratorio);
+      else enlazado = enlazarLaboratorioNombre(f, productos, f.laboratorio, prepProductos);
 
       if (enlazado.estado === 'no_farmaco') {
         filas.push({ ...base, estado: 'sin_match', motivo: 'no farmaco' });
