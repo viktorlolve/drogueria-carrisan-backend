@@ -466,7 +466,7 @@ export async function getOrdenes(req, res) {
   try {
     let query = supabase
       .from('ordenes')
-      .select('*, users(id, nombre, email), sub_usuarios(nombre), ordenes_items(*, productos(nombre_comercial))')
+      .select('*, users(id, nombre, email), sub_usuarios(nombre), ordenes_items(*, productos(nombre_comercial, molecula))')
       .order('created_at', { ascending: false });
 
     if (!req.user.es_admin) {
