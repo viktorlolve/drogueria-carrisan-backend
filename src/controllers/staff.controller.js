@@ -10,6 +10,19 @@ import {
 } from './presupuestos.controller.js';
 import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
 
+// Select completo de una orden para imprimir (guía de despacho y PDF de la
+// orden). `construirOrden` devuelve una versión reducida —`items` con solo
+// `producto_id, cantidad, precio_unitario`— sin cliente, dirección, agencia ni
+// productos, así que la orden recién creada se re-consulta con estas
+// relaciones para que el frontend pueda armar ambos PDFs sin otra llamada.
+const SELECT_ORDEN_IMPRIMIBLE = `
+  *,
+  users(nombre, email, telefono, rif_cedula),
+  direcciones_envio(direccion, ciudad, estado),
+  ordenes_items(*, productos(nombre_comercial, molecula)),
+  agencias_envio(nombre)
+`;
+
 // POST /staff/login
 export async function loginStaff(req, res) {
   const { email, password } = req.body;
@@ -343,7 +356,28 @@ export async function crearOrdenParaCliente(req, res) {
       { creado_por_staff_id: req.staff.id, saltarValidacionPin: true }
     );
 
-    res.status(201).json(orden);
+    // Relectura con las relaciones que necesitan la guía de despacho y el PDF
+    // de la orden. La orden YA está creada: si esta lectura falla se responde
+    // igual lo de `construirOrden` (no se convierte en un 500 para el vendedor).
+    let ordenImprimible = orden;
+    const { data: ordenConRelaciones, error: errorRelectura } = await supabase
+      .from('ordenes')
+      .select(SELECT_ORDEN_IMPRIMIBLE)
+      .eq('id', orden.id)
+      .single();
+
+    if (errorRelectura) {
+      console.error('Error al releer la orden creada para impresión:', errorRelectura);
+    } else if (ordenConRelaciones) {
+      ordenImprimible = {
+        ...orden,
+        ...ordenConRelaciones,
+        descuento_cupon: orden.descuento_cupon,
+        cupon_codigo: orden.cupon_codigo,
+      };
+    }
+
+    res.status(201).json(ordenImprimible);
   } catch (err) {
     if (err instanceof ErrorOrden) {
       return res.status(err.status).json({ error: err.message, ...(err.extra || {}) });
