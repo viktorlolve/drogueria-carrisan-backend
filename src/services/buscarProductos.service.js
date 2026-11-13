@@ -7,10 +7,11 @@
 // Contrato de la RPC (ver 046_buscar_productos.sql):
 //   buscar_productos(p_termino, p_limite, p_offset, p_orden, p_linea,
 //     p_categoria, p_laboratorio, p_forma, p_disponible, p_sin_precio,
-//     p_precio_min, p_precio_max, p_molecula, p_marca_id)
+//     p_precio_min, p_precio_max, p_molecula, p_marca_id, p_solo_visibles)
 //   → TABLE(producto_id integer, tier integer, total integer)
 //   p_limite NULL = sin limite; p_orden: relevancia|nombre_asc|nombre_desc|
-//   precio_asc|precio_desc.
+//   precio_asc|precio_desc; p_solo_visibles true = solo productos con
+//   visible_catalogo (la RPC no lee req.user: el gate lo decide el controller).
 
 // Valores de p_orden que acepta la RPC. Cualquier otro sort del querystring
 // (o ausente) cae a 'relevancia': con termino de busqueda, el orden por
@@ -59,6 +60,8 @@ export function ordenarPorIds(filas, ids) {
 //   - sinPrecio: boolean (default false); la RPC trata NULL o 0 como sin precio
 //   - precioMin/precioMax/marcaId: llegan como strings del querystring; se
 //     coercionan a number (numeric de la firma) o null si estan vacios
+//   - soloVisibles: boolean (default false = sin filtro, comportamiento admin).
+//     El controller lo pone en true salvo para una sesion de admin.
 function aNumero(valor) {
   if (valor === null || valor === undefined || valor === '') return null
   const n = Number(valor)
@@ -80,6 +83,7 @@ export function construirArgsBuscarProductos({
   precioMax = null,
   molecula = null,
   marcaId = null,
+  soloVisibles = false,
 } = {}) {
   return {
     p_termino: termino,
@@ -96,5 +100,6 @@ export function construirArgsBuscarProductos({
     p_precio_max: aNumero(precioMax),
     p_molecula: molecula || null,
     p_marca_id: aNumero(marcaId),
+    p_solo_visibles: Boolean(soloVisibles),
   }
 }

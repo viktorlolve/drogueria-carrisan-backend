@@ -100,7 +100,13 @@ test('construirArgsBuscarProductos: mapea todos los params a claves p_*', () => 
     p_precio_max: 99.9,
     p_molecula: 'acetaminofen',
     p_marca_id: 7,
+    p_solo_visibles: false,
   })
+})
+
+test('construirArgsBuscarProductos: soloVisibles true -> p_solo_visibles true', () => {
+  const args = construirArgsBuscarProductos({ termino: 'atamel', soloVisibles: true })
+  assert.equal(args.p_solo_visibles, true)
 })
 
 test('construirArgsBuscarProductos: opcionales vacios caen a null, sin_precio false, offset 0', () => {

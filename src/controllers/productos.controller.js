@@ -218,6 +218,11 @@ export async function buscarProductos(req, res) {
     const { data: filasRpc, error: errorRpc } = await supabase.rpc('buscar_productos', {
       p_termino: termino,
       p_limite: limite,
+      // Buscador del sitio: `verifyJWTOptional` NO trae `es_admin`, así que acá
+      // no se puede discriminar admin. Los consumidores (Navbar, BuscadorMovil,
+      // PresupuestoCrear) son de tienda y ninguna pantalla admin lo usa →
+      // ocultar siempre los productos con `visible_catalogo=false`.
+      p_solo_visibles: true,
     });
 
     if (errorRpc && !esErrorRpcInexistente(errorRpc)) throw errorRpc;
@@ -236,6 +241,7 @@ export async function buscarProductos(req, res) {
       .from('productos')
       .select(columnas)
       .eq('activo', true)
+      .eq('visible_catalogo', true)
       .or(
         `nombre_comercial.ilike.*${termino}*,` +
         `sku.ilike.*${termino}*,` +
@@ -273,6 +279,12 @@ export async function getProductos(req, res) {
   // quieren un array plano y ya recortan con `.slice()` en el frontend.
   const usarPaginacion = page !== undefined;
 
+  // El catálogo oculta los productos con `visible_catalogo=false` (switch
+  // "Catálogo" apagado en Inventario). Única excepción: una sesión de admin
+  // (el dueño) los sigue viendo, porque comparte este endpoint con las
+  // pantallas de gestión. NO se usa `activo` para esto: son campos distintos.
+  const esAdmin = req.user?.es_admin === true;
+
   const opcionesOrden = {
     nombre_asc: { column: 'nombre_comercial', ascending: true },
     nombre_desc: { column: 'nombre_comercial', ascending: false },
@@ -309,6 +321,9 @@ export async function getProductos(req, res) {
         precioMax: precio_max,
         molecula: molecula || null,
         marcaId: marca_id,
+        // La RPC no puede leer `req.user`: el gate de visibilidad se le pasa
+        // como parámetro. Admin → false (ve todo); resto → true (oculta).
+        soloVisibles: !esAdmin,
       });
 
       const { data: filasRpc, error: errorRpc } = await supabase.rpc('buscar_productos', args);
@@ -403,6 +418,11 @@ export async function getProductos(req, res) {
     const aplicarFiltros = (queryBase) => {
       let q = queryBase.eq('activo', true);
 
+      // Visibilidad en el catálogo: oculta los productos con el switch
+      // "Catálogo" apagado, salvo para una sesión de admin (dueño). El orden
+      // aleatorio reusa esta misma función → su cache key debe incluir el gate.
+      if (!esAdmin) q = q.eq('visible_catalogo', true);
+
       if (search) q = q.ilike('nombre_comercial', `%${search}%`);
       if (marca_id) q = q.eq('marca_id', marca_id);
       if (linea) q = q.eq('linea', NORMALIZAR_LINEA[String(linea).toLowerCase()] || linea);
@@ -448,6 +468,7 @@ export async function getProductos(req, res) {
       const seed = String(req.query.seed ?? '').slice(0, 64) || 'catalogo';
       const firma = JSON.stringify({
         seed,
+        esAdmin,
         marca_id: marca_id || '',
         linea: linea || '',
         categoria: categoria || '',
