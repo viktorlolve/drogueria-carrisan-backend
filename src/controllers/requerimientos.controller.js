@@ -3,6 +3,38 @@ import { crearNotificacion } from './notificaciones.controller.js';
 import { emitirNotificacionStaff } from '../services/notificacionesStaff.service.js';
 import { alPublicarPrecio } from './alertasDisponibilidad.controller.js';
 
+// Un requerimiento respondido con precio queda vigente 48 horas. Pasado ese
+// plazo el cliente ya no puede agregarlo al carrito (debe volver a solicitarlo).
+// No hay columna en la BD: se deriva de `fecha_respuesta`, que escriben tanto
+// responderRequerimiento como alPublicarPrecio.
+const HORAS_VIGENCIA = 48;
+
+// Un requerimiento "responde precio" solo si alguno de sus items quedó listo
+// con producto y precio. Si todo se rechazó, no hay oferta que venza.
+function tienePrecio(requerimiento) {
+  return (requerimiento.requerimiento_items || []).some(
+    (item) => item.estado_item === 'listo' && item.productos && item.productos.precio_usd != null
+  );
+}
+
+// Devuelve el requerimiento con `fecha_expiracion` (ISO) y `expirado` (bool).
+// `fecha_expiracion` es null cuando no hay precio vigente que ofrecer.
+function conVigencia(requerimiento) {
+  if (!requerimiento) return requerimiento;
+
+  const base = requerimiento.fecha_respuesta;
+  if (requerimiento.estado !== 'respondido' || !base || !tienePrecio(requerimiento)) {
+    return { ...requerimiento, fecha_expiracion: null, expirado: false };
+  }
+
+  const expiracion = new Date(new Date(base).getTime() + HORAS_VIGENCIA * 60 * 60 * 1000);
+  return {
+    ...requerimiento,
+    fecha_expiracion: expiracion.toISOString(),
+    expirado: expiracion.getTime() <= Date.now(),
+  };
+}
+
 // ---------------------------------------------------------------
 // POST /requerimientos (cliente)
 // Body: { items: [{ nombre_solicitado, cantidad, nota_usuario, producto_id }, ...] }
@@ -95,7 +127,7 @@ export async function getMisRequerimientos(req, res) {
 
     if (error) throw error;
 
-    res.json(data);
+    res.json((data || []).map(conVigencia));
   } catch (err) {
     console.error('Error al obtener mis requerimientos:', err);
     res.status(500).json({ error: 'Error del servidor' });
@@ -215,12 +247,12 @@ export async function responderRequerimiento(req, res) {
         requerimiento.usuario_id,
         'requerimiento_respondido',
         'Tu solicitud de requerimiento está lista',
-        'Ya tenemos precios para los productos que solicitaste.',
+        `Ya tenemos precios para los productos que solicitaste. Tienes ${HORAS_VIGENCIA} horas para agregarlos al carrito.`,
         null
       );
     }
 
-    res.json(requerimientoActualizado);
+    res.json(conVigencia(requerimientoActualizado));
   } catch (err) {
     console.error('Error al responder requerimiento:', err);
     res.status(500).json({ error: 'Error del servidor' });
