@@ -99,7 +99,7 @@ export async function getRequerimientos(req, res) {
   try {
     let query = supabase
       .from('requerimientos')
-      .select('*, users(id, nombre, email), requerimiento_items(*, productos(id, nombre_comercial, foto_url, precio_usd, disponible))')
+      .select('*, users(id, nombre, email), requerimiento_items(*, productos(id, nombre_comercial, foto_url, precio_usd, disponible, forma, laboratorio))')
       .order('fecha_solicitud', { ascending: false });
 
     if (estado) {
@@ -121,7 +121,7 @@ export async function getMisRequerimientos(req, res) {
   try {
     const { data, error } = await supabase
       .from('requerimientos')
-      .select('*, requerimiento_items(*, productos(id, nombre_comercial, foto_url, precio_usd, disponible))')
+      .select('*, requerimiento_items(*, productos(id, nombre_comercial, foto_url, precio_usd, disponible, forma, laboratorio))')
       .eq('usuario_id', req.user.id)
       .order('fecha_solicitud', { ascending: false });
 

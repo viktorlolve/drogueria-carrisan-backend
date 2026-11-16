@@ -7,6 +7,7 @@ import {
   reintentarEnvio,
   verificarPaquete,
   getCompletadas,
+  ajustarItemsDevolucion,
   getAgencias,
   crearAgencia,
   actualizarAgencia,
@@ -26,6 +27,7 @@ router.post('/:id/incidencia', verifyStaffJWT, checkRolStaff(ROLES_ALMACEN), mar
 router.patch('/:id/reintentar', verifyStaffJWT, checkRolStaff(ROLES_ALMACEN), reintentarEnvio);
 router.post('/:id/verificar-paquete', verifyStaffJWT, checkRolStaff(ROLES_ALMACEN), verificarPaquete);
 router.get('/completadas', verifyStaffJWT, checkRolStaff(ROLES_ALMACEN), getCompletadas);
+router.patch('/:id/devolucion', verifyStaffJWT, checkRolStaff(ROLES_ADMIN), ajustarItemsDevolucion);
 router.get('/agencias', verifyStaffJWT, checkRolStaff(ROLES_ADMIN), getAgencias);
 router.post('/agencias', verifyStaffJWT, checkRolStaff(ROLES_ADMIN), crearAgencia);
 router.patch('/agencias/:id', verifyStaffJWT, checkRolStaff(ROLES_ADMIN), actualizarAgencia);

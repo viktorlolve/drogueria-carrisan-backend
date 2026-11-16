@@ -194,7 +194,7 @@ export async function verificarPaquete(req, res) {
   }
 }
 
-// GET /staff/logistica/completadas?desde=&hasta= — historial entregado/retirado.
+// GET /staff/logistica/completadas?desde=&hasta= - historial entregado/retirado.
 export async function getCompletadas(req, res) {
   const { desde, hasta } = req.query;
   try {
@@ -210,6 +210,106 @@ export async function getCompletadas(req, res) {
     res.json({ ordenes: normalizar(data) });
   } catch (err) {
     console.error('Error al obtener órdenes completadas:', err);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+}
+
+// PATCH /staff/logistica/:id/devolucion - admin/director ajusta items de ordenes completadas (entregado/retirado)
+export async function ajustarItemsDevolucion(req, res) {
+  const { id } = req.params;
+  const { items: cambios } = req.body;
+
+  if (!Array.isArray(cambios) || cambios.length === 0) {
+    return res.status(400).json({ error: 'Debe incluir al menos un cambio de item' });
+  }
+
+  for (const c of cambios) {
+    if (!c.id || !Number.isInteger(c.cantidad) || c.cantidad < 0) {
+      return res.status(400).json({ error: 'Cada item requiere id y una cantidad entera >= 0 (0 elimina el item)' });
+    }
+  }
+
+  try {
+    const { data: ordenActual, error: errorOrden } = await supabase
+      .from('ordenes')
+      .select('id, estado, costo_envio_usd, ordenes_items(id, producto_id, cantidad, precio_unitario)')
+      .eq('id', id)
+      .single();
+
+    if (errorOrden || !ordenActual) {
+      return res.status(404).json({ error: 'Orden no encontrada' });
+    }
+
+    const estadoNorm = ordenActual.estado === 'finalizado' ? 'entregado' : ordenActual.estado;
+    if (estadoNorm !== 'entregado' && estadoNorm !== 'retirado') {
+      return res.status(400).json({ error: 'Solo se pueden ajustar items en órdenes entregadas o retiradas' });
+    }
+
+    const itemsActuales = ordenActual.ordenes_items || [];
+    const idsValidos = new Set(itemsActuales.map(i => i.id));
+    for (const c of cambios) {
+      if (!idsValidos.has(c.id)) {
+        return res.status(400).json({ error: `El item ${c.id} no pertenece a esta orden` });
+      }
+    }
+
+    // Validar: no aumentar cantidades (no exceder entregadas), no dejar orden sin items
+    for (const c of cambios) {
+      const itemActual = itemsActuales.find(i => i.id === c.id);
+      if (c.cantidad > itemActual.cantidad) {
+        return res.status(400).json({ error: `No se puede aumentar la cantidad del item ${c.id} (máximo ${itemActual.cantidad})` });
+      }
+    }
+
+    // Aplicar cambios
+    const idsAEliminar = cambios.filter(c => c.cantidad === 0).map(c => c.id);
+    const cambiosUpdate = cambios.filter(c => c.cantidad > 0);
+
+    // Eliminar items con cantidad 0
+    if (idsAEliminar.length > 0) {
+      const { error: errorDel } = await supabase
+        .from('ordenes_items')
+        .delete()
+        .in('id', idsAEliminar);
+      if (errorDel) throw errorDel;
+    }
+
+    // Actualizar cantidades
+    for (const c of cambiosUpdate) {
+      const { error: errorUpdate } = await supabase
+        .from('ordenes_items')
+        .update({ cantidad: c.cantidad })
+        .eq('id', c.id);
+      if (errorUpdate) throw errorUpdate;
+    }
+
+    // Recalcular total
+    const { data: itemsFinales, error: errorItems } = await supabase
+      .from('ordenes_items')
+      .select('cantidad, precio_unitario')
+      .eq('orden_id', id);
+
+    if (errorItems) throw errorItems;
+    if (!itemsFinales || itemsFinales.length === 0) {
+      return res.status(400).json({ error: 'La orden debe tener al menos un item. Para cancelar, use otro flujo.' });
+    }
+
+    const envio = Number(ordenActual.costo_envio_usd || 0);
+    const totalItems = itemsFinales.reduce((sum, i) => sum + Number(i.precio_unitario) * i.cantidad, 0);
+    const nuevoTotal = Math.round((totalItems + envio) * 100) / 100;
+
+    const { data: ordenActualizada, error: errorTotal } = await supabase
+      .from('ordenes')
+      .update({ total_usd: nuevoTotal })
+      .eq('id', id)
+      .select(SELECT_ORDEN)
+      .single();
+
+    if (errorTotal) throw errorTotal;
+
+    res.json(ordenActualizada);
+  } catch (err) {
+    console.error('Error al ajustar items de devolución:', err);
     res.status(500).json({ error: 'Error del servidor' });
   }
 }
