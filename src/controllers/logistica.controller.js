@@ -201,7 +201,7 @@ export async function getCompletadas(req, res) {
     let query = supabase
       .from('ordenes')
       .select(SELECT_ORDEN)
-      .in('estado', ['entregado', 'retirado'])
+      .in('estado', ['entregado', 'retirado', 'finalizado'])
       .order('created_at', { ascending: false });
     if (desde) query = query.gte('created_at', desde);
     if (hasta) query = query.lte('created_at', hasta);
@@ -261,6 +261,14 @@ export async function ajustarItemsDevolucion(req, res) {
       }
     }
 
+    // Prevalidar que quede al menos un item ANTES de escribir: si se eliminara
+    // todo primero y se validara después, la orden quedaría vacía con un 400.
+    const cantidadesFinales = new Map(itemsActuales.map(i => [i.id, i.cantidad]));
+    for (const c of cambios) cantidadesFinales.set(c.id, c.cantidad);
+    if (![...cantidadesFinales.values()].some(q => q > 0)) {
+      return res.status(400).json({ error: 'La orden debe tener al menos un item. Para cancelar, use otro flujo.' });
+    }
+
     // Aplicar cambios
     const idsAEliminar = cambios.filter(c => c.cantidad === 0).map(c => c.id);
     const cambiosUpdate = cambios.filter(c => c.cantidad > 0);
@@ -286,7 +294,7 @@ export async function ajustarItemsDevolucion(req, res) {
     // Recalcular total
     const { data: itemsFinales, error: errorItems } = await supabase
       .from('ordenes_items')
-      .select('cantidad, precio_unitario')
+      .select('cantidad, precio_unitario, anulado')
       .eq('orden_id', id);
 
     if (errorItems) throw errorItems;
@@ -295,7 +303,12 @@ export async function ajustarItemsDevolucion(req, res) {
     }
 
     const envio = Number(ordenActual.costo_envio_usd || 0);
-    const totalItems = itemsFinales.reduce((sum, i) => sum + Number(i.precio_unitario) * i.cantidad, 0);
+    // Igual que en la aprobación (almacen.controller.js): los items anulados
+    // por agotado no cuentan en el total de la orden.
+    const totalItems = itemsFinales.reduce(
+      (sum, i) => i.anulado ? sum : sum + Number(i.precio_unitario) * i.cantidad,
+      0,
+    );
     const nuevoTotal = Math.round((totalItems + envio) * 100) / 100;
 
     const { data: ordenActualizada, error: errorTotal } = await supabase

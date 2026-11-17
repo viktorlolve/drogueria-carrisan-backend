@@ -12,6 +12,7 @@
 // `staff.clientes.controller.js`), no una query por notificación.
 // ---------------------------------------------------------------
 import { supabase } from '../config/supabase.js'
+import { enviarPushAStaff } from '../services/push.service.js'
 
 const POR_PAGINA_DEFECTO = 50
 const POR_PAGINA_MAX = 100
@@ -268,5 +269,27 @@ export async function actualizarPreferenciasPushStaff(req, res) {
   } catch (error) {
     console.error('[notificaciones.staff] preferenciasPush:', error)
     return res.status(500).json({ error: 'Error al actualizar las preferencias' })
+  }
+}
+
+// ---------------------------------------------------------------
+// GET /staff/push/test — envía una notificación de prueba al
+// staff autenticado para verificar que el push funciona.
+// ---------------------------------------------------------------
+export async function testPushStaff(req, res) {
+  const staffId = req.staff?.id
+  if (!staffId) return res.status(401).json({ error: 'No autenticado' })
+
+  try {
+    await enviarPushAStaff(staffId, {
+      titulo: 'Prueba de push staff',
+      mensaje: 'Si ves esta notificación, el push de staff funciona correctamente.',
+      url: '/staff/notificaciones',
+      tipo: 'sistema',
+    })
+    return res.json({ ok: true, mensaje: 'Push de prueba enviado. Revisá tu dispositivo.' })
+  } catch (error) {
+    console.error('[testPushStaff]', error)
+    return res.status(500).json({ error: 'Error al enviar push de prueba' })
   }
 }

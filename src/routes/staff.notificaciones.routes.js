@@ -8,6 +8,7 @@ import {
   desuscribirPushStaff,
   leerPreferenciasPushStaff,
   actualizarPreferenciasPushStaff,
+  testPushStaff,
 } from '../controllers/notificaciones.staff.controller.js';
 import { verifyStaffJWT, checkRolStaff } from '../middleware/staffAuth.js';
 import { ROLES_TODOS_STAFF } from '../services/notificacionesStaff.service.js';
@@ -28,5 +29,6 @@ router.post('/push/subscribe', verifyStaffJWT, checkRolStaff(ROLES_TODOS), suscr
 router.delete('/push/subscribe', verifyStaffJWT, checkRolStaff(ROLES_TODOS), desuscribirPushStaff);
 router.get('/push/preferencias', verifyStaffJWT, checkRolStaff(ROLES_TODOS), leerPreferenciasPushStaff);
 router.patch('/push/preferencias', verifyStaffJWT, checkRolStaff(ROLES_TODOS), actualizarPreferenciasPushStaff);
+router.get('/push/test', verifyStaffJWT, checkRolStaff(ROLES_TODOS), testPushStaff);
 
 export default router;
