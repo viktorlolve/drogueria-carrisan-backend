@@ -8,7 +8,10 @@ export async function listarProductosStaff(req, res) {
     let query = supabase
       .from('productos')
       .select('id, nombre_comercial, laboratorio, precio_usd, disponible, marcas(id, nombre)')
-      .eq('activo', true);
+      .eq('activo', true)
+      // Solo productos visibles en el catálogo público: los que no lo son no
+      // deben aparecer al agregar items a un presupuesto o una orden.
+      .eq('visible_catalogo', true);
 
     if (buscar && buscar.trim()) {
       query = query.ilike('nombre_comercial', `%${buscar.trim()}%`);
