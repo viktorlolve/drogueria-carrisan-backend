@@ -218,10 +218,7 @@ export async function buscarProductos(req, res) {
     const { data: filasRpc, error: errorRpc } = await supabase.rpc('buscar_productos', {
       p_termino: termino,
       p_limite: limite,
-      // Buscador del sitio: `verifyJWTOptional` NO trae `es_admin`, así que acá
-      // no se puede discriminar admin. Los consumidores (Navbar, BuscadorMovil,
-      // PresupuestoCrear) son de tienda y ninguna pantalla admin lo usa →
-      // ocultar siempre los productos con `visible_catalogo=false`.
+      // Siempre solo productos visibles en el catálogo público.
       p_solo_visibles: true,
     });
 
@@ -237,11 +234,14 @@ export async function buscarProductos(req, res) {
 
     advertirRpcBuscarProductosFaltante(errorRpc);
 
-    const { data, error } = await supabase
+    let q = supabase
       .from('productos')
       .select(columnas)
       .eq('activo', true)
-      .eq('visible_catalogo', true)
+      // Siempre solo productos visibles en el catálogo público.
+      .eq('visible_catalogo', true);
+
+    const { data, error } = await q
       .or(
         `nombre_comercial.ilike.*${termino}*,` +
         `sku.ilike.*${termino}*,` +
