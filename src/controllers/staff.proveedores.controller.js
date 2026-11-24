@@ -305,14 +305,17 @@ export async function costoManual(req, res) {
 
 /**
  * POST /staff/proveedores/enlazar
- * Body: { proveedor, producto_id, costo_usd, subida_id?, descripcion? }
+ * Body: { proveedor, producto_id, costo_usd, fila_id?, descripcion? }
  * Enlaza una fila sin-enlazar de una subida de proveedor con un producto del
  * catálogo: guarda el costo en producto_costos, recalcula costo/precio del
  * producto (MIN entre proveedores) y publica si es la primera vez que tiene precio.
+ * `fila_id` es el id de subidas_sin_enlazar: se borra SOLO esa fila. Un `subida_id`
+ * que envíe un cliente viejo se ignora a propósito (antes borraba TODAS las filas
+ * pendientes de la subida).
  */
 export async function enlazarProducto(req, res) {
   try {
-    const { proveedor, producto_id, costo_usd, subida_id, descripcion } = req.body;
+    const { proveedor, producto_id, costo_usd, fila_id, descripcion } = req.body;
     if (!proveedor || !PROVEEDORES[proveedor]) return res.status(400).json({ mensaje: 'Proveedor inválido' });
     if (!producto_id) return res.status(400).json({ mensaje: 'producto_id es requerido' });
     if (costo_usd == null || Number(costo_usd) < 0) return res.status(400).json({ mensaje: 'costo_usd inválido' });
@@ -332,9 +335,14 @@ export async function enlazarProducto(req, res) {
     // 2. Recalcular costo_usd (MIN > 0) + precio_usd = costo/0.6 + disponible
     await recalcularCostoProducto(pid);
 
-    // 3. Marcar como enlazado: borrar de subidas_sin_enlazar si se paso subida_id
-    if (subida_id) {
-      await supabase.from('subidas_sin_enlazar').delete().eq('subida_id', subida_id);
+    // 3. Marcar como enlazado: borrar SOLO la fila elegida de subidas_sin_enlazar.
+    // Ojo: borrar por subida_id sacaba todas las pendientes de esa subida de una vez.
+    if (fila_id) {
+      const { error: errorFila } = await supabase
+        .from('subidas_sin_enlazar')
+        .delete()
+        .eq('id', fila_id);
+      if (errorFila) throw errorFila;
     }
 
     res.json({ ok: true, proveedor, producto_id: pid, costo_usd: costo });
